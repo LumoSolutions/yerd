@@ -6,7 +6,7 @@ import (
 	"github.com/fatih/color"
 )
 
-const Version = "1.0.1"
+const Version = "1.0.3"
 
 func PrintSplash() {
 	cyan := color.New(color.FgCyan, color.Bold)
@@ -34,7 +34,6 @@ func PrintSplash() {
 	gray.Println("https://github.com/LumoSolutions/yerd")
 	fmt.Println()
 }
-
 
 func GetVersion() string {
 	return Version
