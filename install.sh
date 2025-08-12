@@ -283,7 +283,7 @@ verify_installation() {
 main() {
     echo "╔══════════════════════════════════════════════════════════════════════════════╗"
     echo "║                           YERD Installation Script                          ║"
-    echo "║                  Your (PHP) Environment Runtime Deployer                   ║"
+    echo "║      A powerful, developer-friendly tool for managing PHP versions         ║"
     echo "╚══════════════════════════════════════════════════════════════════════════════╝"
     echo
     
