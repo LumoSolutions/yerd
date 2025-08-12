@@ -132,13 +132,20 @@ func CheckAndPromptForSudo(operation, command string, args ...string) bool {
 		case "PHP update":
 			fmt.Printf("   • Update PHP installations in /opt/yerd/\n")
 			fmt.Printf("   • Manage symlinks in /usr/local/bin/\n")
+		case "YERD update":
+			fmt.Printf("   • Update YERD binary in /usr/local/bin/\n")
+			fmt.Printf("   • Replace existing installation\n")
 		default:
 			fmt.Printf("   • Manage files in /opt/yerd/ and /usr/local/bin/\n")
 		}
 		
 		fmt.Printf("   • Update system-wide configuration\n\n")
 		fmt.Printf("Please run with sudo:\n")
-		fmt.Printf("   sudo yerd php %s", command)
+		if command == "update" && operation == "YERD update" {
+			fmt.Printf("   sudo yerd %s", command)
+		} else {
+			fmt.Printf("   sudo yerd php %s", command)
+		}
 		for _, arg := range args {
 			fmt.Printf(" %s", arg)
 		}

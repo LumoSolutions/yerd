@@ -27,6 +27,7 @@ func Execute() {
 func init() {
 	rootCmd.AddCommand(phpCmd)
 	rootCmd.AddCommand(statusCmd)
+	rootCmd.AddCommand(UpdateCmd)
 
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 }
