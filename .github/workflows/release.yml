@@ -14,6 +14,9 @@ on:
 env:
   GO_VERSION: '1.21'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build Release Binaries
@@ -86,7 +89,7 @@ jobs:
         path: ${{ env.ASSET_NAME }}
 
   release:
-    name: Create Release
+    name: Update Release
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -120,8 +123,8 @@ jobs:
           fi
         done
 
-    - name: Create Release
-      id: create_release
+    - name: Update Release
+      id: update_release
       uses: softprops/action-gh-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -130,53 +133,7 @@ jobs:
         name: YERD ${{ steps.get_version.outputs.VERSION }}
         draft: false
         prerelease: false
-        body: |
-          # YERD v${{ steps.get_version.outputs.VERSION }}
-
-          PHP & NGINX Manager for Linux - Multi-Version PHP Installation Manager
-
-          ## Installation
-
-          ### Quick Install (Linux/macOS)
-          ```bash
-          curl -sSL https://raw.githubusercontent.com/LumoSolutions/yerd/main/install.sh | bash
-          ```
-
-          ### Manual Installation
-          1. Download the appropriate binary for your system
-          2. Extract the archive
-          3. Move the binary to a directory in your PATH (e.g., `/usr/local/bin`)
-          4. Make it executable: `chmod +x /usr/local/bin/yerd`
-
-          ## Usage
-
-          ```bash
-          # List available PHP versions
-          yerd list
-
-          # Install PHP version
-          sudo yerd add php8.4
-
-          # Set CLI version
-          sudo yerd cli php8.4
-
-          # Remove PHP version
-          sudo yerd remove php8.3
-          ```
-
-          ## What's Changed
-
-          - Initial release of YERD
-          - Support for PHP 8.2, 8.3, and 8.4
-          - Source-based PHP compilation from official php.net releases
-          - Dynamic version fetching with automatic updates
-          - CLI version switching with symlink management
-          - Clean removal with automatic cleanup
-          - Zero-downtime update system
-
-          ## Checksums
-
-          See `checksums.txt` for SHA256 checksums of all release artifacts.
+        generate_release_notes: true
 
     - name: Upload Release Assets
       uses: softprops/action-gh-release@v1
