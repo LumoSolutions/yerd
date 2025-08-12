@@ -1,0 +1,142 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Dependency directories (remove the comment below to include it)
+# vendor/
+
+# Go workspace file
+go.work
+
+# Built binaries
+yerd
+yerd.exe
+
+# Build directories
+build/
+dist/
+bin/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Local configuration files
+.env
+.env.local
+.env.*.local
+
+# Coverage reports
+coverage.txt
+coverage.html
+coverage.out
+
+# Profiling data
+cpu.prof
+mem.prof
+profile.out
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Archive files
+*.tar.gz
+*.zip
+*.7z
+*.rar
+
+# Local development
+local/
+tmp/
+
+# Release artifacts (keep in repo for GitHub Actions)
+# dist/ is commented out because we may want to include release artifacts
+
+# Node modules (in case of any JS tooling)
+node_modules/
+
+# Python cache (in case of any Python scripts)
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Backup files
+*.bak
+*.backup
+
+# AI Agent files and configurations
+CLAUDE.md
+claude.md
+CLAUDE/*
+claude/*
+.claude/
+.claude*
+
+# Cursor AI files
+.cursor/
+.cursorrules
+.cursor-tutor
+
+# GitHub Copilot files
+.github/copilot-instructions.md
+.copilot/
+
+# Other AI assistant files
+.ai/
+.assistant/
+ai-instructions.md
+assistant-config.*
+
+# Anthropic Claude files
+anthropic.md
+claude-instructions.*
+claude-config.*
+
+# OpenAI files
+openai.*
+chatgpt.*
+
+# Continue.dev files
+.continue/
+continue.md
+
+# Cody files
+.cody/
+cody-config.*
+
+# Tabnine files
+.tabnine/
+tabnine.*
+
+# Other common AI files
+ai-context.*
+ai-prompts.*
+assistant-notes.*
+llm-config.*

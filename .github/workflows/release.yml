@@ -1,0 +1,189 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.0.0)'
+        required: true
+        default: '1.0.0'
+
+env:
+  GO_VERSION: '1.21'
+
+jobs:
+  build:
+    name: Build Release Binaries
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+          - goos: linux
+            goarch: arm64
+          - goos: linux
+            goarch: 386
+          - goos: darwin
+            goarch: amd64
+          - goos: darwin
+            goarch: arm64
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - name: Get version
+      id: get_version
+      run: |
+        if [[ $GITHUB_REF == refs/tags/* ]]; then
+          VERSION=${GITHUB_REF#refs/tags/v}
+        elif [[ "${{ github.event.inputs.version }}" != "" ]]; then
+          VERSION="${{ github.event.inputs.version }}"
+        else
+          VERSION="1.0.0"
+        fi
+        echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+        echo "Building version: ${VERSION}"
+
+    - name: Build binary
+      env:
+        GOOS: ${{ matrix.goos }}
+        GOARCH: ${{ matrix.goarch }}
+        VERSION: ${{ steps.get_version.outputs.VERSION }}
+      run: |
+        BINARY_NAME="yerd"
+        
+        echo "Building for $GOOS/$GOARCH..."
+        go build -o "$BINARY_NAME" \
+          -ldflags="-s -w -X github.com/LumoSolutions/yerd/internal/version.Version=${VERSION}" \
+          .
+
+    - name: Create archive
+      env:
+        GOOS: ${{ matrix.goos }}
+        GOARCH: ${{ matrix.goarch }}
+        VERSION: ${{ steps.get_version.outputs.VERSION }}
+      run: |
+        BINARY_NAME="yerd"
+        ARCHIVE_NAME="yerd_${{ steps.get_version.outputs.VERSION }}_${{ matrix.goos }}_${{ matrix.goarch }}"
+        
+        tar -czf "${ARCHIVE_NAME}.tar.gz" "$BINARY_NAME"
+        echo "ASSET_NAME=${ARCHIVE_NAME}.tar.gz" >> $GITHUB_ENV
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.ASSET_NAME }}
+        path: ${{ env.ASSET_NAME }}
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Get version
+      id: get_version
+      run: |
+        if [[ $GITHUB_REF == refs/tags/* ]]; then
+          VERSION=${GITHUB_REF#refs/tags/v}
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+        elif [[ "${{ github.event.inputs.version }}" != "" ]]; then
+          VERSION="${{ github.event.inputs.version }}"
+          TAG_NAME="v${VERSION}"
+        else
+          VERSION="1.0.0"
+          TAG_NAME="v1.0.0"
+        fi
+        echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+        echo "TAG_NAME=${TAG_NAME}" >> $GITHUB_OUTPUT
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+
+    - name: Generate checksums
+      run: |
+        find . -name "*.tar.gz" | sort | while read file; do
+          if [ -f "$file" ]; then
+            sha256sum "$file" >> checksums.txt
+          fi
+        done
+
+    - name: Create Release
+      id: create_release
+      uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.get_version.outputs.TAG_NAME }}
+        name: YERD ${{ steps.get_version.outputs.VERSION }}
+        draft: false
+        prerelease: false
+        body: |
+          # YERD v${{ steps.get_version.outputs.VERSION }}
+
+          PHP & NGINX Manager for Linux - Multi-Version PHP Installation Manager
+
+          ## Installation
+
+          ### Quick Install (Linux/macOS)
+          ```bash
+          curl -sSL https://raw.githubusercontent.com/LumoSolutions/yerd/main/install.sh | bash
+          ```
+
+          ### Manual Installation
+          1. Download the appropriate binary for your system
+          2. Extract the archive
+          3. Move the binary to a directory in your PATH (e.g., `/usr/local/bin`)
+          4. Make it executable: `chmod +x /usr/local/bin/yerd`
+
+          ## Usage
+
+          ```bash
+          # List available PHP versions
+          yerd list
+
+          # Install PHP version
+          sudo yerd add php8.4
+
+          # Set CLI version
+          sudo yerd cli php8.4
+
+          # Remove PHP version
+          sudo yerd remove php8.3
+          ```
+
+          ## What's Changed
+
+          - Initial release of YERD
+          - Support for PHP 8.2, 8.3, and 8.4
+          - Source-based PHP compilation from official php.net releases
+          - Dynamic version fetching with automatic updates
+          - CLI version switching with symlink management
+          - Clean removal with automatic cleanup
+          - Zero-downtime update system
+
+          ## Checksums
+
+          See `checksums.txt` for SHA256 checksums of all release artifacts.
+
+    - name: Upload Release Assets
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.get_version.outputs.TAG_NAME }}
+        files: |
+          ./**/*.tar.gz
+          checksums.txt
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
