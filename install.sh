@@ -349,3 +349,6 @@ main() {
     echo "4. Install PHP: sudo yerd php add 8.4"
     echo
 }
+
+# Call main function with all arguments
+main "$@"
