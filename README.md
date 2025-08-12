@@ -80,6 +80,7 @@ Built by **LumoSolutions**, YERD compiles PHP from official source code, ensurin
 - **Permissions**: `sudo` access for system-wide operations
 - **Development Libraries**: Automatically installed during first PHP build
 - **For Building YERD**: Go 1.21+ (optional - only for building YERD from source)
+- **Internet Connection**: Required for downloading PHP source code and checking for updates
 
 ## 🐧 Linux Distribution Compatibility
 
@@ -88,7 +89,7 @@ YERD now supports automatic dependency management across all major Linux distrib
 | Distribution | Support Level | Package Manager | Auto-Install |
 |--------------|---------------|----------------|--------------|
 | **ArchLinux** | ✅ Full | pacman | ✅ Yes |
-| **Omarchy** | ✅ Full | pacman | ✅ Yes |
+| **Manjaro** | ✅ Full | pacman | ✅ Yes |
 | **Ubuntu** | ✅ Full | apt | ✅ Yes |
 | **Debian** | ✅ Full | apt | ✅ Yes |
 | **Fedora** | ✅ Full | dnf | ✅ Yes |
@@ -119,30 +120,30 @@ wget -qO- https://raw.githubusercontent.com/LumoSolutions/yerd/main/install.sh |
 - 🔧 Creates necessary directories with proper permissions
 - ✅ Verifies installation and provides next steps
 
-### Option 2: Download Pre-built Binary
+### Option 2: Manual Installation
 
 1. Go to the [Releases](https://github.com/LumoSolutions/yerd/releases) page
-2. Download the appropriate binary for your system (usually `yerd_*_linux_amd64.tar.gz`)
+2. Download the appropriate binary for your system
 3. Extract and install:
 
 ```bash
-# Download and extract (replace with actual version)
-wget https://github.com/LumoSolutions/yerd/releases/download/v1.0.0/yerd_1.0.0_linux_amd64.tar.gz
-tar -xzf yerd_1.0.0_linux_amd64.tar.gz
+# Download latest release (check releases page for current version)
+wget https://github.com/LumoSolutions/yerd/releases/latest/download/yerd_VERSION_linux_amd64.tar.gz
+tar -xzf yerd_VERSION_linux_amd64.tar.gz
 
 # Install system-wide
 sudo mv yerd /usr/local/bin/yerd
 sudo chmod +x /usr/local/bin/yerd
 
-# Create YERD directories (important!)
+# Create YERD directories
 sudo mkdir -p /opt/yerd/{bin,php,etc}
 
 # Verify installation
-yerd --help
+yerd --version
 yerd status
 ```
 
-### Option 3: Install Script with Options
+### Option 3: Install Script with Custom Options
 
 ```bash
 # Download install script
@@ -153,7 +154,10 @@ chmod +x install.sh
 ./install.sh
 
 # Install specific version
-./install.sh --version 1.0.0
+./install.sh --version 1.0.2
+
+# Show help
+./install.sh --help
 ```
 
 ### ✅ Post-Installation Verification
@@ -222,7 +226,7 @@ $ yerd
   ╚██╔╝  ██╔══╝  ██╔══██╗██║  ██║
    ██║   ███████╗██║  ██║██████╔╝
    ╚═╝   ╚══════╝╚═╝  ╚═╝╚═════╝
-                     v1.0.3
+                     vX.X.X
 
 A powerful, developer-friendly tool for managing PHP versions
 and local development environments with ease
@@ -256,6 +260,8 @@ https://github.com/LumoSolutions/yerd
 
 📝 **Build Logging**: The `add` command creates detailed build logs in `~/.config/yerd/` that are automatically deleted on success or preserved for troubleshooting on failure.
 
+🚫 **Cache Bypass**: Use `-u` flag with `add` command to bypass version cache and get fresh data from PHP.net.
+
 ### 🚀 Quick Start Example
 
 ```bash
@@ -267,7 +273,7 @@ $ yerd status
   ╚██╔╝  ██╔══╝  ██╔══██╗██║  ██║
    ██║   ███████╗██║  ██║██████╔╝
    ╚═╝   ╚══════╝╚═╝  ╚═╝╚═════╝
-                     v1.0.3
+                     vX.X.X
 
 📊 YERD Status
 ├─ Installed versions: 0
@@ -285,13 +291,14 @@ $ yerd php list
   ╚██╔╝  ██╔══╝  ██╔══██╗██║  ██║
    ██║   ███████╗██║  ██║██████╔╝
    ╚═╝   ╚══════╝╚═╝  ╚═╝╚═════╝
-                     v1.0.3
+                     vX.X.X
 
 +---------+-----------+-----+----------------+
 | VERSION | INSTALLED | CLI |    UPDATES     |
 +---------+-----------+-----+----------------+
+| PHP 8.1 | No        |     | Latest: 8.1.31 |
 | PHP 8.2 | No        |     | Latest: 8.2.29 |
-| PHP 8.3 | No        |     | Latest: 8.3.14 |
+| PHP 8.3 | No        |     | Latest: 8.3.15 |
 | PHP 8.4 | No        |     | Latest: 8.4.11 |
 +---------+-----------+-----+----------------+
 
@@ -303,7 +310,7 @@ $ sudo yerd php add 8.4
   ╚██╔╝  ██╔══╝  ██╔══██╗██║  ██║
    ██║   ███████╗██║  ██║██████╔╝
    ╚═╝   ╚══════╝╚═╝  ╚═╝╚═════╝
-                     v1.0.3
+                     vX.X.X
 
 📦 Installing latest PHP 8.4: 8.4.11
 📋 Detected: Arch Linux
@@ -337,7 +344,7 @@ $ sudo yerd php cli 8.4
   ╚██╔╝  ██╔══╝  ██╔══██╗██║  ██║
    ██║   ███████╗██║  ██║██████╔╝
    ╚═╝   ╚══════╝╚═╝  ╚═╝╚═════╝
-                     v1.0.3
+                     vX.X.X
 
 Setting PHP 8.4 as CLI version...
 ✓ PHP 8.4 is now the default CLI version
@@ -383,7 +390,7 @@ $ yerd
   ╚██╔╝  ██╔══╝  ██╔══██╗██║  ██║
    ██║   ███████╗██║  ██║██████╔╝
    ╚═╝   ╚══════╝╚═╝  ╚═╝╚═════╝
-                     v1.0.3
+                     vX.X.X
 
 A powerful, developer-friendly tool for managing PHP versions
 and local development environments with ease
@@ -424,6 +431,7 @@ $ yerd php list
 +---------+-----------+-----+----------------+
 | VERSION | INSTALLED | CLI |    UPDATES     |
 +---------+-----------+-----+----------------+
+| PHP 8.1 | No        |     | Latest: 8.1.30 |
 | PHP 8.2 | No        |     | Latest: 8.2.29 |
 | PHP 8.3 | Yes       |     | Yes            |
 | PHP 8.4 | Yes       | *   | No             |
@@ -440,9 +448,15 @@ $ yerd php list
 ### ⬇️ `yerd php add <version>` - Build PHP from Source
 Downloads and builds a specific PHP version from official source code.
 
-**Usage**: `sudo yerd php add 8.4` or `sudo yerd php add php8.4`  
+**Usage**: 
+- `sudo yerd php add 8.4` (install with cached version data)
+- `sudo yerd php add 8.4 -u` (bypass cache for latest version info)
+
 **Permissions**: Requires `sudo`  
-**Supported Versions**: `8.2`, `8.3`, `8.4` (with or without `php` prefix)
+**Supported Versions**: `8.1`, `8.2`, `8.3`, `8.4` (with or without `php` prefix)
+
+**Flags**:
+- `-u, --uncached`: Bypass cache to get the latest version information from PHP.net
 
 ```bash
 $ sudo yerd php add 8.4
