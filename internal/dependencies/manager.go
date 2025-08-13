@@ -92,22 +92,6 @@ var extensionDependencies = map[string]map[PackageManager][]string{
 		ZYPPER: []string{"postgresql-devel"},
 		APKL:   []string{"postgresql-dev"},
 	},
-	"sqlite3": {
-		APT:    []string{"libsqlite3-dev"},
-		YUM:    []string{"sqlite-devel"},
-		DNF:    []string{"sqlite-devel"},
-		PACMAN: []string{"sqlite"},
-		ZYPPER: []string{"sqlite3-devel"},
-		APKL:   []string{"sqlite-dev"},
-	},
-	"pdo-sqlite": {
-		APT:    []string{"libsqlite3-dev"},
-		YUM:    []string{"sqlite-devel"},
-		DNF:    []string{"sqlite-devel"},
-		PACMAN: []string{"sqlite"},
-		ZYPPER: []string{"sqlite3-devel"},
-		APKL:   []string{"sqlite-dev"},
-	},
 	"jpeg": {
 		APT:    []string{"libjpeg-dev"},
 		YUM:    []string{"libjpeg-turbo-devel"},
@@ -123,14 +107,6 @@ var extensionDependencies = map[string]map[PackageManager][]string{
 		PACMAN: []string{"freetype2"},
 		ZYPPER: []string{"freetype2-devel"},
 		APKL:   []string{"freetype-dev"},
-	},
-	"xml": {
-		APT:    []string{"libxml2-dev"},
-		YUM:    []string{"libxml2-devel"},
-		DNF:    []string{"libxml2-devel"},
-		PACMAN: []string{"libxml2"},
-		ZYPPER: []string{"libxml2-devel"},
-		APKL:   []string{"libxml2-dev"},
 	},
 	"zlib": {
 		APT:    []string{"zlib1g-dev"},
@@ -191,12 +167,12 @@ var extensionDependencies = map[string]map[PackageManager][]string{
 }
 
 var buildDependencies = map[PackageManager][]string{
-	APT:    []string{"build-essential", "autoconf", "pkg-config", "re2c", "libonig-dev", "libxml2-dev"},
-	YUM:    []string{"gcc", "gcc-c++", "make", "autoconf", "pkgconfig", "re2c", "oniguruma-devel", "libxml2-devel"},
-	DNF:    []string{"gcc", "gcc-c++", "make", "autoconf", "pkgconf", "re2c", "oniguruma-devel", "libxml2-devel"},
-	PACMAN: []string{"base-devel", "autoconf", "pkgconf", "re2c", "oniguruma", "libxml2"},
-	ZYPPER: []string{"gcc", "gcc-c++", "make", "autoconf", "pkg-config", "re2c", "libonig-devel", "libxml2-devel"},
-	APKL:   []string{"build-base", "autoconf", "pkgconf", "re2c", "oniguruma-dev", "libxml2-dev"},
+	APT:    []string{"build-essential", "autoconf", "pkg-config", "re2c", "libonig-dev", "libxml2-dev", "libsqlite3-dev"},
+	YUM:    []string{"gcc", "gcc-c++", "make", "autoconf", "pkgconfig", "re2c", "oniguruma-devel", "libxml2-devel", "sqlite-devel"},
+	DNF:    []string{"gcc", "gcc-c++", "make", "autoconf", "pkgconf", "re2c", "oniguruma-devel", "libxml2-devel", "sqlite-devel"},
+	PACMAN: []string{"base-devel", "autoconf", "pkgconf", "re2c", "oniguruma", "libxml2", "sqlite"},
+	ZYPPER: []string{"gcc", "gcc-c++", "make", "autoconf", "pkg-config", "re2c", "libonig-devel", "libxml2-devel", "sqlite3-devel"},
+	APKL:   []string{"build-base", "autoconf", "pkgconf", "re2c", "oniguruma-dev", "libxml2-dev", "sqlite-dev"},
 }
 
 // NewDependencyManager creates a new dependency manager with auto-detected distribution and package manager.
