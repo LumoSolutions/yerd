@@ -23,6 +23,8 @@ type Builder struct {
 	LogPath    string
 }
 
+// NewBuilder creates a new PHP builder instance with source and install directories.
+// version: PHP version to build, extensions: List of extensions to include. Returns configured Builder.
 func NewBuilder(version string, extensions []string) *Builder {
 	sourceDir := filepath.Join(utils.YerdPHPDir, "src", "php-"+version)
 	installDir := php.GetInstallPath(version)
@@ -39,6 +41,8 @@ func NewBuilder(version string, extensions []string) *Builder {
 	}
 }
 
+// RebuildPHP performs complete PHP compilation from source with dependencies and configuration.
+// Returns error if any build step fails.
 func (b *Builder) RebuildPHP() error {
 	if err := b.validateEnvironment(); err != nil {
 		return fmt.Errorf("environment validation failed: %v", err)
@@ -67,6 +71,8 @@ func (b *Builder) RebuildPHP() error {
 	return nil
 }
 
+// validateEnvironment checks and installs required build dependencies and extensions.
+// Returns error if dependencies cannot be satisfied.
 func (b *Builder) validateEnvironment() error {
 	depMgr, err := dependencies.NewDependencyManager()
 	if err != nil {
@@ -92,6 +98,8 @@ func (b *Builder) validateEnvironment() error {
 	return nil
 }
 
+// downloadSource downloads and extracts PHP source code from official distribution.
+// Returns error if download or extraction fails.
 func (b *Builder) downloadSource() error {
 	if _, err := os.Stat(b.SourceDir); err == nil {
 		return nil
@@ -160,6 +168,8 @@ func (b *Builder) downloadSource() error {
 	return nil
 }
 
+// getFullVersion resolves short version string to full version number from remote or config.
+// Returns full version string with patch number.
 func (b *Builder) getFullVersion() string {
 	latestVersions, _, err := versions.FetchLatestVersions()
 	if err == nil {
@@ -180,6 +190,8 @@ func (b *Builder) getFullVersion() string {
 	return b.Version + ".0"
 }
 
+// configure runs PHP's configure script with appropriate flags for version and extensions.
+// Returns error if configuration fails.
 func (b *Builder) configure() error {
 	configFlags := b.getConfigureFlags()
 
@@ -190,10 +202,14 @@ func (b *Builder) configure() error {
 	return b.runCommand(cmd, "Configuring PHP build")
 }
 
+// getConfigureFlags returns configure script flags based on PHP version and extensions.
+// Returns slice of configure flag strings.
 func (b *Builder) getConfigureFlags() []string {
 	return php.GetConfigureFlagsForVersion(b.Version, b.Extensions)
 }
 
+// compile runs make with optimal parallel job count to build PHP from source.
+// Returns error if compilation fails.
 func (b *Builder) compile() error {
 	nproc := b.getProcessorCount()
 	cmd := exec.Command("make", fmt.Sprintf("-j%d", nproc))
@@ -202,6 +218,8 @@ func (b *Builder) compile() error {
 	return b.runCommand(cmd, "Compiling PHP")
 }
 
+// getProcessorCount detects system CPU count for parallel compilation jobs.
+// Returns processor count or defaults to 4 if detection fails.
 func (b *Builder) getProcessorCount() int {
 	cmd := exec.Command("nproc")
 	output, err := cmd.Output()
@@ -217,6 +235,8 @@ func (b *Builder) getProcessorCount() int {
 	return 4
 }
 
+// parseInt converts string to integer without external dependencies.
+// s: String to convert. Returns integer value or 0 if invalid.
 func parseInt(s string) int {
 	var result int
 	for _, r := range s {
@@ -228,6 +248,8 @@ func parseInt(s string) int {
 	return result
 }
 
+// install runs make install to install compiled PHP to target directory with root privileges.
+// Returns error if installation fails.
 func (b *Builder) install() error {
 	cmd := exec.Command("make", "install")
 	cmd.Dir = b.SourceDir
@@ -235,6 +257,8 @@ func (b *Builder) install() error {
 	return b.runCommandAsRoot(cmd, "Installing PHP")
 }
 
+// createSymlinks creates version-specific and global symlinks for the PHP binary.
+// Returns error if symlink creation fails.
 func (b *Builder) createSymlinks() error {
 	phpBinary := filepath.Join(strings.TrimSuffix(b.InstallDir, "/"), "bin", "php")
 	if _, err := os.Stat(phpBinary); err != nil {
@@ -265,6 +289,8 @@ func (b *Builder) createSymlinks() error {
 	return nil
 }
 
+// runCommand executes a command with logging and user privilege handling.
+// cmd: Command to execute, description: Operation description. Returns error if command fails.
 func (b *Builder) runCommand(cmd *exec.Cmd, description string) error {
 	logFile, err := os.OpenFile(b.LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
@@ -294,6 +320,8 @@ func (b *Builder) runCommand(cmd *exec.Cmd, description string) error {
 	return nil
 }
 
+// runCommandAsRoot executes a command with root privileges and full logging.
+// cmd: Command to execute, description: Operation description. Returns error if command fails.
 func (b *Builder) runCommandAsRoot(cmd *exec.Cmd, description string) error {
 	logFile, err := os.OpenFile(b.LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
@@ -317,6 +345,8 @@ func (b *Builder) runCommandAsRoot(cmd *exec.Cmd, description string) error {
 	return nil
 }
 
+// setUserCredentials configures command to run as original SUDO user instead of root.
+// cmd: Command to configure. Returns error if user context cannot be determined.
 func (b *Builder) setUserCredentials(cmd *exec.Cmd) error {
 	sudoUser := os.Getenv("SUDO_USER")
 	if sudoUser == "" {
@@ -338,6 +368,8 @@ func (b *Builder) setUserCredentials(cmd *exec.Cmd) error {
 	return nil
 }
 
+// Cleanup removes source directory after failed build to free disk space.
+// Returns error if cleanup fails.
 func (b *Builder) Cleanup() error {
 	if b.SourceDir != "" {
 		os.RemoveAll(b.SourceDir)
@@ -346,6 +378,8 @@ func (b *Builder) Cleanup() error {
 	return nil
 }
 
+// CleanupSuccess removes source directory and logs after successful build.
+// Returns error if cleanup fails.
 func (b *Builder) CleanupSuccess() error {
 	if b.SourceDir != "" {
 		os.RemoveAll(b.SourceDir)

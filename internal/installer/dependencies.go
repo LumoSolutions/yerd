@@ -7,6 +7,8 @@ import (
 	"github.com/LumoSolutions/yerd/internal/utils"
 )
 
+// checkBuildDependencies detects system distribution and installs required build dependencies for PHP compilation.
+// logger: Logging instance for operation tracking. Returns error if dependency installation fails.
 func checkBuildDependencies(logger *utils.Logger) error {
 	utils.SafeLog(logger, "Checking and installing build dependencies...")
 

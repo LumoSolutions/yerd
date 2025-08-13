@@ -9,6 +9,8 @@ import (
 	"github.com/LumoSolutions/yerd/pkg/php"
 )
 
+// prepareBuildDirectory cleans and creates a fresh build directory for PHP source compilation.
+// buildDir: Directory path for build operations, logger: Logging instance. Returns error if directory setup fails.
 func prepareBuildDirectory(buildDir string, logger *utils.Logger) error {
 	if err := os.RemoveAll(buildDir); err != nil && !os.IsNotExist(err) {
 		utils.SafeLog(logger, "Failed to clean existing build directory: %v", err)
@@ -24,6 +26,8 @@ func prepareBuildDirectory(buildDir string, logger *utils.Logger) error {
 	return nil
 }
 
+// downloadSource downloads PHP source archive from official distribution using wget with progress spinner.
+// versionInfo: PHP version with download URL, buildDir: Directory for downloaded file, logger: Logging instance. Returns error if download fails.
 func downloadSource(versionInfo php.VersionInfo, buildDir string, logger *utils.Logger) error {
 	utils.SafeLog(logger, "Downloading PHP source from: %s", versionInfo.DownloadURL)
 
@@ -48,6 +52,8 @@ func downloadSource(versionInfo php.VersionInfo, buildDir string, logger *utils.
 	return nil
 }
 
+// extractSource extracts PHP source archive to build directory and returns extracted source path.
+// versionInfo: PHP version with package info, buildDir: Build directory path, logger: Logging instance. Returns source directory or error.
 func extractSource(versionInfo php.VersionInfo, buildDir string, logger *utils.Logger) (string, error) {
 	utils.SafeLog(logger, "Extracting PHP source archive")
 

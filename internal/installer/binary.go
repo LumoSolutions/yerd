@@ -10,6 +10,8 @@ import (
 
 const binaryVerificationError = "Binary verification failed for %s: %v"
 
+// findInstalledPHPBinary locates the PHP binary after source installation with fallback paths.
+// version: PHP version to locate, logger: Logging instance. Returns binary path or error if not found.
 func findInstalledPHPBinary(version string, logger *utils.Logger) (string, error) {
 	utils.SafeLog(logger, "Locating PHP %s binary after source build...", version)
 
@@ -68,6 +70,8 @@ func findInstalledPHPBinary(version string, logger *utils.Logger) (string, error
 	return "", fmt.Errorf("PHP %s binary not found after source installation", version)
 }
 
+// searchForPHPInInstallDir recursively searches installation directory for PHP executable binary.
+// installDir: Directory to search, version: Expected PHP version, logger: Logging instance. Returns binary path or error.
 func searchForPHPInInstallDir(installDir, version string, logger *utils.Logger) (string, error) {
 	utils.SafeLog(logger, "Searching for PHP binary in: %s", installDir)
 
@@ -97,6 +101,8 @@ func searchForPHPInInstallDir(installDir, version string, logger *utils.Logger) 
 	return "", fmt.Errorf("no valid PHP binary found in %s", installDir)
 }
 
+// verifyPHPBinary validates that a PHP binary exists and reports the expected version.
+// path: Binary path to verify, expectedVersion: Required PHP version, logger: Logging instance. Returns error if invalid.
 func verifyPHPBinary(path, expectedVersion string, logger *utils.Logger) error {
 	utils.SafeLog(logger, "Verifying PHP binary at %s for version %s", path, expectedVersion)
 
@@ -118,6 +124,8 @@ func verifyPHPBinary(path, expectedVersion string, logger *utils.Logger) error {
 	return nil
 }
 
+// searchForPHPInDir searches a directory for PHP binaries using common naming patterns.
+// dir: Directory to search, version: PHP version to find, logger: Logging instance. Returns binary path or error.
 func searchForPHPInDir(dir, version string, logger *utils.Logger) (string, error) {
 	patterns := []string{
 		"php" + version,
@@ -146,6 +154,8 @@ func searchForPHPInDir(dir, version string, logger *utils.Logger) (string, error
 	return "", fmt.Errorf("no matching PHP binary found in %s", dir)
 }
 
+// showInstalledSourceFiles displays debug information about files in installation and system directories.
+// version: PHP version being searched, installDir: Installation directory path, logger: Logging instance.
 func showInstalledSourceFiles(version string, installDir string, logger *utils.Logger) {
 	fmt.Printf("Searching for PHP %s files in installation directory:\n", version)
 	utils.SafeLog(logger, "Running debug search for installed PHP files in: %s", installDir)
@@ -154,6 +164,8 @@ func showInstalledSourceFiles(version string, installDir string, logger *utils.L
 	searchSystemDirectories(version, logger)
 }
 
+// searchInstallationDirectory searches the main installation directory for executables and PHP files.
+// installDir: Installation directory path, logger: Logging instance.
 func searchInstallationDirectory(installDir string, logger *utils.Logger) {
 	if !utils.FileExists(installDir) {
 		fmt.Printf("❌ Installation directory does not exist: %s\n", installDir)
@@ -168,6 +180,8 @@ func searchInstallationDirectory(installDir string, logger *utils.Logger) {
 	searchPHPFiles(installDir, logger)
 }
 
+// searchExecutableFiles finds and displays all executable files in a directory.
+// dir: Directory to search, logger: Logging instance.
 func searchExecutableFiles(dir string, logger *utils.Logger) {
 	output, err := utils.ExecuteCommand("find", dir, "-type", "f", "-executable")
 	if err != nil || output == "" {
@@ -180,6 +194,8 @@ func searchExecutableFiles(dir string, logger *utils.Logger) {
 	printFileList(output, "   - ", logger, "Found executable")
 }
 
+// searchPHPFiles finds and displays all PHP-related files in a directory.
+// dir: Directory to search, logger: Logging instance.
 func searchPHPFiles(dir string, logger *utils.Logger) {
 	output, err := utils.ExecuteCommand("find", dir, "-name", "*php*", "-type", "f")
 	if err != nil || output == "" {
@@ -191,6 +207,8 @@ func searchPHPFiles(dir string, logger *utils.Logger) {
 	printFileList(output, "   - ", logger, "Found PHP file")
 }
 
+// searchSystemDirectories searches standard system directories for PHP binaries.
+// version: PHP version to search for, logger: Logging instance.
 func searchSystemDirectories(version string, logger *utils.Logger) {
 	fmt.Printf("\n🔍 Checking system directories for PHP %s:\n", version)
 	searchDirs := []string{"/usr/local/bin", "/usr/local/sbin"}
@@ -200,6 +218,8 @@ func searchSystemDirectories(version string, logger *utils.Logger) {
 	}
 }
 
+// searchSystemDirectory searches a specific system directory for PHP-related files.
+// dir: System directory path to search, logger: Logging instance.
 func searchSystemDirectory(dir string, logger *utils.Logger) {
 	utils.SafeLog(logger, "Searching for PHP files in: %s", dir)
 	output, err := utils.ExecuteCommand("find", dir, "-name", "*php*", "-type", "f", "2>/dev/null")
@@ -211,6 +231,8 @@ func searchSystemDirectory(dir string, logger *utils.Logger) {
 	printFileList(output, fmt.Sprintf("  Found in %s: ", dir), logger, "Found in system dir")
 }
 
+// printFileList formats and displays a list of files with consistent prefix and logging.
+// output: Newline-separated file list, prefix: Display prefix, logger: Logging instance, logMessage: Log entry prefix.
 func printFileList(output, prefix string, logger *utils.Logger, logMessage string) {
 	lines := strings.Split(strings.TrimSpace(output), "\n")
 	for _, line := range lines {

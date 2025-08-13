@@ -7,6 +7,8 @@ import (
 	"github.com/LumoSolutions/yerd/internal/utils"
 )
 
+// createSymlinks locates installed PHP binary and creates YERD and global symlinks with progress feedback.
+// version: PHP version string, binaryPath: Target symlink path, logger: Logging instance. Returns error if symlink creation fails.
 func createSymlinks(version, binaryPath string, logger *utils.Logger) error {
 	utils.SafeLog(logger, "Creating symlinks for PHP %s", version)
 	utils.SafeLog(logger, "Target binary path: %s", binaryPath)
@@ -50,6 +52,8 @@ func createSymlinks(version, binaryPath string, logger *utils.Logger) error {
 	return nil
 }
 
+// verifyInstallation checks that the installed PHP binary is functional and executable.
+// binaryPath: Path to PHP binary to verify, logger: Logging instance. Returns error if verification fails.
 func verifyInstallation(binaryPath string, logger *utils.Logger) error {
 	utils.SafeLog(logger, "Verifying PHP installation at: %s", binaryPath)
 
@@ -64,6 +68,8 @@ func verifyInstallation(binaryPath string, logger *utils.Logger) error {
 	return nil
 }
 
+// createDefaultPHPIni generates a default php.ini configuration file for the specified PHP version.
+// version: PHP version string, logger: Logging instance. Returns error if php.ini creation fails.
 func createDefaultPHPIni(version string, logger *utils.Logger) error {
 	utils.SafeLog(logger, "Creating default php.ini for PHP %s", version)
 

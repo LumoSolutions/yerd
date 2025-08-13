@@ -99,6 +99,8 @@ func fetchLatestForMajorMinor(majorMinor string) (string, string, error) {
 	return release.Version, downloadURL, nil
 }
 
+// compareVersions compares two semantic version strings numerically.
+// v1, v2: Version strings to compare. Returns 1 if v1>v2, -1 if v1<v2, 0 if equal.
 func compareVersions(v1, v2 string) int {
 	parts1 := strings.Split(v1, ".")
 	parts2 := strings.Split(v2, ".")
@@ -128,6 +130,8 @@ func compareVersions(v1, v2 string) int {
 	return 0
 }
 
+// GetCachedVersions retrieves version information from local cache if valid.
+// Returns cached version data and validity flag, or nil and false if cache invalid/missing.
 func GetCachedVersions() (*VersionCache, bool) {
 	configDir, err := utils.GetUserConfigDir()
 	if err != nil {
@@ -156,6 +160,8 @@ func GetCachedVersions() (*VersionCache, bool) {
 	return &cache, true
 }
 
+// SaveVersionCache writes version and download URL data to local cache file with proper ownership.
+// latestVersions: Version mapping, downloadURLs: Download URL mapping. Returns error if save fails.
 func SaveVersionCache(latestVersions, downloadURLs map[string]string) error {
 	configDir, err := utils.GetUserConfigDir()
 	if err != nil {
@@ -192,6 +198,8 @@ func SaveVersionCache(latestVersions, downloadURLs map[string]string) error {
 	return nil
 }
 
+// GetLatestVersions retrieves PHP versions from cache or fetches fresh data if cache expired.
+// Returns latest versions map, download URLs map, or error if fetch fails.
 func GetLatestVersions() (map[string]string, map[string]string, error) {
 
 	if cache, valid := GetCachedVersions(); valid {
@@ -211,6 +219,8 @@ func GetLatestVersions() (map[string]string, map[string]string, error) {
 	return latestVersions, downloadURLs, nil
 }
 
+// GetLatestVersionsFresh bypasses cache and fetches fresh PHP version data from php.net.
+// Returns latest versions map, download URLs map, or error if fetch fails.
 func GetLatestVersionsFresh() (map[string]string, map[string]string, error) {
 
 	latestVersions, downloadURLs, err := FetchLatestVersions()
@@ -226,6 +236,8 @@ func GetLatestVersionsFresh() (map[string]string, map[string]string, error) {
 	return latestVersions, downloadURLs, nil
 }
 
+// CheckForUpdates compares installed PHP versions against latest available versions using cache.
+// installedVersions: Map of installed version info. Returns update availability map or error.
 func CheckForUpdates(installedVersions map[string]string) (map[string]bool, error) {
 	latestVersions, _, err := GetLatestVersions()
 	if err != nil {
@@ -245,6 +257,8 @@ func CheckForUpdates(installedVersions map[string]string) (map[string]bool, erro
 	return updates, nil
 }
 
+// CheckForUpdatesFresh compares installed versions against fresh data and returns available updates.
+// installedVersions: Map of installed version info. Returns update flags, available updates map, or error.
 func CheckForUpdatesFresh(installedVersions map[string]string) (map[string]bool, map[string]string, error) {
 	latestVersions, _, err := GetLatestVersionsFresh()
 	if err != nil {
@@ -269,6 +283,8 @@ func CheckForUpdatesFresh(installedVersions map[string]string) (map[string]bool,
 	return updates, availableUpdates, nil
 }
 
+// extractVersionFromString extracts semantic version number from version string using regex.
+// versionStr: Input version string. Returns extracted version or original string if no match.
 func extractVersionFromString(versionStr string) string {
 
 	versionRegex := regexp.MustCompile(`\d+\.\d+\.\d+`)
@@ -279,6 +295,8 @@ func extractVersionFromString(versionStr string) string {
 	return versionStr
 }
 
+// ExtractVersionFromString is a public wrapper for extractVersionFromString.
+// versionStr: Input version string. Returns extracted semantic version number.
 func ExtractVersionFromString(versionStr string) string {
 	return extractVersionFromString(versionStr)
 }

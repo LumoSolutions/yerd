@@ -174,6 +174,8 @@ var buildDependencies = map[PackageManager][]string{
 	APKL:   []string{"build-base", "autoconf", "pkgconf", "re2c", "oniguruma-dev"},
 }
 
+// NewDependencyManager creates a new dependency manager with auto-detected distribution and package manager.
+// Returns configured DependencyManager or error if detection fails.
 func NewDependencyManager() (*DependencyManager, error) {
 	distro, err := detectDistribution()
 	if err != nil {
@@ -192,6 +194,8 @@ func NewDependencyManager() (*DependencyManager, error) {
 	}, nil
 }
 
+// detectDistribution identifies the Linux distribution using multiple detection methods.
+// Returns distribution name or error if detection fails.
 func detectDistribution() (string, error) {
 	if output, err := utils.ExecuteCommand("cat", "/etc/os-release"); err == nil {
 		lines := strings.Split(output, "\n")
@@ -223,6 +227,8 @@ func detectDistribution() (string, error) {
 	return "unknown", fmt.Errorf("could not detect distribution")
 }
 
+// detectPackageManager finds available package manager by checking system commands.
+// Returns PackageManager type, command string, and error if none found.
 func detectPackageManager() (PackageManager, string, error) {
 	managers := []struct {
 		pm      PackageManager
@@ -246,14 +252,18 @@ func detectPackageManager() (PackageManager, string, error) {
 	return "", "", fmt.Errorf("no supported package manager found")
 }
 
+// GetDistro returns the detected Linux distribution name.
 func (dm *DependencyManager) GetDistro() string {
 	return dm.distro
 }
 
+// GetPackageManager returns the detected package manager type.
 func (dm *DependencyManager) GetPackageManager() PackageManager {
 	return dm.pm
 }
 
+// InstallBuildDependencies installs essential build tools and dependencies for PHP compilation.
+// Returns error if installation fails.
 func (dm *DependencyManager) InstallBuildDependencies() error {
 	deps, exists := buildDependencies[dm.pm]
 	if !exists {
@@ -265,6 +275,8 @@ func (dm *DependencyManager) InstallBuildDependencies() error {
 	return dm.installPackages(deps, "build dependencies")
 }
 
+// InstallExtensionDependencies installs libraries required for specific PHP extensions.
+// extensions: List of PHP extensions needing dependencies. Returns error if installation fails.
 func (dm *DependencyManager) InstallExtensionDependencies(extensions []string) error {
 	var allPackages []string
 	missingDeps := make(map[string]bool)
@@ -306,6 +318,8 @@ func (dm *DependencyManager) InstallExtensionDependencies(extensions []string) e
 	return dm.installPackages(allPackages, "extension dependencies")
 }
 
+// installPackages executes package installation commands for the detected package manager.
+// packages: Package list to install, description: Operation description for logging. Returns error if installation fails.
 func (dm *DependencyManager) installPackages(packages []string, description string) error {
 	if len(packages) == 0 {
 		return nil
@@ -348,6 +362,8 @@ func (dm *DependencyManager) installPackages(packages []string, description stri
 	return nil
 }
 
+// mapExtensionToDependency converts PHP extension names to system library dependency names.
+// extension: PHP extension name. Returns corresponding dependency name or empty string.
 func mapExtensionToDependency(extension string) string {
 	mapping := map[string]string{
 		"curl":       "curl",
@@ -375,6 +391,8 @@ func mapExtensionToDependency(extension string) string {
 	return mapping[extension]
 }
 
+// contains checks if a string slice contains a specific item.
+// slice: String slice to search, item: Item to find. Returns true if found.
 func contains(slice []string, item string) bool {
 	for _, s := range slice {
 		if s == item {
@@ -384,6 +402,8 @@ func contains(slice []string, item string) bool {
 	return false
 }
 
+// CheckSystemDependencies verifies which extension dependencies are missing from the system.
+// extensions: List of PHP extensions to check. Returns slice of missing dependency names.
 func (dm *DependencyManager) CheckSystemDependencies(extensions []string) []string {
 	var missing []string
 
@@ -401,6 +421,8 @@ func (dm *DependencyManager) CheckSystemDependencies(extensions []string) []stri
 	return missing
 }
 
+// isDependencyAvailable checks if a system dependency is available using pkg-config and custom checks.
+// depName: Dependency name to check. Returns true if available.
 func (dm *DependencyManager) isDependencyAvailable(depName string) bool {
 	pkgConfigNames := map[string][]string{
 		"gd":        {"gdlib"},
@@ -453,11 +475,15 @@ func (dm *DependencyManager) isDependencyAvailable(depName string) bool {
 	return false
 }
 
+// checkCommand verifies if a system command is available in PATH.
+// command: Command name to check. Returns true if command exists.
 func (dm *DependencyManager) checkCommand(command string) bool {
 	_, err := exec.LookPath(command)
 	return err == nil
 }
 
+// checkLibrary searches common system library paths for a specific library file.
+// libName: Library name to find. Returns true if library found in system paths.
 func (dm *DependencyManager) checkLibrary(libName string) bool {
 	paths := []string{"/usr/lib", "/usr/local/lib", "/opt/homebrew/lib", "/lib"}
 

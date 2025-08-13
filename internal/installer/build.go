@@ -10,6 +10,8 @@ import (
 	"github.com/LumoSolutions/yerd/pkg/php"
 )
 
+// buildAndInstall performs complete PHP build and installation from source with default extensions.
+// versionInfo: PHP version information, sourceDir: Source code directory, logger: Logging instance. Returns error if build fails.
 func buildAndInstall(versionInfo php.VersionInfo, sourceDir string, logger *utils.Logger) error {
 	utils.SafeLog(logger, "Starting build process in: %s", sourceDir)
 
@@ -60,6 +62,8 @@ func buildAndInstall(versionInfo php.VersionInfo, sourceDir string, logger *util
 	return nil
 }
 
+// configureSource runs PHP's configure script with specified flags and loading spinner.
+// configureFlags: Configure script arguments, logger: Logging instance. Returns error if configuration fails.
 func configureSource(configureFlags []string, logger *utils.Logger) error {
 	utils.SafeLog(logger, "Running ./configure with flags: %v", configureFlags)
 
@@ -81,6 +85,8 @@ func configureSource(configureFlags []string, logger *utils.Logger) error {
 	return nil
 }
 
+// makeSource compiles PHP source code using parallel jobs with processor count detection.
+// logger: Logging instance. Returns error if compilation fails.
 func makeSource(logger *utils.Logger) error {
 	utils.SafeLog(logger, "Running make...")
 
@@ -106,6 +112,8 @@ func makeSource(logger *utils.Logger) error {
 	return nil
 }
 
+// makeInstall runs make install to install compiled PHP binaries to system directories.
+// logger: Logging instance. Returns error if installation fails.
 func makeInstall(logger *utils.Logger) error {
 	utils.SafeLog(logger, "Running make install...")
 
