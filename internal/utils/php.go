@@ -369,4 +369,3 @@ func NormalizePHPVersion(version string) string {
 	}
 	return version
 }
-

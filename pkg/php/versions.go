@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/LumoSolutions/yerd/internal/utils"
-	"github.com/LumoSolutions/yerd/pkg/extensions"
 	"github.com/LumoSolutions/yerd/pkg/constants"
+	"github.com/LumoSolutions/yerd/pkg/extensions"
 )
 
 var availableVersions = []string{"8.1", "8.2", "8.3", "8.4"}
@@ -138,6 +138,7 @@ func FormatVersion(version string) string {
 	}
 	return version
 }
+
 // GetDefaultExtensions returns the standard set of PHP extensions for new installations.
 // Returns slice of default extension names commonly used in PHP projects.
 func GetDefaultExtensions() []string {

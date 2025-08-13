@@ -7,8 +7,8 @@ import (
 
 	"github.com/LumoSolutions/yerd/internal/dependencies"
 	"github.com/LumoSolutions/yerd/internal/utils"
-	"github.com/LumoSolutions/yerd/pkg/php"
 	"github.com/LumoSolutions/yerd/pkg/constants"
+	"github.com/LumoSolutions/yerd/pkg/php"
 )
 
 // buildAndInstall performs complete PHP build and installation from source with default extensions.

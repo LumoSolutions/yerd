@@ -27,7 +27,7 @@ type Builder struct {
 func NewBuilder(version string, extensions []string) (*Builder, error) {
 	sourceDir := filepath.Join(utils.YerdPHPDir, "src", "php-"+version)
 	installDir := php.GetInstallPath(version)
-	
+
 	logger, err := utils.NewLogger(version)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create logger: %v", err)
@@ -269,14 +269,13 @@ func (b *Builder) runCommandAsRoot(cmd *exec.Cmd, description string) error {
 	return nil
 }
 
-
 // Cleanup removes source directory after failed build to free disk space.
 // Returns error if cleanup fails.
 func (b *Builder) Cleanup() error {
 	if b.SourceDir != "" {
 		os.RemoveAll(b.SourceDir)
 	}
-	
+
 	if b.logger != nil {
 		b.logger.Close()
 	}

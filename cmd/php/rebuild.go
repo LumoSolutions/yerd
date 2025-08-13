@@ -8,8 +8,8 @@ import (
 	"github.com/LumoSolutions/yerd/internal/config"
 	"github.com/LumoSolutions/yerd/internal/utils"
 	"github.com/LumoSolutions/yerd/internal/version"
-	"github.com/LumoSolutions/yerd/pkg/php"
 	"github.com/LumoSolutions/yerd/pkg/constants"
+	"github.com/LumoSolutions/yerd/pkg/php"
 	"github.com/spf13/cobra"
 )
 
@@ -90,7 +90,7 @@ func forceRebuildPHP(cfg *config.Config, version string, extensions []string) er
 		return fmt.Errorf("builder creation failed")
 	}
 	err = phpBuilder.RebuildPHP()
-	
+
 	if err != nil {
 		spinner.Stop("✗ Build failed")
 		utils.PrintError("Failed to rebuild PHP %s: %v", version, err)

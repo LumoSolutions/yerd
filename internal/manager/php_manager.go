@@ -10,8 +10,7 @@ import (
 )
 
 const (
-	configLoadError = "failed to load config: %v"
-	globalPHPPath   = "/usr/local/bin/php"
+	globalPHPPath = "/usr/local/bin/php"
 )
 
 // SetCLIVersion creates symlinks to set a PHP version as the system default CLI.
