@@ -220,7 +220,7 @@ func performUpdate(release *GitHubRelease) error {
 		return fmt.Errorf("failed to backup current binary: %v", err)
 	}
 
-	if err := os.Rename(extractedBinary, executablePath); err != nil {
+	if err := copyFile(extractedBinary, executablePath); err != nil {
 		os.Rename(backupPath, executablePath)
 		return fmt.Errorf("failed to install new binary: %v", err)
 	}
@@ -346,4 +346,23 @@ func extractBinaryFromArchive(archivePath string) (string, error) {
 	}
 
 	return "", fmt.Errorf("yerd binary not found in archive")
+}
+
+// copyFile copies a file from src to dst, handling cross-device links properly.
+// src: Source file path, dst: Destination file path. Returns error if copy fails.
+func copyFile(src, dst string) error {
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer srcFile.Close()
+
+	dstFile, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer dstFile.Close()
+
+	_, err = io.Copy(dstFile, srcFile)
+	return err
 }
