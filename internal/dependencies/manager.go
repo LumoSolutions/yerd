@@ -191,12 +191,12 @@ var extensionDependencies = map[string]map[PackageManager][]string{
 }
 
 var buildDependencies = map[PackageManager][]string{
-	APT:    []string{"build-essential", "autoconf", "pkg-config", "re2c", "libonig-dev"},
-	YUM:    []string{"gcc", "gcc-c++", "make", "autoconf", "pkgconfig", "re2c", "oniguruma-devel"},
-	DNF:    []string{"gcc", "gcc-c++", "make", "autoconf", "pkgconf", "re2c", "oniguruma-devel"},
-	PACMAN: []string{"base-devel", "autoconf", "pkgconf", "re2c", "oniguruma"},
-	ZYPPER: []string{"gcc", "gcc-c++", "make", "autoconf", "pkg-config", "re2c", "libonig-devel"},
-	APKL:   []string{"build-base", "autoconf", "pkgconf", "re2c", "oniguruma-dev"},
+	APT:    []string{"build-essential", "autoconf", "pkg-config", "re2c", "libonig-dev", "libxml2-dev"},
+	YUM:    []string{"gcc", "gcc-c++", "make", "autoconf", "pkgconfig", "re2c", "oniguruma-devel", "libxml2-devel"},
+	DNF:    []string{"gcc", "gcc-c++", "make", "autoconf", "pkgconf", "re2c", "oniguruma-devel", "libxml2-devel"},
+	PACMAN: []string{"base-devel", "autoconf", "pkgconf", "re2c", "oniguruma", "libxml2"},
+	ZYPPER: []string{"gcc", "gcc-c++", "make", "autoconf", "pkg-config", "re2c", "libonig-devel", "libxml2-devel"},
+	APKL:   []string{"build-base", "autoconf", "pkgconf", "re2c", "oniguruma-dev", "libxml2-dev"},
 }
 
 // NewDependencyManager creates a new dependency manager with auto-detected distribution and package manager.
