@@ -8,6 +8,7 @@ import (
 	"github.com/LumoSolutions/yerd/internal/utils"
 	"github.com/LumoSolutions/yerd/internal/versions"
 	"github.com/LumoSolutions/yerd/pkg/php"
+	"github.com/LumoSolutions/yerd/pkg/constants"
 )
 
 // InstallPHP performs complete PHP installation from source with comprehensive logging and validation.
@@ -224,7 +225,7 @@ func updateConfiguration(cfg *config.Config, version string, logger *utils.Logge
 
 	installPath := php.GetInstallPath(version)
 
-	defaultExtensions := getDefaultExtensions()
+	defaultExtensions := constants.DefaultPHPExtensions
 	cfg.AddInstalledPHPWithExtensions(version, installPath, defaultExtensions)
 
 	if err := cfg.Save(); err != nil {
@@ -238,23 +239,6 @@ func updateConfiguration(cfg *config.Config, version string, logger *utils.Logge
 	return nil
 }
 
-// getDefaultExtensions returns the standard set of PHP extensions for new installations.
-func getDefaultExtensions() []string {
-	return []string{
-		"mbstring",
-		"bcmath",
-		"opcache",
-		"curl",
-		"openssl",
-		"zip",
-		"sockets",
-		"mysqli",
-		"pdo-mysql",
-		"gd",
-		"jpeg",
-		"freetype",
-	}
-}
 
 // installFromSource handles complete source-based PHP installation with dependency management.
 // versionInfo: PHP version and download details, logger: Logger instance. Returns error if build fails.

@@ -6,7 +6,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"syscall"
 
 	"github.com/LumoSolutions/yerd/internal/config"
 	"github.com/LumoSolutions/yerd/internal/dependencies"
@@ -20,25 +19,27 @@ type Builder struct {
 	Extensions []string
 	SourceDir  string
 	InstallDir string
-	LogPath    string
+	logger     *utils.Logger
 }
 
 // NewBuilder creates a new PHP builder instance with source and install directories.
 // version: PHP version to build, extensions: List of extensions to include. Returns configured Builder.
-func NewBuilder(version string, extensions []string) *Builder {
+func NewBuilder(version string, extensions []string) (*Builder, error) {
 	sourceDir := filepath.Join(utils.YerdPHPDir, "src", "php-"+version)
 	installDir := php.GetInstallPath(version)
-	logDir := filepath.Join(os.TempDir(), "yerd-build")
-	os.MkdirAll(logDir, 0755)
-	logPath := filepath.Join(logDir, fmt.Sprintf("php-%s-build.log", version))
+	
+	logger, err := utils.NewLogger(version)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create logger: %v", err)
+	}
 
 	return &Builder{
 		Version:    version,
 		Extensions: extensions,
 		SourceDir:  sourceDir,
 		InstallDir: installDir,
-		LogPath:    logPath,
-	}
+		logger:     logger,
+	}, nil
 }
 
 // RebuildPHP performs complete PHP compilation from source with dependencies and configuration.
@@ -127,14 +128,9 @@ func (b *Builder) downloadSource() error {
 		return err
 	}
 
-	if os.Geteuid() == 0 {
-		sudoUser := os.Getenv("SUDO_USER")
-		if sudoUser != "" {
-			uid, gid, err := utils.GetSudoUserIDs(sudoUser)
-			if err == nil {
-				os.Chown(tempExtractDir, uid, gid)
-			}
-		}
+	userCtx, err := utils.GetRealUser()
+	if err == nil && os.Geteuid() == 0 {
+		os.Chown(tempExtractDir, userCtx.UID, userCtx.GID)
 	}
 
 	cmd = exec.Command("tar", "-xzf", tempArchivePath, "-C", tempExtractDir)
@@ -150,14 +146,11 @@ func (b *Builder) downloadSource() error {
 	}
 
 	if os.Geteuid() == 0 {
-		sudoUser := os.Getenv("SUDO_USER")
-		if sudoUser != "" {
-			uid, gid, err := utils.GetSudoUserIDs(sudoUser)
-			if err == nil {
-				chownCmd := exec.Command("chown", "-R", fmt.Sprintf("%d:%d", uid, gid), b.SourceDir)
-				if err := b.runCommandAsRoot(chownCmd, "Fixing source directory permissions"); err != nil {
-					return fmt.Errorf("failed to fix source directory permissions: %v", err)
-				}
+		userCtx, err := utils.GetRealUser()
+		if err == nil {
+			chownCmd := exec.Command("chown", "-R", fmt.Sprintf("%d:%d", userCtx.UID, userCtx.GID), b.SourceDir)
+			if err := b.runCommandAsRoot(chownCmd, "Fixing source directory permissions"); err != nil {
+				return fmt.Errorf("failed to fix source directory permissions: %v", err)
 			}
 		}
 	}
@@ -257,87 +250,35 @@ func (b *Builder) createSymlinks() error {
 // runCommand executes a command with logging and user privilege handling.
 // cmd: Command to execute, description: Operation description. Returns error if command fails.
 func (b *Builder) runCommand(cmd *exec.Cmd, description string) error {
-	logFile, err := os.OpenFile(b.LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	b.logger.WriteLog("=== %s ===", description)
+	_, err := utils.ExecuteCommandAsUser(b.logger, cmd.Path, cmd.Args[1:]...)
 	if err != nil {
-		return fmt.Errorf("failed to open log file: %v", err)
+		return fmt.Errorf("%s failed: %v", description, err)
 	}
-	defer logFile.Close()
-
-	logFile.WriteString(fmt.Sprintf("\n=== %s ===\n", description))
-	logFile.WriteString(fmt.Sprintf("Command: %s\n", strings.Join(cmd.Args, " ")))
-	logFile.WriteString(fmt.Sprintf("Directory: %s\n\n", cmd.Dir))
-
-	cmd.Stdout = logFile
-	cmd.Stderr = logFile
-
-	if os.Geteuid() == 0 {
-		if err := b.setUserCredentials(cmd); err != nil {
-			logFile.WriteString(fmt.Sprintf("Warning: failed to set user credentials: %v\n", err))
-		}
-	}
-
-	if err := cmd.Run(); err != nil {
-		logFile.WriteString(fmt.Sprintf("\nCommand failed with error: %v\n", err))
-		return fmt.Errorf("%s failed (see %s for details): %v", description, b.LogPath, err)
-	}
-
-	logFile.WriteString(fmt.Sprintf("\n%s completed successfully\n", description))
 	return nil
 }
 
 // runCommandAsRoot executes a command with root privileges and full logging.
 // cmd: Command to execute, description: Operation description. Returns error if command fails.
 func (b *Builder) runCommandAsRoot(cmd *exec.Cmd, description string) error {
-	logFile, err := os.OpenFile(b.LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	b.logger.WriteLog("=== %s (as root) ===", description)
+	_, err := utils.ExecuteCommandWithLogging(b.logger, cmd.Path, cmd.Args[1:]...)
 	if err != nil {
-		return fmt.Errorf("failed to open log file: %v", err)
+		return fmt.Errorf("%s failed: %v", description, err)
 	}
-	defer logFile.Close()
-
-	logFile.WriteString(fmt.Sprintf("\n=== %s (as root) ===\n", description))
-	logFile.WriteString(fmt.Sprintf("Command: %s\n", strings.Join(cmd.Args, " ")))
-	logFile.WriteString(fmt.Sprintf("Directory: %s\n\n", cmd.Dir))
-
-	cmd.Stdout = logFile
-	cmd.Stderr = logFile
-
-	if err := cmd.Run(); err != nil {
-		logFile.WriteString(fmt.Sprintf("\nCommand failed with error: %v\n", err))
-		return fmt.Errorf("%s failed (see %s for details): %v", description, b.LogPath, err)
-	}
-
-	logFile.WriteString(fmt.Sprintf("\n%s completed successfully\n", description))
 	return nil
 }
 
-// setUserCredentials configures command to run as original SUDO user instead of root.
-// cmd: Command to configure. Returns error if user context cannot be determined.
-func (b *Builder) setUserCredentials(cmd *exec.Cmd) error {
-	sudoUser := os.Getenv("SUDO_USER")
-	if sudoUser == "" {
-		return nil
-	}
-
-	uid, gid, err := utils.GetSudoUserIDs(sudoUser)
-	if err != nil {
-		return err
-	}
-
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Credential: &syscall.Credential{
-			Uid: uint32(uid),
-			Gid: uint32(gid),
-		},
-	}
-
-	return nil
-}
 
 // Cleanup removes source directory after failed build to free disk space.
 // Returns error if cleanup fails.
 func (b *Builder) Cleanup() error {
 	if b.SourceDir != "" {
 		os.RemoveAll(b.SourceDir)
+	}
+	
+	if b.logger != nil {
+		b.logger.Close()
 	}
 
 	return nil
@@ -350,8 +291,8 @@ func (b *Builder) CleanupSuccess() error {
 		os.RemoveAll(b.SourceDir)
 	}
 
-	if b.LogPath != "" {
-		os.Remove(b.LogPath)
+	if b.logger != nil {
+		b.logger.DeleteLogFile()
 	}
 
 	return nil

@@ -9,6 +9,7 @@ import (
 	"github.com/LumoSolutions/yerd/internal/utils"
 	"github.com/LumoSolutions/yerd/internal/version"
 	"github.com/LumoSolutions/yerd/pkg/php"
+	"github.com/LumoSolutions/yerd/pkg/constants"
 	"github.com/spf13/cobra"
 )
 
@@ -61,7 +62,7 @@ func runRebuild(cmd *cobra.Command, args []string) error {
 
 	if len(currentExtensions) == 0 {
 		utils.PrintWarning("PHP %s has no extensions configured. Adding default extensions.", phpVersion)
-		currentExtensions = utils.GetDefaultPHPExtensions()
+		currentExtensions = constants.DefaultPHPExtensions
 		cfg.UpdatePHPExtensions(phpVersion, currentExtensions)
 	}
 
@@ -82,8 +83,13 @@ func forceRebuildPHP(cfg *config.Config, version string, extensions []string) er
 	spinner := utils.NewLoadingSpinner(fmt.Sprintf("Building PHP %s with extensions", version))
 	spinner.Start()
 
-	phpBuilder := builder.NewBuilder(version, extensions)
-	err := phpBuilder.RebuildPHP()
+	phpBuilder, err := builder.NewBuilder(version, extensions)
+	if err != nil {
+		spinner.Stop("✗ Failed to create builder")
+		utils.PrintError("Failed to create builder: %v", err)
+		return fmt.Errorf("builder creation failed")
+	}
+	err = phpBuilder.RebuildPHP()
 	
 	if err != nil {
 		spinner.Stop("✗ Build failed")

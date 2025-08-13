@@ -7,6 +7,7 @@ import (
 
 	"github.com/LumoSolutions/yerd/internal/utils"
 	"github.com/LumoSolutions/yerd/pkg/extensions"
+	"github.com/LumoSolutions/yerd/pkg/constants"
 )
 
 var availableVersions = []string{"8.1", "8.2", "8.3", "8.4"}
@@ -82,11 +83,7 @@ func getExtensionConfigureFlags(extList []string) []string {
 // getConfigureFlagsForVersion generates configure flags with default extensions for a PHP version.
 // majorMinor: PHP version string. Returns configure flags with standard extension set.
 func getConfigureFlagsForVersion(majorMinor string) []string {
-	defaultExtensions := []string{
-		"mbstring", "bcmath", "opcache", "curl", "openssl",
-		"zip", "sockets", "mysqli", "pdo-mysql", "gd", "jpeg", "freetype",
-	}
-	return GetConfigureFlagsForVersion(majorMinor, defaultExtensions)
+	return GetConfigureFlagsForVersion(majorMinor, constants.DefaultPHPExtensions)
 }
 
 // GetLatestVersionInfo creates VersionInfo from version and URL mappings.
@@ -140,4 +137,9 @@ func FormatVersion(version string) string {
 		}
 	}
 	return version
+}
+// GetDefaultExtensions returns the standard set of PHP extensions for new installations.
+// Returns slice of default extension names commonly used in PHP projects.
+func GetDefaultExtensions() []string {
+	return constants.DefaultPHPExtensions
 }

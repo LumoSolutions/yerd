@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"time"
+
+	"github.com/LumoSolutions/yerd/pkg/constants"
 )
 
 type Config struct {
@@ -175,7 +177,7 @@ func (c *Config) AddInstalledPHP(version, installPath string) {
 		InstallPath: installPath,
 		InstallDate: time.Now(),
 		IsCLI:       c.CurrentCLI == version,
-		Extensions:  getDefaultExtensions(),
+		Extensions:  constants.DefaultPHPExtensions,
 	}
 }
 
@@ -215,23 +217,6 @@ func (c *Config) GetPHPExtensions(version string) ([]string, bool) {
 	return nil, false
 }
 
-// getDefaultExtensions returns the default set of PHP extensions for new installations.
-func getDefaultExtensions() []string {
-	return []string{
-		"mbstring",
-		"bcmath",
-		"opcache",
-		"curl",
-		"openssl",
-		"zip",
-		"sockets",
-		"mysqli",
-		"pdo-mysql",
-		"gd",
-		"jpeg",
-		"freetype",
-	}
-}
 
 type ConfigSnapshot struct {
 	Version    string

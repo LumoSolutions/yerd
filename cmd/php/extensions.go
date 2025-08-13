@@ -433,7 +433,10 @@ func applyExtensionChanges(cfg *config.Config, version string, extensions []stri
 // rebuildPHPWithExtensions performs PHP rebuild with specified extensions using the builder.
 // version: PHP version string, extensions: Extension list. Returns error if build fails.
 func rebuildPHPWithExtensions(version string, extensions []string) error {
-	phpBuilder := builder.NewBuilder(version, extensions)
+	phpBuilder, err := builder.NewBuilder(version, extensions)
+	if err != nil {
+		return fmt.Errorf("failed to create builder: %v", err)
+	}
 	defer phpBuilder.Cleanup()
 
 	return phpBuilder.RebuildPHP()
