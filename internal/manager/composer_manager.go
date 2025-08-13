@@ -67,10 +67,9 @@ func downloadComposer(composerPath string) error {
 
 	downloadURL := "https://getcomposer.org/download/latest-stable/composer.phar"
 
-	output, err := utils.ExecuteCommand("curl", "-sS", "-L", "-o", composerPath, downloadURL)
-	if err != nil {
+	if err := downloadWithAvailableTool(composerPath, downloadURL); err != nil {
 		spinner.Stop("❌ Download failed")
-		return fmt.Errorf("curl failed: %v, output: %s", err, output)
+		return fmt.Errorf("download failed: %v", err)
 	}
 
 	if !utils.FileExists(composerPath) {
@@ -79,6 +78,47 @@ func downloadComposer(composerPath string) error {
 	}
 
 	spinner.Stop("✓ Composer downloaded")
+	return nil
+}
+
+// downloadWithAvailableTool attempts to download using curl or wget as fallback.
+// composerPath: Target file path, downloadURL: Source URL. Returns error if both tools fail.
+func downloadWithAvailableTool(composerPath, downloadURL string) error {
+	if isCommandAvailable("curl") {
+		return downloadWithCurl(composerPath, downloadURL)
+	}
+
+	if isCommandAvailable("wget") {
+		return downloadWithWget(composerPath, downloadURL)
+	}
+
+	return fmt.Errorf("neither curl nor wget is available on this system")
+}
+
+// isCommandAvailable checks if a command is available in the system PATH.
+// command: Command name to check. Returns true if command is available.
+func isCommandAvailable(command string) bool {
+	output, err := utils.ExecuteCommand("which", command)
+	return err == nil && output != ""
+}
+
+// downloadWithCurl downloads a file using curl with appropriate flags.
+// composerPath: Target file path, downloadURL: Source URL. Returns error if download fails.
+func downloadWithCurl(composerPath, downloadURL string) error {
+	output, err := utils.ExecuteCommand("curl", "-sS", "-L", "-o", composerPath, downloadURL)
+	if err != nil {
+		return fmt.Errorf("curl failed: %v, output: %s", err, output)
+	}
+	return nil
+}
+
+// downloadWithWget downloads a file using wget with appropriate flags.
+// composerPath: Target file path, downloadURL: Source URL. Returns error if download fails.
+func downloadWithWget(composerPath, downloadURL string) error {
+	output, err := utils.ExecuteCommand("wget", "-q", "-O", composerPath, downloadURL)
+	if err != nil {
+		return fmt.Errorf("wget failed: %v, output: %s", err, output)
+	}
 	return nil
 }
 
