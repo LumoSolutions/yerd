@@ -89,7 +89,7 @@ jobs:
         path: ${{ env.ASSET_NAME }}
 
   release:
-    name: Update Release
+    name: Create Release
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -123,8 +123,8 @@ jobs:
           fi
         done
 
-    - name: Update Release
-      id: update_release
+    - name: Create Release
+      id: create_release
       uses: softprops/action-gh-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -133,13 +133,6 @@ jobs:
         name: v${{ steps.get_version.outputs.VERSION }}
         draft: false
         prerelease: false
-
-    - name: Upload Release Assets
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: ${{ steps.get_version.outputs.TAG_NAME }}
         files: |
           ./**/*.tar.gz
           checksums.txt
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -103,3 +103,17 @@ func PrintWarning(format string, args ...interface{}) {
 func PrintInfo(format string, args ...interface{}) {
 	fmt.Printf(format+"\n", args...)
 }
+
+// PrintExtensionsGrid displays extensions in a nicely formatted grid (4 per line).
+// extensions: List of extension names to display with proper spacing and alignment.
+func PrintExtensionsGrid(extensions []string) {
+	for i, ext := range extensions {
+		if i%4 == 0 {
+			fmt.Print("  ")
+		}
+		fmt.Printf("%-12s", ext)
+		if (i+1)%4 == 0 || i == len(extensions)-1 {
+			fmt.Println()
+		}
+	}
+}

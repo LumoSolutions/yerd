@@ -24,6 +24,7 @@ type DependencyManager struct {
 	distro    string
 	pm        PackageManager
 	pmCommand string
+	quiet     bool
 }
 
 var extensionDependencies = map[string]map[PackageManager][]string{
@@ -59,7 +60,7 @@ var extensionDependencies = map[string]map[PackageManager][]string{
 		ZYPPER: []string{"gd-devel"},
 		APKL:   []string{"gd-dev"},
 	},
-	"mysql": {
+	"mysqli": {
 		APT:    []string{"libmysqlclient-dev"},
 		YUM:    []string{"mysql-devel"},
 		DNF:    []string{"mysql-devel"},
@@ -67,7 +68,15 @@ var extensionDependencies = map[string]map[PackageManager][]string{
 		ZYPPER: []string{"libmysqlclient-devel"},
 		APKL:   []string{"mysql-dev"},
 	},
-	"postgresql": {
+	"pdo-mysql": {
+		APT:    []string{"libmysqlclient-dev"},
+		YUM:    []string{"mysql-devel"},
+		DNF:    []string{"mysql-devel"},
+		PACMAN: []string{"mariadb-libs"},
+		ZYPPER: []string{"libmysqlclient-devel"},
+		APKL:   []string{"mysql-dev"},
+	},
+	"pgsql": {
 		APT:    []string{"libpq-dev"},
 		YUM:    []string{"postgresql-devel"},
 		DNF:    []string{"postgresql-devel"},
@@ -75,7 +84,15 @@ var extensionDependencies = map[string]map[PackageManager][]string{
 		ZYPPER: []string{"postgresql-devel"},
 		APKL:   []string{"postgresql-dev"},
 	},
-	"sqlite": {
+	"pdo-pgsql": {
+		APT:    []string{"libpq-dev"},
+		YUM:    []string{"postgresql-devel"},
+		DNF:    []string{"postgresql-devel"},
+		PACMAN: []string{"postgresql-libs"},
+		ZYPPER: []string{"postgresql-devel"},
+		APKL:   []string{"postgresql-dev"},
+	},
+	"sqlite3": {
 		APT:    []string{"libsqlite3-dev"},
 		YUM:    []string{"sqlite-devel"},
 		DNF:    []string{"sqlite-devel"},
@@ -83,7 +100,15 @@ var extensionDependencies = map[string]map[PackageManager][]string{
 		ZYPPER: []string{"sqlite3-devel"},
 		APKL:   []string{"sqlite-dev"},
 	},
-	"libjpeg": {
+	"pdo-sqlite": {
+		APT:    []string{"libsqlite3-dev"},
+		YUM:    []string{"sqlite-devel"},
+		DNF:    []string{"sqlite-devel"},
+		PACMAN: []string{"sqlite"},
+		ZYPPER: []string{"sqlite3-devel"},
+		APKL:   []string{"sqlite-dev"},
+	},
+	"jpeg": {
 		APT:    []string{"libjpeg-dev"},
 		YUM:    []string{"libjpeg-turbo-devel"},
 		DNF:    []string{"libjpeg-turbo-devel"},
@@ -91,7 +116,7 @@ var extensionDependencies = map[string]map[PackageManager][]string{
 		ZYPPER: []string{"libjpeg8-devel"},
 		APKL:   []string{"libjpeg-turbo-dev"},
 	},
-	"freetype2": {
+	"freetype": {
 		APT:    []string{"libfreetype6-dev"},
 		YUM:    []string{"freetype-devel"},
 		DNF:    []string{"freetype-devel"},
@@ -99,7 +124,7 @@ var extensionDependencies = map[string]map[PackageManager][]string{
 		ZYPPER: []string{"freetype2-devel"},
 		APKL:   []string{"freetype-dev"},
 	},
-	"libxml2": {
+	"xml": {
 		APT:    []string{"libxml2-dev"},
 		YUM:    []string{"libxml2-devel"},
 		DNF:    []string{"libxml2-devel"},
@@ -115,7 +140,7 @@ var extensionDependencies = map[string]map[PackageManager][]string{
 		ZYPPER: []string{"zlib-devel"},
 		APKL:   []string{"zlib-dev"},
 	},
-	"bzip2": {
+	"bz2": {
 		APT:    []string{"libbz2-dev"},
 		YUM:    []string{"bzip2-devel"},
 		DNF:    []string{"bzip2-devel"},
@@ -123,7 +148,7 @@ var extensionDependencies = map[string]map[PackageManager][]string{
 		ZYPPER: []string{"libbz2-devel"},
 		APKL:   []string{"bzip2-dev"},
 	},
-	"icu": {
+	"intl": {
 		APT:    []string{"libicu-dev"},
 		YUM:    []string{"libicu-devel"},
 		DNF:    []string{"libicu-devel"},
@@ -147,7 +172,7 @@ var extensionDependencies = map[string]map[PackageManager][]string{
 		ZYPPER: []string{"gmp-devel"},
 		APKL:   []string{"gmp-dev"},
 	},
-	"openldap": {
+	"ldap": {
 		APT:    []string{"libldap2-dev"},
 		YUM:    []string{"openldap-devel"},
 		DNF:    []string{"openldap-devel"},
@@ -155,7 +180,7 @@ var extensionDependencies = map[string]map[PackageManager][]string{
 		ZYPPER: []string{"openldap2-devel"},
 		APKL:   []string{"openldap-dev"},
 	},
-	"pcre2": {
+	"pcre": {
 		APT:    []string{"libpcre2-dev"},
 		YUM:    []string{"pcre2-devel"},
 		DNF:    []string{"pcre2-devel"},
@@ -191,6 +216,7 @@ func NewDependencyManager() (*DependencyManager, error) {
 		distro:    distro,
 		pm:        pm,
 		pmCommand: pmCmd,
+		quiet:     false,
 	}, nil
 }
 
@@ -262,6 +288,12 @@ func (dm *DependencyManager) GetPackageManager() PackageManager {
 	return dm.pm
 }
 
+// SetQuiet enables or disables quiet mode for dependency installation.
+// In quiet mode, verbose output is suppressed during operations.
+func (dm *DependencyManager) SetQuiet(quiet bool) {
+	dm.quiet = quiet
+}
+
 // InstallBuildDependencies installs essential build tools and dependencies for PHP compilation.
 // Returns error if installation fails.
 func (dm *DependencyManager) InstallBuildDependencies() error {
@@ -270,7 +302,9 @@ func (dm *DependencyManager) InstallBuildDependencies() error {
 		return fmt.Errorf("no build dependencies defined for package manager: %s", dm.pm)
 	}
 
-	color.New(color.FgYellow).Printf("Installing build dependencies for %s...\n", dm.distro)
+	if !dm.quiet {
+		color.New(color.FgYellow).Printf("Installing build dependencies for %s...\n", dm.distro)
+	}
 
 	return dm.installPackages(deps, "build dependencies")
 }
@@ -282,12 +316,7 @@ func (dm *DependencyManager) InstallExtensionDependencies(extensions []string) e
 	missingDeps := make(map[string]bool)
 
 	for _, ext := range extensions {
-		depName := mapExtensionToDependency(ext)
-		if depName == "" {
-			continue
-		}
-
-		if deps, exists := extensionDependencies[depName]; exists {
+		if deps, exists := extensionDependencies[ext]; exists {
 			if packages, hasPM := deps[dm.pm]; hasPM {
 				for _, pkg := range packages {
 					if !contains(allPackages, pkg) {
@@ -295,12 +324,12 @@ func (dm *DependencyManager) InstallExtensionDependencies(extensions []string) e
 					}
 				}
 			} else {
-				missingDeps[depName] = true
+				missingDeps[ext] = true
 			}
 		}
 	}
 
-	if len(missingDeps) > 0 {
+	if len(missingDeps) > 0 && !dm.quiet {
 		var missing []string
 		for dep := range missingDeps {
 			missing = append(missing, dep)
@@ -309,11 +338,15 @@ func (dm *DependencyManager) InstallExtensionDependencies(extensions []string) e
 	}
 
 	if len(allPackages) == 0 {
-		color.New(color.FgGreen).Println("No additional dependencies required for selected extensions")
+		if !dm.quiet {
+			color.New(color.FgGreen).Println("No additional dependencies required for selected extensions")
+		}
 		return nil
 	}
 
-	color.New(color.FgCyan).Printf("Installing dependencies for extensions: %s\n", strings.Join(extensions, ", "))
+	if !dm.quiet {
+		// Removed verbose extension dependency listing for cleaner output
+	}
 
 	return dm.installPackages(allPackages, "extension dependencies")
 }
@@ -350,7 +383,9 @@ func (dm *DependencyManager) installPackages(packages []string, description stri
 		return fmt.Errorf("unsupported package manager: %s", dm.pm)
 	}
 
-	color.New(color.FgBlue).Printf("Running: %s %s\n", cmd.Path, strings.Join(cmd.Args[1:], " "))
+	if !dm.quiet {
+		// Removed verbose command output for cleaner installation experience
+	}
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -358,38 +393,12 @@ func (dm *DependencyManager) installPackages(packages []string, description stri
 		return fmt.Errorf("package installation failed: %v", err)
 	}
 
-	color.New(color.FgGreen).Printf("✓ Successfully installed %s\n", description)
+	if !dm.quiet {
+		color.New(color.FgGreen).Printf("✓ Successfully installed %s\n", description)
+	}
 	return nil
 }
 
-// mapExtensionToDependency converts PHP extension names to system library dependency names.
-// extension: PHP extension name. Returns corresponding dependency name or empty string.
-func mapExtensionToDependency(extension string) string {
-	mapping := map[string]string{
-		"curl":       "curl",
-		"openssl":    "openssl",
-		"zip":        "zip",
-		"gd":         "gd",
-		"mysqli":     "mysql",
-		"pdo-mysql":  "mysql",
-		"pgsql":      "postgresql",
-		"pdo-pgsql":  "postgresql",
-		"sqlite3":    "sqlite",
-		"pdo-sqlite": "sqlite",
-		"jpeg":       "libjpeg",
-		"freetype":   "freetype2",
-		"xml":        "libxml2",
-		"zlib":       "zlib",
-		"bz2":        "bzip2",
-		"intl":       "icu",
-		"gettext":    "gettext",
-		"gmp":        "gmp",
-		"ldap":       "openldap",
-		"pcre":       "pcre2",
-	}
-
-	return mapping[extension]
-}
 
 // contains checks if a string slice contains a specific item.
 // slice: String slice to search, item: Item to find. Returns true if found.
@@ -408,13 +417,10 @@ func (dm *DependencyManager) CheckSystemDependencies(extensions []string) []stri
 	var missing []string
 
 	for _, ext := range extensions {
-		depName := mapExtensionToDependency(ext)
-		if depName == "" {
-			continue
-		}
-
-		if !dm.isDependencyAvailable(depName) {
-			missing = append(missing, depName)
+		if _, exists := extensionDependencies[ext]; exists {
+			if !dm.isDependencyAvailable(ext) {
+				missing = append(missing, ext)
+			}
 		}
 	}
 

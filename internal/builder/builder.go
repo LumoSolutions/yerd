@@ -80,7 +80,7 @@ func (b *Builder) validateEnvironment() error {
 		return fmt.Errorf("failed to initialize dependency manager: %v", err)
 	}
 
-	utils.PrintInfo("Detected %s with %s package manager", depMgr.GetDistro(), depMgr.GetPackageManager())
+	depMgr.SetQuiet(true)
 
 	if err := depMgr.InstallBuildDependencies(); err != nil {
 		return fmt.Errorf("failed to install build dependencies: %v", err)
@@ -95,7 +95,6 @@ func (b *Builder) validateEnvironment() error {
 		return fmt.Errorf("dependencies still missing after installation: %s", strings.Join(missing, ", "))
 	}
 
-	utils.PrintSuccess("All dependencies satisfied")
 	return nil
 }
 
@@ -186,10 +185,20 @@ func (b *Builder) getFullVersion() string {
 // configure runs PHP's configure script with appropriate flags for version and extensions.
 // Returns error if configuration fails.
 func (b *Builder) configure() error {
+	configurePath := filepath.Join(b.SourceDir, "configure")
+
+	if _, err := os.Stat(configurePath); err != nil {
+		return fmt.Errorf("configure script not found at %s", configurePath)
+	}
+
+	if err := os.Chmod(configurePath, 0755); err != nil {
+		return fmt.Errorf("failed to make configure executable: %v", err)
+	}
+
 	configFlags := b.getConfigureFlags()
 
-	args := append([]string{"./configure"}, configFlags...)
-	cmd := exec.Command("sh", "-c", strings.Join(args, " "))
+	args := append([]string{"/bin/bash", configurePath}, configFlags...)
+	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Dir = b.SourceDir
 
 	return b.runCommand(cmd, "Configuring PHP build")
@@ -251,6 +260,13 @@ func (b *Builder) createSymlinks() error {
 // cmd: Command to execute, description: Operation description. Returns error if command fails.
 func (b *Builder) runCommand(cmd *exec.Cmd, description string) error {
 	b.logger.WriteLog("=== %s ===", description)
+
+	if cmd.Dir != "" {
+		currentDir, _ := os.Getwd()
+		os.Chdir(cmd.Dir)
+		defer os.Chdir(currentDir)
+	}
+
 	_, err := utils.ExecuteCommandAsUser(b.logger, cmd.Path, cmd.Args[1:]...)
 	if err != nil {
 		return fmt.Errorf("%s failed: %v", description, err)
@@ -262,6 +278,13 @@ func (b *Builder) runCommand(cmd *exec.Cmd, description string) error {
 // cmd: Command to execute, description: Operation description. Returns error if command fails.
 func (b *Builder) runCommandAsRoot(cmd *exec.Cmd, description string) error {
 	b.logger.WriteLog("=== %s (as root) ===", description)
+
+	if cmd.Dir != "" {
+		currentDir, _ := os.Getwd()
+		os.Chdir(cmd.Dir)
+		defer os.Chdir(currentDir)
+	}
+
 	_, err := utils.ExecuteCommandWithLogging(b.logger, cmd.Path, cmd.Args[1:]...)
 	if err != nil {
 		return fmt.Errorf("%s failed: %v", description, err)
@@ -295,4 +318,13 @@ func (b *Builder) CleanupSuccess() error {
 	}
 
 	return nil
+}
+
+// GetLogPath returns the path to the current log file, or empty string if no logger exists.
+// Returns log file path for troubleshooting failed builds.
+func (b *Builder) GetLogPath() string {
+	if b.logger != nil {
+		return b.logger.GetLogPath()
+	}
+	return ""
 }
