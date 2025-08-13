@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"syscall"
 )
@@ -113,4 +114,19 @@ func ExecuteCommandWithLogging(logger *Logger, command string, args ...string) (
 	}
 
 	return result, err
+}
+
+// GetProcessorCount detects the number of CPU cores for parallel processing.
+// Returns processor count or defaults to 4 if detection fails.
+func GetProcessorCount() int {
+	output, err := ExecuteCommand("nproc")
+	if err != nil {
+		return 4
+	}
+
+	if n, err := strconv.Atoi(strings.TrimSpace(output)); err == nil && n > 0 {
+		return n
+	}
+
+	return 4
 }

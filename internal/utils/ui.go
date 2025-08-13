@@ -79,3 +79,27 @@ func (s *LoadingSpinner) spin() {
 		}
 	}
 }
+
+// PrintSuccess displays a success message with green checkmark.
+// format: Printf format string, args: Format arguments.
+func PrintSuccess(format string, args ...interface{}) {
+	fmt.Printf("✓ "+format+"\n", args...)
+}
+
+// PrintError displays an error message with red X mark.
+// format: Printf format string, args: Format arguments.
+func PrintError(format string, args ...interface{}) {
+	fmt.Printf("✗ "+format+"\n", args...)
+}
+
+// PrintWarning displays a warning message with warning symbol.
+// format: Printf format string, args: Format arguments.
+func PrintWarning(format string, args ...interface{}) {
+	fmt.Printf("⚠️  "+format+"\n", args...)
+}
+
+// PrintInfo displays an info message with cyan formatting.
+// format: Printf format string, args: Format arguments.
+func PrintInfo(format string, args ...interface{}) {
+	fmt.Printf(format+"\n", args...)
+}

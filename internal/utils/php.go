@@ -369,3 +369,12 @@ func NormalizePHPVersion(version string) string {
 	}
 	return version
 }
+
+// GetDefaultPHPExtensions returns the standard set of PHP extensions for new installations.
+// Returns slice of default extension names commonly used in PHP projects.
+func GetDefaultPHPExtensions() []string {
+	return []string{
+		"mbstring", "bcmath", "opcache", "curl", "openssl", "zip",
+		"sockets", "mysqli", "pdo-mysql", "gd", "jpeg", "freetype",
+	}
+}

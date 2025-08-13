@@ -79,7 +79,7 @@ func (b *Builder) validateEnvironment() error {
 		return fmt.Errorf("failed to initialize dependency manager: %v", err)
 	}
 
-	fmt.Printf("Detected %s with %s package manager\n", depMgr.GetDistro(), depMgr.GetPackageManager())
+	utils.PrintInfo("Detected %s with %s package manager", depMgr.GetDistro(), depMgr.GetPackageManager())
 
 	if err := depMgr.InstallBuildDependencies(); err != nil {
 		return fmt.Errorf("failed to install build dependencies: %v", err)
@@ -94,7 +94,7 @@ func (b *Builder) validateEnvironment() error {
 		return fmt.Errorf("dependencies still missing after installation: %s", strings.Join(missing, ", "))
 	}
 
-	fmt.Println("✓ All dependencies satisfied")
+	utils.PrintSuccess("All dependencies satisfied")
 	return nil
 }
 
@@ -117,14 +117,14 @@ func (b *Builder) downloadSource() error {
 	}
 
 	extractDir := filepath.Dir(b.SourceDir)
-	if err := os.MkdirAll(extractDir, 0755); err != nil {
-		return fmt.Errorf("failed to create extract directory %s: %v", extractDir, err)
+	if err := utils.CreateDirectory(extractDir); err != nil {
+		return err
 	}
 
 	tempExtractDir := filepath.Join(tempDir, fmt.Sprintf("php-%s-extract", fullVersion))
 	os.RemoveAll(tempExtractDir)
-	if err := os.MkdirAll(tempExtractDir, 0755); err != nil {
-		return fmt.Errorf("failed to create temp extract directory: %v", err)
+	if err := utils.CreateDirectory(tempExtractDir); err != nil {
+		return err
 	}
 
 	if os.Geteuid() == 0 {
@@ -221,31 +221,7 @@ func (b *Builder) compile() error {
 // getProcessorCount detects system CPU count for parallel compilation jobs.
 // Returns processor count or defaults to 4 if detection fails.
 func (b *Builder) getProcessorCount() int {
-	cmd := exec.Command("nproc")
-	output, err := cmd.Output()
-	if err != nil {
-		return 4
-	}
-
-	nproc := strings.TrimSpace(string(output))
-	if n := parseInt(nproc); n > 0 {
-		return n
-	}
-
-	return 4
-}
-
-// parseInt converts string to integer without external dependencies.
-// s: String to convert. Returns integer value or 0 if invalid.
-func parseInt(s string) int {
-	var result int
-	for _, r := range s {
-		if r < '0' || r > '9' {
-			return 0
-		}
-		result = result*10 + int(r-'0')
-	}
-	return result
+	return utils.GetProcessorCount()
 }
 
 // install runs make install to install compiled PHP to target directory with root privileges.
@@ -266,23 +242,12 @@ func (b *Builder) createSymlinks() error {
 	}
 
 	targetPath := php.GetBinaryPath(b.Version)
-
-	if _, err := os.Lstat(targetPath); err == nil {
-		if err := os.Remove(targetPath); err != nil {
-			return fmt.Errorf("failed to remove existing symlink: %v", err)
-		}
-	}
-
-	if err := os.Symlink(phpBinary, targetPath); err != nil {
+	if err := utils.CreateSymlink(phpBinary, targetPath); err != nil {
 		return fmt.Errorf("failed to create symlink: %v", err)
 	}
 
 	globalSymlink := "/usr/local/bin/php" + b.Version
-	if err := os.Remove(globalSymlink); err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("failed to remove existing global symlink: %v", err)
-	}
-
-	if err := os.Symlink(targetPath, globalSymlink); err != nil {
+	if err := utils.CreateSymlink(targetPath, globalSymlink); err != nil {
 		return fmt.Errorf("failed to create global symlink: %v", err)
 	}
 

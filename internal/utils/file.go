@@ -97,3 +97,12 @@ func IsBrokenSymlink(path string) bool {
 	_, err := os.Stat(path)
 	return os.IsNotExist(err)
 }
+
+// CreateDirectory creates a directory with proper permissions and error handling.
+// path: Directory path to create. Returns error if creation fails.
+func CreateDirectory(path string) error {
+	if err := os.MkdirAll(path, DirPermissions); err != nil {
+		return fmt.Errorf("failed to create directory %s: %v", path, err)
+	}
+	return nil
+}
