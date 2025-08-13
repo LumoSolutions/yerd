@@ -60,22 +60,44 @@ yerd php list
 - **Dependencies**: Automatically installed based on your distribution
 - **Internet**: Required for downloading PHP source and updates
 
-## 💻 Core Commands
+## 💻 Commands
+
+### Top-Level Commands
 
 | Command | Description | Example |
 |---------|-------------|---------|
-| **Installation** | | |
+| `yerd status` | System status overview | Shows conflicts, paths |
+| `yerd --help` | Show help information | Display usage guide |
+| `yerd --version` | Show YERD version | Display current version |
+
+### PHP Commands
+
+#### Installation & Removal
+
+| Command | Description | Example |
+|---------|-------------|---------|
 | `sudo yerd php add 8.4` | Install PHP version from source | Builds PHP 8.4 with default extensions |
 | `sudo yerd php remove 8.3` | Remove PHP version | Cleans up completely |
-| **Management** | | |
+
+#### Management
+
+| Command | Description | Example |
+|---------|-------------|---------|
 | `yerd php list` | List available/installed versions | Shows status and updates |
 | `sudo yerd php cli 8.4` | Set CLI version | Makes `php` command use 8.4 |
-| `yerd status` | System status overview | Shows conflicts, paths |
-| **Extensions** | | |
+
+#### Extensions
+
+| Command | Description | Example |
+|---------|-------------|---------|
 | `yerd php extensions 8.3` | View extensions | Shows installed/available |
 | `sudo yerd php extensions add 8.3 mysqli gd` | Add extensions | Rebuilds PHP automatically |
 | `sudo yerd php extensions remove 8.3 curl` | Remove extensions | Smart dependency management |
-| **Maintenance** | | |
+
+#### Maintenance
+
+| Command | Description | Example |
+|---------|-------------|---------|
 | `sudo yerd php rebuild 8.3` | Force rebuild | Useful for troubleshooting |
 | `sudo yerd php update` | Update versions | Gets latest patches |
 | `yerd php doctor` | Diagnostics | Troubleshoot issues |
