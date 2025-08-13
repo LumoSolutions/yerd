@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/LumoSolutions/yerd/internal/utils"
+	"github.com/LumoSolutions/yerd/pkg/extensions"
 )
 
 var availableVersions = []string{"8.1", "8.2", "8.3", "8.4"}
@@ -74,52 +75,8 @@ func GetConfigureFlagsForVersion(majorMinor string, extensions []string) []strin
 
 // getExtensionConfigureFlags converts extension names to their configure flags.
 // extensions: Extension name list. Returns slice of configure flags for enabled extensions.
-func getExtensionConfigureFlags(extensions []string) []string {
-	var flags []string
-
-	extensionFlags := map[string]string{
-		"mbstring":   "--enable-mbstring",
-		"bcmath":     "--enable-bcmath",
-		"opcache":    "--enable-opcache",
-		"curl":       "--with-curl",
-		"openssl":    "--with-openssl",
-		"zip":        "--with-zip",
-		"sockets":    "--enable-sockets",
-		"mysqli":     "--with-mysqli",
-		"pdo-mysql":  "--with-pdo-mysql",
-		"gd":         "--enable-gd",
-		"jpeg":       "--with-jpeg",
-		"freetype":   "--with-freetype",
-		"xml":        "--enable-xml",
-		"json":       "--enable-json",
-		"session":    "--enable-session",
-		"hash":       "--enable-hash",
-		"filter":     "--enable-filter",
-		"pcre":       "--with-pcre-jit",
-		"zlib":       "--with-zlib",
-		"bz2":        "--with-bz2",
-		"iconv":      "--with-iconv",
-		"intl":       "--enable-intl",
-		"pgsql":      "--with-pgsql",
-		"pdo-pgsql":  "--with-pdo-pgsql",
-		"sqlite3":    "--with-sqlite3",
-		"pdo-sqlite": "--with-pdo-sqlite",
-		"fileinfo":   "--enable-fileinfo",
-		"exif":       "--enable-exif",
-		"gettext":    "--with-gettext",
-		"gmp":        "--with-gmp",
-		"ldap":       "--with-ldap",
-		"soap":       "--enable-soap",
-		"ftp":        "--enable-ftp",
-	}
-
-	for _, ext := range extensions {
-		if flag, exists := extensionFlags[ext]; exists {
-			flags = append(flags, flag)
-		}
-	}
-
-	return flags
+func getExtensionConfigureFlags(extList []string) []string {
+	return extensions.GetConfigureFlags(extList)
 }
 
 // getConfigureFlagsForVersion generates configure flags with default extensions for a PHP version.
