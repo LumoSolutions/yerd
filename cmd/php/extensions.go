@@ -2,7 +2,6 @@ package php
 
 import (
 	"fmt"
-	"os"
 	"sort"
 	"strings"
 	"time"
@@ -14,7 +13,6 @@ import (
 	"github.com/LumoSolutions/yerd/pkg/extensions"
 	"github.com/LumoSolutions/yerd/pkg/php"
 	"github.com/fatih/color"
-	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 )
 
@@ -110,7 +108,10 @@ func runAddExtensions(cmd *cobra.Command, args []string) error {
 
 	valid, invalid := extensions.ValidateExtensions(extensionsToAdd)
 	if len(invalid) > 0 {
-		color.New(color.FgRed).Printf("Invalid extensions: %s\n", strings.Join(invalid, ", "))
+		utils.PrintError("Invalid extensions:")
+		utils.PrintExtensionsGrid(invalid)
+		fmt.Println()
+
 		for _, inv := range invalid {
 			suggestions := extensions.SuggestSimilarExtensions(inv)
 			if len(suggestions) > 0 {
@@ -139,21 +140,27 @@ func runAddExtensions(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(alreadyInstalled) > 0 {
-		color.New(color.FgYellow).Printf("Already installed: %s\n", strings.Join(alreadyInstalled, ", "))
+		utils.PrintWarning("Already installed:")
+		sort.Strings(alreadyInstalled)
+		utils.PrintExtensionsGrid(alreadyInstalled)
+		fmt.Println()
 	}
 
 	if len(newExtensions) == 0 {
-		color.New(color.FgYellow).Printf("No new extensions to add for PHP %s\n", phpVersion)
+		utils.PrintWarning("No new extensions to add for PHP %s", phpVersion)
 		return nil
 	}
+
+	utils.PrintInfo("Adding extensions to PHP %s:", phpVersion)
+	sort.Strings(newExtensions)
+	utils.PrintExtensionsGrid(newExtensions)
+	fmt.Println()
 
 	var finalExtensions []string
 	for ext := range currentMap {
 		finalExtensions = append(finalExtensions, ext)
 	}
 	sort.Strings(finalExtensions)
-
-	color.New(color.FgGreen).Printf("Adding extensions to PHP %s: %s\n", phpVersion, strings.Join(newExtensions, ", "))
 
 	return applyExtensionChanges(cfg, phpVersion, finalExtensions)
 }
@@ -201,21 +208,27 @@ func runRemoveExtensions(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(notInstalled) > 0 {
-		color.New(color.FgYellow).Printf("Not installed: %s\n", strings.Join(notInstalled, ", "))
+		utils.PrintWarning("Not installed:")
+		sort.Strings(notInstalled)
+		utils.PrintExtensionsGrid(notInstalled)
+		fmt.Println()
 	}
 
 	if len(removedExtensions) == 0 {
-		color.New(color.FgYellow).Printf("No extensions to remove from PHP %s\n", phpVersion)
+		utils.PrintWarning("No extensions to remove from PHP %s", phpVersion)
 		return nil
 	}
+
+	utils.PrintInfo("Removing extensions from PHP %s:", phpVersion)
+	sort.Strings(removedExtensions)
+	utils.PrintExtensionsGrid(removedExtensions)
+	fmt.Println()
 
 	var finalExtensions []string
 	for ext := range currentMap {
 		finalExtensions = append(finalExtensions, ext)
 	}
 	sort.Strings(finalExtensions)
-
-	color.New(color.FgRed).Printf("Removing extensions from PHP %s: %s\n", phpVersion, strings.Join(removedExtensions, ", "))
 
 	return applyExtensionChanges(cfg, phpVersion, finalExtensions)
 }
@@ -246,7 +259,10 @@ func runReplaceExtensions(cmd *cobra.Command, args []string) error {
 
 	valid, invalid := extensions.ValidateExtensions(newExtensions)
 	if len(invalid) > 0 {
-		color.New(color.FgRed).Printf("Invalid extensions: %s\n", strings.Join(invalid, ", "))
+		utils.PrintError("Invalid extensions:")
+		utils.PrintExtensionsGrid(invalid)
+		fmt.Println()
+
 		for _, inv := range invalid {
 			suggestions := extensions.SuggestSimilarExtensions(inv)
 			if len(suggestions) > 0 {
@@ -261,16 +277,19 @@ func runReplaceExtensions(cmd *cobra.Command, args []string) error {
 	sort.Strings(currentExtensions)
 
 	if fmt.Sprintf("%v", valid) == fmt.Sprintf("%v", currentExtensions) {
-		color.New(color.FgYellow).Printf("Extensions for PHP %s are already set to: %s\n", phpVersion, strings.Join(valid, ", "))
+		utils.PrintWarning("Extensions for PHP %s are already set to:", phpVersion)
+		utils.PrintExtensionsGrid(valid)
 		return nil
 	}
 
-	color.New(color.FgCyan).Printf("Replacing all extensions for PHP %s with: %s\n", phpVersion, strings.Join(valid, ", "))
+	utils.PrintInfo("Replacing all extensions for PHP %s with:", phpVersion)
+	utils.PrintExtensionsGrid(valid)
+	fmt.Println()
 
 	return applyExtensionChanges(cfg, phpVersion, valid)
 }
 
-// listExtensions displays formatted tables of installed and available extensions for a PHP version.
+// listExtensions displays installed and available extensions in grid format for a PHP version.
 // cfg: Configuration object, version: PHP version string. Returns error if version data not found.
 func listExtensions(cfg *config.Config, version string) error {
 	installedExtensions, exists := cfg.GetPHPExtensions(version)
@@ -278,49 +297,20 @@ func listExtensions(cfg *config.Config, version string) error {
 		return fmt.Errorf("no extension information found for PHP %s", version)
 	}
 
-	color.New(color.FgCyan, color.Bold).Printf("PHP %s Extensions\n\n", version)
+	utils.PrintInfo("PHP %s Extensions:", version)
+	fmt.Println()
 
-	color.New(color.FgGreen, color.Bold).Println("✓ INSTALLED:")
+	utils.PrintSuccess("INSTALLED:")
 	if len(installedExtensions) == 0 {
-		color.New(color.FgYellow).Println("  No extensions installed")
+		fmt.Println("  No extensions installed")
 	} else {
-		installedTable := tablewriter.NewWriter(os.Stdout)
-		installedTable.SetHeader([]string{"Extension", "Category", "Description"})
-		installedTable.SetBorder(false)
-		installedTable.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
-		installedTable.SetAlignment(tablewriter.ALIGN_LEFT)
-		installedTable.SetCenterSeparator("")
-		installedTable.SetColumnSeparator("")
-		installedTable.SetRowSeparator("")
-		installedTable.SetHeaderLine(false)
-		installedTable.SetTablePadding("  ")
-		installedTable.SetNoWhiteSpace(true)
-
 		sort.Strings(installedExtensions)
-
-		for _, extName := range installedExtensions {
-			if ext, exists := extensions.AvailableExtensions[extName]; exists {
-				installedTable.Append([]string{
-					color.New(color.FgGreen).Sprint(extName),
-					color.New(color.FgBlue).Sprint(ext.Category),
-					ext.Description,
-				})
-			} else {
-				installedTable.Append([]string{
-					color.New(color.FgRed).Sprint(extName),
-					color.New(color.FgYellow).Sprint("unknown"),
-					"Unknown extension",
-				})
-			}
-		}
-
-		installedTable.Render()
+		utils.PrintExtensionsGrid(installedExtensions)
 	}
 
 	fmt.Println()
 
-	color.New(color.FgBlue, color.Bold).Println("⊡ AVAILABLE:")
-
+	utils.PrintInfo("AVAILABLE:")
 	installedMap := make(map[string]bool)
 	for _, ext := range installedExtensions {
 		installedMap[ext] = true
@@ -334,44 +324,18 @@ func listExtensions(cfg *config.Config, version string) error {
 	}
 
 	if len(availableExtensions) == 0 {
-		color.New(color.FgYellow).Println("  All available extensions are already installed")
+		fmt.Println("  All available extensions are already installed")
 	} else {
-		availableTable := tablewriter.NewWriter(os.Stdout)
-		availableTable.SetHeader([]string{"Extension", "Category", "Description"})
-		availableTable.SetBorder(false)
-		availableTable.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
-		availableTable.SetAlignment(tablewriter.ALIGN_LEFT)
-		availableTable.SetCenterSeparator("")
-		availableTable.SetColumnSeparator("")
-		availableTable.SetRowSeparator("")
-		availableTable.SetHeaderLine(false)
-		availableTable.SetTablePadding("  ")
-		availableTable.SetNoWhiteSpace(true)
-
 		sort.Strings(availableExtensions)
-
-		for _, extName := range availableExtensions {
-			ext := extensions.AvailableExtensions[extName]
-			availableTable.Append([]string{
-				color.New(color.FgWhite).Sprint(extName),
-				color.New(color.FgCyan).Sprint(ext.Category),
-				ext.Description,
-			})
-		}
-
-		availableTable.Render()
+		utils.PrintExtensionsGrid(availableExtensions)
 	}
 
 	fmt.Println()
-	color.New(color.FgMagenta, color.Bold).Println("USAGE:")
-	fmt.Printf("  %s add %s <extension>     # Add extensions\n",
-		color.New(color.FgWhite).Sprint("yerd php extensions"), version)
-	fmt.Printf("  %s remove %s <extension>  # Remove extensions\n",
-		color.New(color.FgWhite).Sprint("yerd php extensions"), version)
-	fmt.Printf("  %s replace %s <extension> # Replace all extensions\n",
-		color.New(color.FgWhite).Sprint("yerd php extensions"), version)
-	fmt.Printf("  %s %s                     # Force rebuild with current extensions\n",
-		color.New(color.FgWhite).Sprint("yerd php rebuild"), version)
+	utils.PrintInfo("USAGE:")
+	fmt.Printf("  yerd php extensions add %s <extension>     # Add extensions\n", version)
+	fmt.Printf("  yerd php extensions remove %s <extension>  # Remove extensions\n", version)
+	fmt.Printf("  yerd php extensions replace %s <extension> # Replace all extensions\n", version)
+	fmt.Printf("  yerd php rebuild %s                        # Force rebuild with current extensions\n", version)
 
 	return nil
 }
@@ -405,7 +369,7 @@ func applyExtensionChanges(cfg *config.Config, version string, extensions []stri
 
 	err := rebuildPHPWithExtensions(version, extensions)
 	done <- true
-	fmt.Print("\r")
+	fmt.Print("\r\033[K") // Clear the entire line
 
 	if err != nil {
 		color.New(color.FgRed).Printf("✗ Failed to rebuild PHP %s: %v\n", version, err)
@@ -426,7 +390,7 @@ func applyExtensionChanges(cfg *config.Config, version string, extensions []stri
 		color.New(color.FgRed).Printf("⚠️  Warning: Build succeeded but failed to save configuration: %v\n", err)
 	}
 
-	color.New(color.FgGreen).Printf("✓ Successfully updated PHP %s extensions: %s\n", version, strings.Join(extensions, ", "))
+	color.New(color.FgGreen).Printf("✓ Successfully updated PHP %s extensions\n", version)
 	return nil
 }
 

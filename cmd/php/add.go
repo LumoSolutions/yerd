@@ -7,6 +7,7 @@ import (
 	"github.com/LumoSolutions/yerd/internal/installer"
 	"github.com/LumoSolutions/yerd/internal/utils"
 	"github.com/LumoSolutions/yerd/internal/version"
+	"github.com/LumoSolutions/yerd/pkg/constants"
 	"github.com/LumoSolutions/yerd/pkg/php"
 	"github.com/spf13/cobra"
 )
@@ -48,9 +49,13 @@ func runAdd(cmd *cobra.Command, args []string) {
 
 	uncached, _ := cmd.Flags().GetBool("uncached")
 
-	fmt.Printf("Installing PHP %s...\n", phpVersion)
+	fmt.Printf("Installing PHP %s with extensions:\n", phpVersion)
+	utils.PrintExtensionsGrid(constants.DefaultPHPExtensions)
+	fmt.Println()
+	
 	if uncached {
 		fmt.Printf("ℹ️  Bypassing cache to get latest version information\n")
+		fmt.Println()
 	}
 
 	err := installer.InstallPHP(phpVersion, uncached)
@@ -63,3 +68,4 @@ func runAdd(cmd *cobra.Command, args []string) {
 
 	fmt.Printf("✓ PHP %s installed successfully\n", phpVersion)
 }
+

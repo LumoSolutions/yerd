@@ -2,7 +2,6 @@ package php
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/LumoSolutions/yerd/internal/builder"
 	"github.com/LumoSolutions/yerd/internal/config"
@@ -66,7 +65,9 @@ func runRebuild(cmd *cobra.Command, args []string) error {
 		cfg.UpdatePHPExtensions(phpVersion, currentExtensions)
 	}
 
-	utils.PrintInfo("Rebuilding PHP %s with extensions: %s", phpVersion, strings.Join(currentExtensions, ", "))
+	utils.PrintInfo("Rebuilding PHP %s with extensions:", phpVersion)
+	utils.PrintExtensionsGrid(currentExtensions)
+	fmt.Println()
 
 	if err := forceRebuildPHP(cfg, phpVersion, currentExtensions); err != nil {
 		return nil
@@ -79,6 +80,7 @@ func runRebuild(cmd *cobra.Command, args []string) error {
 // cfg: Configuration object, version: PHP version to rebuild, extensions: Extensions to include.
 func forceRebuildPHP(cfg *config.Config, version string, extensions []string) error {
 	utils.PrintWarning("Force rebuilding PHP (no configuration backup needed)...")
+	fmt.Println()
 
 	spinner := utils.NewLoadingSpinner(fmt.Sprintf("Building PHP %s with extensions", version))
 	spinner.Start()
@@ -93,13 +95,18 @@ func forceRebuildPHP(cfg *config.Config, version string, extensions []string) er
 
 	if err != nil {
 		spinner.Stop("✗ Build failed")
+		logPath := phpBuilder.GetLogPath()
 		utils.PrintError("Failed to rebuild PHP %s: %v", version, err)
+		if logPath != "" {
+			utils.PrintError("Detailed build logs available at: %s", logPath)
+		}
 		phpBuilder.Cleanup()
 		return fmt.Errorf("rebuild failed")
 	}
 
 	spinner.Stop("✓ Build complete")
 
+	utils.PrintSuccess("All dependencies satisfied")
 	utils.PrintInfo("Updating configuration...")
 	if err := cfg.Save(); err != nil {
 		utils.PrintWarning("Warning: Rebuild succeeded but failed to save configuration: %v", err)
@@ -107,6 +114,6 @@ func forceRebuildPHP(cfg *config.Config, version string, extensions []string) er
 
 	phpBuilder.CleanupSuccess()
 
-	utils.PrintSuccess("Successfully rebuilt PHP %s with extensions: %s", version, strings.Join(extensions, ", "))
+	utils.PrintSuccess("Successfully rebuilt PHP %s", version)
 	return nil
 }
