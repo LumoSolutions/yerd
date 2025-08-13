@@ -205,7 +205,10 @@ func updateConfiguration(cfg *config.Config, version string, logger *utils.Logge
 	utils.SafeLog(logger, "Updating YERD configuration...")
 
 	installPath := php.GetInstallPath(version)
-	cfg.AddInstalledPHP(version, installPath)
+	
+	// Get default extensions for new installation
+	defaultExtensions := getDefaultExtensions()
+	cfg.AddInstalledPHPWithExtensions(version, installPath, defaultExtensions)
 
 	if err := cfg.Save(); err != nil {
 		utils.SafeLog(logger, "Failed to save config: %v", err)
@@ -213,9 +216,26 @@ func updateConfiguration(cfg *config.Config, version string, logger *utils.Logge
 	}
 
 	utils.SafeLog(logger, "Configuration updated successfully")
-	utils.SafeLog(logger, "PHP %s installation completed successfully!", version)
+	utils.SafeLog(logger, "PHP %s installation completed with extensions: %v", version, defaultExtensions)
 
 	return nil
+}
+
+func getDefaultExtensions() []string {
+	return []string{
+		"mbstring",
+		"bcmath", 
+		"opcache",
+		"curl",
+		"openssl",
+		"zip",
+		"sockets",
+		"mysqli",
+		"pdo-mysql",
+		"gd",
+		"jpeg",
+		"freetype",
+	}
 }
 
 func installFromSource(versionInfo php.VersionInfo, logger *utils.Logger) error {

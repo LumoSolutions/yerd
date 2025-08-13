@@ -47,8 +47,8 @@ func GetVersionInfoWithDownloadURL(version, downloadURL, fullVersion string) (Ve
 	return VersionInfo{}, false
 }
 
-func getConfigureFlagsForVersion(majorMinor string) []string {
-	return []string{
+func GetConfigureFlagsForVersion(majorMinor string, extensions []string) []string {
+	baseFlags := []string{
 		fmt.Sprintf("--prefix=%s/php%s", utils.YerdPHPDir, majorMinor),
 		fmt.Sprintf("--with-config-file-path=%s/php%s", utils.YerdEtcDir, majorMinor),
 		fmt.Sprintf("--with-config-file-scan-dir=%s/php%s/conf.d", utils.YerdEtcDir, majorMinor),
@@ -56,19 +56,71 @@ func getConfigureFlagsForVersion(majorMinor string) []string {
 		"--with-fpm-user=http",
 		"--with-fpm-group=http",
 		"--enable-cli",
-		"--enable-mbstring",
-		"--enable-bcmath",
-		"--enable-opcache",
-		"--with-curl",
-		"--with-openssl",
-		"--with-zip",
-		"--enable-sockets",
-		"--with-mysqli",
-		"--with-pdo-mysql",
-		"--enable-gd",
-		"--with-jpeg",
-		"--with-freetype",
 	}
+	
+	// Get extension-specific configure flags
+	extensionFlags := getExtensionConfigureFlags(extensions)
+	
+	return append(baseFlags, extensionFlags...)
+}
+
+func getExtensionConfigureFlags(extensions []string) []string {
+	var flags []string
+	
+	// Extension to configure flag mapping
+	extensionFlags := map[string]string{
+		"mbstring":    "--enable-mbstring",
+		"bcmath":      "--enable-bcmath",
+		"opcache":     "--enable-opcache",
+		"curl":        "--with-curl",
+		"openssl":     "--with-openssl",
+		"zip":         "--with-zip",
+		"sockets":     "--enable-sockets",
+		"mysqli":      "--with-mysqli",
+		"pdo-mysql":   "--with-pdo-mysql",
+		"gd":          "--enable-gd",
+		"jpeg":        "--with-jpeg",
+		"freetype":    "--with-freetype",
+		"xml":         "--enable-xml",
+		"json":        "--enable-json",
+		"session":     "--enable-session",
+		"hash":        "--enable-hash",
+		"filter":      "--enable-filter",
+		"pcre":        "--with-pcre-jit",
+		"zlib":        "--with-zlib",
+		"bz2":         "--with-bz2",
+		"iconv":       "--with-iconv",
+		"intl":        "--enable-intl",
+		"pgsql":       "--with-pgsql",
+		"pdo-pgsql":   "--with-pdo-pgsql",
+		"sqlite3":     "--with-sqlite3",
+		"pdo-sqlite":  "--with-pdo-sqlite",
+		"fileinfo":    "--enable-fileinfo",
+		"exif":        "--enable-exif",
+		"gettext":     "--with-gettext",
+		"gmp":         "--with-gmp",
+		"ldap":        "--with-ldap",
+		"soap":        "--enable-soap",
+		"ftp":         "--enable-ftp",
+	}
+	
+	for _, ext := range extensions {
+		if flag, exists := extensionFlags[ext]; exists {
+			flags = append(flags, flag)
+		}
+	}
+	
+	return flags
+}
+
+// Backward compatibility for existing code
+func getConfigureFlagsForVersion(majorMinor string) []string {
+	// Default extensions for backward compatibility
+	defaultExtensions := []string{
+		"mbstring", "bcmath", "opcache", "curl", "openssl", 
+		"zip", "sockets", "mysqli", "pdo-mysql", "gd", "jpeg", "freetype",
+	}
+	return GetConfigureFlagsForVersion(majorMinor, defaultExtensions)
 }
 
 func GetLatestVersionInfo(majorMinor string, latestVersions, downloadURLs map[string]string) (VersionInfo, bool) {

@@ -112,6 +112,25 @@ func GetUserConfigDir() (string, error) {
 	return filepath.Join(userCtx.HomeDir, ".config", "yerd"), nil
 }
 
+func GetSudoUserIDs(sudoUser string) (int, int, error) {
+	realUser, err := user.Lookup(sudoUser)
+	if err != nil {
+		return 0, 0, err
+	}
+	
+	uid, err := strconv.Atoi(realUser.Uid)
+	if err != nil {
+		return 0, 0, err
+	}
+	
+	gid, err := strconv.Atoi(realUser.Gid)
+	if err != nil {
+		return 0, 0, err
+	}
+	
+	return uid, gid, nil
+}
+
 func CheckAndPromptForSudo(operation, command string, args ...string) bool {
 	if err := CheckInstallPermissions(); err != nil {
 		fmt.Printf("❌ Error: %s requires elevated permissions\n", operation)

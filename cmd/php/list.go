@@ -79,7 +79,7 @@ func getUpdateStatus(cfg *config.Config) map[string]bool {
 
 func renderTable(data *listData) {
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"VERSION", "INSTALLED", "CLI", "UPDATES"})
+	table.SetHeader([]string{"VERSION", "INSTALLED", "CLI", "EXTENSIONS", "UPDATES"})
 	
 	for _, ver := range data.availableVersions {
 		row := buildTableRow(ver, data)
@@ -92,9 +92,10 @@ func renderTable(data *listData) {
 func buildTableRow(ver string, data *listData) []string {
 	installed := getInstallStatus(ver, data.cfg)
 	cli := getCLIStatus(ver, data.cfg)
+	extensions := getExtensionsStatus(ver, data.cfg)
 	updates := getVersionUpdateStatus(ver, data)
 	
-	return []string{fmt.Sprintf("PHP %s", ver), installed, cli, updates}
+	return []string{fmt.Sprintf("PHP %s", ver), installed, cli, extensions, updates}
 }
 
 func getInstallStatus(ver string, cfg *config.Config) string {
@@ -109,6 +110,19 @@ func getCLIStatus(ver string, cfg *config.Config) string {
 		return "*"
 	}
 	return ""
+}
+
+func getExtensionsStatus(ver string, cfg *config.Config) string {
+	if info, exists := cfg.InstalledPHP[ver]; exists {
+		if len(info.Extensions) == 0 {
+			return "None"
+		}
+		if len(info.Extensions) == 1 {
+			return fmt.Sprintf("1: %s", info.Extensions[0])
+		}
+		return fmt.Sprintf("%d extensions", len(info.Extensions))
+	}
+	return "N/A"
 }
 
 func getVersionUpdateStatus(ver string, data *listData) string {

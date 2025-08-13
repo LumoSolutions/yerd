@@ -18,4 +18,6 @@ func init() {
 	phpCmd.AddCommand(php.ListCmd)
 	phpCmd.AddCommand(php.DoctorCmd)
 	phpCmd.AddCommand(php.UpdateCmd)
+	phpCmd.AddCommand(php.RebuildCmd)
+	phpCmd.AddCommand(php.ExtensionsCmd)
 }

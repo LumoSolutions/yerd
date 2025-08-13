@@ -5,13 +5,36 @@ import (
 	"os"
 	"strings"
 
+	"github.com/LumoSolutions/yerd/internal/dependencies"
 	"github.com/LumoSolutions/yerd/internal/utils"
 	"github.com/LumoSolutions/yerd/pkg/php"
 )
 
 func buildAndInstall(versionInfo php.VersionInfo, sourceDir string, logger *utils.Logger) error {
 	utils.SafeLog(logger, "Starting build process in: %s", sourceDir)
-	utils.SafeLog(logger, "Configure flags: %v", versionInfo.ConfigureFlags)
+	
+	// Use default extensions for new installations
+	defaultExtensions := []string{
+		"mbstring", "bcmath", "opcache", "curl", "openssl", "zip", 
+		"sockets", "mysqli", "pdo-mysql", "gd", "jpeg", "freetype",
+	}
+	
+	// Install extension dependencies
+	depMgr, err := dependencies.NewDependencyManager()
+	if err != nil {
+		utils.SafeLog(logger, "Failed to initialize dependency manager: %v", err)
+		return fmt.Errorf("failed to initialize dependency manager: %v", err)
+	}
+	
+	utils.SafeLog(logger, "Installing extension dependencies for: %v", defaultExtensions)
+	if err := depMgr.InstallExtensionDependencies(defaultExtensions); err != nil {
+		utils.SafeLog(logger, "Failed to install extension dependencies: %v", err)
+		return fmt.Errorf("failed to install extension dependencies: %v", err)
+	}
+	
+	configureFlags := php.GetConfigureFlagsForVersion(versionInfo.Version, defaultExtensions)
+	utils.SafeLog(logger, "Configure flags: %v", configureFlags)
+	utils.SafeLog(logger, "Extensions: %v", defaultExtensions)
 	
 	oldDir, err := os.Getwd()
 	if err != nil {
@@ -24,7 +47,7 @@ func buildAndInstall(versionInfo php.VersionInfo, sourceDir string, logger *util
 		return fmt.Errorf("failed to change to source directory: %v", err)
 	}
 	
-	if err := configureSource(versionInfo, logger); err != nil {
+	if err := configureSource(configureFlags, logger); err != nil {
 		return err
 	}
 	
@@ -39,13 +62,14 @@ func buildAndInstall(versionInfo php.VersionInfo, sourceDir string, logger *util
 	return nil
 }
 
-func configureSource(versionInfo php.VersionInfo, logger *utils.Logger) error {
-	utils.SafeLog(logger, "Running ./configure with flags: %v", versionInfo.ConfigureFlags)
+
+func configureSource(configureFlags []string, logger *utils.Logger) error {
+	utils.SafeLog(logger, "Running ./configure with flags: %v", configureFlags)
 	
 	spinner := utils.NewLoadingSpinner("Configuring build...")
 	spinner.Start()
 	
-	args := append([]string{"./configure"}, versionInfo.ConfigureFlags...)
+	args := append([]string{"./configure"}, configureFlags...)
 	output, err := utils.ExecuteCommand("bash", args...)
 	if err != nil {
 		spinner.Stop("❌ Configure failed")

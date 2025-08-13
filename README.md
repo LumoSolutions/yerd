@@ -1,4 +1,4 @@
-# YERD - A powerful, developer-friendly tool for managing PHP versions
+# YERD - PHP Version Manager for Linux
 
 <div align="center">
 
@@ -17,541 +17,248 @@ https://github.com/LumoSolutions/yerd
 
 ---
 
-## 🎯 Purpose
+## 🎯 What is YERD?
 
-YERD is designed to solve two key challenges:
+YERD is a Linux PHP version manager that compiles PHP from official source code, giving you complete control over your PHP installations. Perfect for both production servers and development environments.
 
-1. **Production Server Management**: Install and manage multiple PHP versions on Linux servers for different applications and projects
-2. **Development Environment Control**: Easily switch between PHP versions on development machines for testing and compatibility
+**Key Benefits:**
+- 🚀 **Multiple PHP versions** running simultaneously
+- ⚡ **Instant CLI switching** between versions  
+- 🛡️ **Safe isolation** - never conflicts with system PHP
+- 🧩 **Rich extension support** with automatic dependencies
+- 🏗️ **Source-based builds** for maximum reliability
+- 🌐 **Multi-distro support** - works on all major Linux distributions
 
-Built by **LumoSolutions**, YERD compiles PHP from official source code, ensuring complete control and reliability without depending on external package repositories.
+## 🚀 Quick Start
 
-**🚀 Coming Soon**: NGINX configuration management and site linking/unlinking functionality for complete web server environment control.
-
-**Cross-platform Linux compatibility** with automatic dependency management for all major distributions.
-
-## ✨ Features
-
-### Core Features
-- 🚀 **Install and manage multiple PHP versions simultaneously**
-- ⚡ **Switch PHP CLI versions instantly with simple commands**
-- 🪶 **Lightweight and fast - no unnecessary overhead**
-- 👨‍💻 **Developer friendly**
-
-### Installation & Management
-- 🏗️ **Build from official PHP source** - Direct from php.net for maximum reliability
-- 🔄 **Dynamic version fetching** - Automatically fetches latest PHP versions from php.net
-- 📊 **Update checking** - Shows available updates for installed PHP versions
-- 🧹 **Clean removal** of PHP versions with complete directory cleanup
-- 🔄 **Zero-downtime updates** - Update PHP versions safely with automatic rollback
-- 🌐 **Isolated installations** - Each version in separate `/opt/yerd/php/phpX.X/` directories
-- 🛠️ **Multi-distro dependency management** - Automatically installs build tools on all major Linux distributions
-- 📦 **Rich PHP extensions** - Built-in support for MySQL, GD, cURL, OpenSSL, and more
-- 🎯 **Multi-core compilation** - Uses all CPU cores for faster builds
-- ⚡ **Intelligent caching** - Hourly refresh of version data to minimize API requests
-- 🌐 **Real-time updates** - Always installs the latest patch versions automatically
-- 🤖 **Automation support** - `-y` flag for unattended updates in scripts and CI/CD
-- 🛡️ **Enterprise-grade reliability** - Install-first, cleanup-after update strategy
-
-### Safety & Security
-- 🛡️ **System PHP conflict protection** - Never overwrites existing installations
-- 🔒 **Safe removal** - Confirms before removing current CLI versions
-- 🔐 **Secure privilege handling** - Build processes run as user, minimal root usage
-- 🔍 **Intelligent binary detection** - Finds PHP binaries in installation directories
-
-### User Experience
-- 🎨 **Beautiful CLI interface** - Colored output, ASCII art, and loading spinners
-- ⏳ **Visual build progress** - Loading indicators for download, configure, compile, and install phases
-- 📊 **System status monitoring** - Comprehensive conflict detection and build environment checks
-- 🩺 **Advanced diagnostics** - Troubleshoot installation issues with `yerd php doctor`
-- 📝 **Comprehensive logging** - Detailed build logs with automatic cleanup on success
-
-## 🚀 Coming Soon
-
-- 🌐 **NGINX Configuration Management** - Automatic NGINX setup and configuration
-- 🔗 **Site Linking/Unlinking** - Easy website deployment and management
-- 📂 **Virtual Host Management** - Create and manage multiple sites per PHP version
-- 🔧 **Development Environment Presets** - Quick setup for common development scenarios
-
-## 📋 Requirements
-
-- **Operating System**: Linux (any distribution)
-- **Build Tools**: Automatically detected and installed per distribution
-- **Permissions**: `sudo` access for system-wide operations
-- **Development Libraries**: Automatically installed during first PHP build
-- **For Building YERD**: Go 1.21+ (optional - only for building YERD from source)
-- **Internet Connection**: Required for downloading PHP source code and checking for updates
-
-## 🐧 Linux Distribution Compatibility
-
-YERD now supports automatic dependency management across all major Linux distributions:
-
-| Distribution | Support Level | Package Manager | Auto-Install |
-|--------------|---------------|----------------|--------------|
-| **ArchLinux** | ✅ Full | pacman | ✅ Yes |
-| **Manjaro** | ✅ Full | pacman | ✅ Yes |
-| **Ubuntu** | ✅ Full | apt | ✅ Yes |
-| **Debian** | ✅ Full | apt | ✅ Yes |
-| **Fedora** | ✅ Full | dnf | ✅ Yes |
-| **RHEL/CentOS** | ✅ Full | yum | ✅ Yes |
-| **openSUSE** | ✅ Full | zypper | ✅ Yes |
-
-**Automatic dependency installation**: YERD automatically detects your distribution and installs the correct build dependencies using your system's package manager. No manual setup required!
-
-## 🚀 Quick Installation
-
-### Option 1: One-Line Install (Recommended)
-
-The installation script automatically detects your system and handles all setup:
+### Installation (One Command)
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/LumoSolutions/yerd/main/install.sh | bash
 ```
 
-**Alternative with wget:**
-```bash
-wget -qO- https://raw.githubusercontent.com/LumoSolutions/yerd/main/install.sh | bash
-```
-
-**Smart installer features:**
-- 🔍 Auto-detects Linux distribution and architecture
-- ⚠️ Checks for existing YERD installation (prompts before overwrite)
-- 📦 Downloads latest release automatically
-- 🔧 Creates necessary directories with proper permissions
-- ✅ Verifies installation and provides next steps
-
-### Option 2: Manual Installation
-
-1. Go to the [Releases](https://github.com/LumoSolutions/yerd/releases) page
-2. Download the appropriate binary for your system
-3. Extract and install:
+### Basic Usage
 
 ```bash
-# Download latest release (check releases page for current version)
-wget https://github.com/LumoSolutions/yerd/releases/latest/download/yerd_VERSION_linux_amd64.tar.gz
-tar -xzf yerd_VERSION_linux_amd64.tar.gz
+# Install PHP 8.4
+sudo yerd php add 8.4
 
-# Install system-wide
-sudo mv yerd /usr/local/bin/yerd
-sudo chmod +x /usr/local/bin/yerd
-
-# Create YERD directories
-sudo mkdir -p /opt/yerd/{bin,php,etc}
+# Set as default CLI version  
+sudo yerd php cli 8.4
 
 # Verify installation
-yerd --version
-yerd status
-```
+php -v  # PHP 8.4.11 (cli)
 
-### Option 3: Install Script with Custom Options
-
-```bash
-# Download install script
-wget https://raw.githubusercontent.com/LumoSolutions/yerd/main/install.sh
-chmod +x install.sh
-
-# Install latest version
-./install.sh
-
-# Install specific version
-./install.sh --version 1.0.2
-
-# Show help
-./install.sh --help
-```
-
-### ✅ Post-Installation Verification
-
-After successful installation, verify YERD is working correctly:
-
-```bash
-# Check installation
-yerd --version
-
-# View system status
-yerd status  
-
-# Test with help
-yerd --help
-yerd php --help
-
-# Check available PHP versions
+# View all versions
 yerd php list
 ```
 
-**Expected output:** You should see the YERD splash screen and version information without errors.
+## 📋 System Requirements
 
-**Troubleshooting:**
-- If `yerd` command is not found, ensure `/usr/local/bin` is in your PATH
-- Add to your shell profile: `export PATH="/usr/local/bin:$PATH"`
-- Reload shell: `source ~/.bashrc` or restart terminal
+- **OS**: Any Linux distribution (Ubuntu, Debian, Arch, Fedora, RHEL, openSUSE, etc.)
+- **Permissions**: `sudo` access for installation operations
+- **Dependencies**: Automatically installed based on your distribution
+- **Internet**: Required for downloading PHP source and updates
+
+## 💻 Core Commands
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| **Installation** | | |
+| `sudo yerd php add 8.4` | Install PHP version from source | Builds PHP 8.4 with default extensions |
+| `sudo yerd php remove 8.3` | Remove PHP version | Cleans up completely |
+| **Management** | | |
+| `yerd php list` | List available/installed versions | Shows status and updates |
+| `sudo yerd php cli 8.4` | Set CLI version | Makes `php` command use 8.4 |
+| `yerd status` | System status overview | Shows conflicts, paths |
+| **Extensions** | | |
+| `yerd php extensions 8.3` | View extensions | Shows installed/available |
+| `sudo yerd php extensions add 8.3 mysqli gd` | Add extensions | Rebuilds PHP automatically |
+| `sudo yerd php extensions remove 8.3 curl` | Remove extensions | Smart dependency management |
+| **Maintenance** | | |
+| `sudo yerd php rebuild 8.3` | Force rebuild | Useful for troubleshooting |
+| `sudo yerd php update` | Update versions | Gets latest patches |
+| `yerd php doctor` | Diagnostics | Troubleshoot issues |
+
+## 🧩 Extension Management
+
+YERD includes a powerful extension system with 40+ supported extensions:
+
+**Popular Extensions:**
+- **Database**: `mysqli`, `pdo-mysql`, `pgsql`, `sqlite3`
+- **Graphics**: `gd`, `jpeg`, `freetype`, `exif`  
+- **Network**: `curl`, `openssl`, `sockets`
+- **Core**: `mbstring`, `opcache`, `zip`, `json`
+
+**Smart Features:**
+- 📦 **Auto-dependencies**: Installs required system packages automatically
+- 🔄 **Configuration rollback**: Reverts changes if build fails
+- 🌐 **Multi-distro support**: Works across all Linux distributions
+- ⚡ **Smart rebuilding**: Only rebuilds when extensions change
+
+```bash
+# View extensions for PHP 8.3
+yerd php extensions 8.3
+
+# Add extensions (rebuilds PHP automatically)
+sudo yerd php extensions add 8.3 mysqli gd curl
+
+# Replace all extensions with specific list
+sudo yerd php extensions replace 8.3 mbstring opcache curl
+```
+
+## 🔧 Advanced Features
+
+### Multi-Distribution Support
+
+YERD automatically detects your Linux distribution and installs appropriate dependencies:
+
+| Distribution | Package Manager | Example Extensions |
+|--------------|----------------|-------------------|
+| Ubuntu/Debian | `apt` | `libgd-dev`, `libcurl4-openssl-dev` |
+| Arch/Manjaro | `pacman` | `gd`, `curl` |
+| Fedora/RHEL | `dnf`/`yum` | `gd-devel`, `libcurl-devel` |
+| openSUSE | `zypper` | `gd-devel`, `libcurl-devel` |
+
+### Safety Features
+
+- **🛡️ System Protection**: Never overwrites existing PHP installations
+- **🔐 Privilege Separation**: Build processes run as user, not root
+- **📸 Configuration Backup**: Automatic rollback if extension changes fail
+- **🔍 Conflict Detection**: Warns about system PHP conflicts before installation
+
+### Performance Optimizations
+
+- **🚀 Multi-core compilation**: Uses all CPU cores for faster builds
+- **⚡ Smart caching**: Minimizes API requests with intelligent version caching
+- **📦 Parallel downloads**: Efficient source code retrieval
+- **🧹 Automatic cleanup**: Removes temporary files after successful builds
+
+## 🗂️ File Locations
+
+```
+/opt/yerd/                      # Main directory
+├── php/                        # PHP installations
+│   ├── php8.3/                # PHP 8.3 installation
+│   └── php8.4/                # PHP 8.4 installation
+├── bin/                        # YERD-managed binaries
+│   ├── php8.3 -> /opt/yerd/php/php8.3/bin/php
+│   └── php8.4 -> /opt/yerd/php/php8.4/bin/php
+└── etc/                        # Configuration files
+
+/usr/local/bin/                 # Global symlinks
+├── php -> /opt/yerd/bin/php8.4 # Current CLI version
+├── php8.3 -> /opt/yerd/bin/php8.3
+└── php8.4 -> /opt/yerd/bin/php8.4
+
+~/.config/yerd/config.json      # User configuration
+```
+
+## 🚀 Common Workflows
+
+### Development Environment Setup
+
+```bash
+# Install multiple PHP versions for testing
+sudo yerd php add 8.1
+sudo yerd php add 8.2
+sudo yerd php add 8.3
+sudo yerd php add 8.4
+
+# Set 8.3 as default CLI
+sudo yerd php cli 8.3
+
+# Test with different versions
+php8.1 -v  # PHP 8.1.x
+php8.2 -v  # PHP 8.2.x
+php8.3 -v  # PHP 8.3.x (also available as 'php')
+php8.4 -v  # PHP 8.4.x
+```
+
+### Production Server Management
+
+```bash
+# Install specific version for production
+sudo yerd php add 8.3
+
+# Add production extensions
+sudo yerd php extensions add 8.3 mysqli pdo-mysql opcache gd curl openssl
+
+# Set as CLI version
+sudo yerd php cli 8.3
+
+# Monitor and update
+yerd status
+sudo yerd php update -y
+```
+
+### Extension Development
+
+```bash
+# Add development extensions
+sudo yerd php extensions add 8.3 mysqli gd curl json xml
+
+# Force rebuild after system updates
+sudo yerd php rebuild 8.3
+
+# Troubleshoot issues
+yerd php doctor 8.3
+```
+
+## 🔍 Troubleshooting
+
+### Common Issues
+
+1. **Build failures**: Run `yerd php doctor <version>` for diagnostics
+2. **Permission errors**: Ensure you're using `sudo` for installation commands
+3. **System conflicts**: Use `yerd status` to check for existing PHP installations
+4. **Extension issues**: Check logs in `~/.config/yerd/` directory
+
+### Getting Help
+
+```bash
+# General diagnostics
+yerd php doctor
+
+# Version-specific diagnostics  
+yerd php doctor 8.3
+
+# System status
+yerd status
+
+# Command help
+yerd --help
+yerd php --help
+yerd php extensions --help
+```
 
 ## 🏗️ Building from Source
 
-**Requirements:**
-- Go 1.21+ installed
-- Git for cloning the repository
-- Build tools (gcc, make) - usually pre-installed
+If you want to build YERD yourself:
 
 ```bash
-# Clone the repository
 git clone https://github.com/LumoSolutions/yerd.git
 cd yerd
-
-# Install dependencies and build
 go mod tidy
 go build -o yerd .
-
-# Install system-wide
 sudo cp yerd /usr/local/bin/yerd
-sudo chmod +x /usr/local/bin/yerd
-
-# Create YERD directories
-sudo mkdir -p /opt/yerd/{bin,php,etc}
-
-# Verify installation
-yerd --help
-yerd status
 ```
 
-## 💻 Usage
+## 🤝 Contributing
 
-YERD provides a clean, intuitive command-line interface with beautiful colored output:
+We welcome contributions! Please see our [contributing guidelines](CONTRIBUTING.md) for details.
 
-```bash
-$ yerd
-██╗   ██╗███████╗██████╗ ██████╗ 
-╚██╗ ██╔╝██╔════╝██╔══██╗██╔══██╗
- ╚████╔╝ █████╗  ██████╔╝██║  ██║
-  ╚██╔╝  ██╔══╝  ██╔══██╗██║  ██║
-   ██║   ███████╗██║  ██║██████╔╝
-   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═════╝
-                     vX.X.X
+## 📄 License
 
-A powerful, developer-friendly tool for managing PHP versions
-and local development environments with ease
+MIT License - see [LICENSE](LICENSE) file for details.
 
-https://github.com/LumoSolutions/yerd
-```
+## 🔗 Links
 
-### 📝 Commands
-
-**Top-Level Commands:**
-| Command | Description | Requires Sudo | Example |
-|---------|-------------|---------------|---------|
-| `yerd` | Show splash screen and help | No | `yerd` |
-| `yerd status` | Show system status and build environment | No | `yerd status` |
-| `yerd php` | Manage PHP versions (see PHP commands below) | Varies | `yerd php --help` |
-
-**PHP Management Commands:**
-| Command | Description | Requires Sudo | Example |
-|---------|-------------|---------------|---------|
-| `yerd php list` | List available and installed PHP versions | No | `yerd php list` |
-| `yerd php add <version>` | Build and install PHP from source | Yes | `sudo yerd php add 8.4` |
-| `yerd php remove <version>` | Remove an installed PHP version | Yes | `sudo yerd php remove 8.3` |
-| `yerd php cli <version>` | Set default CLI PHP version | Yes | `sudo yerd php cli 8.4` |
-| `yerd php update [version]` | Update PHP versions to latest releases | Yes | `sudo yerd php update 8.4` |
-| `yerd php doctor [version]` | Diagnose installations and environment | No | `yerd php doctor 8.3` |
-
-**Version Format Flexibility:**
-- ✅ **Short format**: `8.4`, `8.3`, `8.2`
-- ✅ **With prefix**: `php8.4`, `php8.3`, `php8.2`
-- ✅ **Case insensitive**: `PHP8.4`, `Php8.3`
-
-📝 **Build Logging**: The `add` command creates detailed build logs in `~/.config/yerd/` that are automatically deleted on success or preserved for troubleshooting on failure.
-
-🚫 **Cache Bypass**: Use `-u` flag with `add` command to bypass version cache and get fresh data from PHP.net.
-
-### 🚀 Quick Start Example
-
-```bash
-# 1. Check system status
-$ yerd status
-██╗   ██╗███████╗██████╗ ██████╗ 
-╚██╗ ██╔╝██╔════╝██╔══██╗██╔══██╗
- ╚████╔╝ █████╗  ██████╔╝██║  ██║
-  ╚██╔╝  ██╔══╝  ██╔══██╗██║  ██║
-   ██║   ███████╗██║  ██║██████╔╝
-   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═════╝
-                     vX.X.X
-
-📊 YERD Status
-├─ Installed versions: 0
-├─ Current CLI: None set
-└─ Config: ~/.config/yerd/config.json
-
-🔍 System PHP Check
-└─ ✅ No conflicts - ready for YERD management
-
-# 2. Check what's available
-$ yerd php list
-██╗   ██╗███████╗██████╗ ██████╗ 
-╚██╗ ██╔╝██╔════╝██╔══██╗██╔══██╗
- ╚████╔╝ █████╗  ██████╔╝██║  ██║
-  ╚██╔╝  ██╔══╝  ██╔══██╗██║  ██║
-   ██║   ███████╗██║  ██║██████╔╝
-   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═════╝
-                     vX.X.X
-
-+---------+-----------+-----+----------------+
-| VERSION | INSTALLED | CLI |    UPDATES     |
-+---------+-----------+-----+----------------+
-| PHP 8.1 | No        |     | Latest: 8.1.31 |
-| PHP 8.2 | No        |     | Latest: 8.2.29 |
-| PHP 8.3 | No        |     | Latest: 8.3.15 |
-| PHP 8.4 | No        |     | Latest: 8.4.11 |
-+---------+-----------+-----+----------------+
-
-# 3. Install PHP 8.4 (note: flexible version format)
-$ sudo yerd php add 8.4
-██╗   ██╗███████╗██████╗ ██████╗ 
-╚██╗ ██╔╝██╔════╝██╔══██╗██╔══██╗
- ╚████╔╝ █████╗  ██████╔╝██║  ██║
-  ╚██╔╝  ██╔══╝  ██╔══██╗██║  ██║
-   ██║   ███████╗██║  ██║██████╔╝
-   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═════╝
-                     vX.X.X
-
-📦 Installing latest PHP 8.4: 8.4.11
-📋 Detected: Arch Linux
-⚠️  Installing build dependencies...
-✓ Build dependencies installed
-Building PHP 8.4 from source...
-[/] Downloading php-8.4.11.tar.gz...
-✓ Download complete
-[|] Extracting source code...
-✓ Source extracted
-[-] Configuring build...
-✓ Configure complete
-[\] Building PHP (this may take several minutes)...
-✓ Build complete
-[/] Installing PHP...
-✓ Install complete
-✓ PHP 8.4 built and installed successfully
-[|] Locating PHP 8.4 binary...
-✓ Found PHP binary at: /opt/yerd/php/php8.4/bin/php
-[-] Creating symlinks...
-✓ Symlinks created successfully
-✓ PHP installation verified
-✓ Default php.ini created
-✓ PHP 8.4 installed successfully
-
-# 4. Set as default CLI version
-$ sudo yerd php cli 8.4
-██╗   ██╗███████╗██████╗ ██████╗ 
-╚██╗ ██╔╝██╔════╝██╔══██╗██╔══██╗
- ╚████╔╝ █████╗  ██████╔╝██║  ██║
-  ╚██╔╝  ██╔══╝  ██╔══██╗██║  ██║
-   ██║   ███████╗██║  ██║██████╔╝
-   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═════╝
-                     vX.X.X
-
-Setting PHP 8.4 as CLI version...
-✓ PHP 8.4 is now the default CLI version
-Verify with: php -v
-
-# 5. Verify it's working
-$ php -v
-PHP 8.4.11 (cli) (built: Aug 12 2025 18:52:45) (NTS)
-
-# 6. Check final status with detailed paths
-$ yerd status
-📦 Installed PHP Versions
-└─ 🎯 PHP 8.4 (Current CLI)
-   ├─ Binary: /opt/yerd/bin/php8.4
-   ├─ Config: /opt/yerd/etc/php8.4/php.ini
-   └─ Install: /opt/yerd/php/php8.4/
-
-# 7. Later, when updates are available
-$ sudo yerd php update -y
-🔄 Auto-updating all 1 PHP version(s)...
-📦 Installing updated PHP 8.4...
-✅ PHP 8.4 updated successfully to 8.4.12
-```
-
-**Key Features Demonstrated:**
-- 🔧 **Automatic dependency management** across Linux distributions
-- 🏗️ **Source-based compilation** with build progress indicators
-- 📝 **Default php.ini creation** for immediate usability
-- 🔄 **Flexible version formats**: `8.4`, `php8.4`, `PHP8.4` all work
-- 📊 **Detailed status reporting** with binary and config paths
-- ⚡ **Zero-downtime updates** with automatic cleanup
-
-## 📚 Complete Command Reference
-
-### 🏠 `yerd` - Main Command
-Shows the beautiful YERD splash screen and help information.
-
-```bash
-$ yerd
-██╗   ██╗███████╗██████╗ ██████╗ 
-╚██╗ ██╔╝██╔════╝██╔══██╗██╔══██╗
- ╚████╔╝ █████╗  ██████╔╝██║  ██║
-  ╚██╔╝  ██╔══╝  ██╔══██╗██║  ██║
-   ██║   ███████╗██║  ██║██████╔╝
-   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═════╝
-                     vX.X.X
-
-A powerful, developer-friendly tool for managing PHP versions
-and local development environments with ease
-
-https://github.com/LumoSolutions/yerd
-```
-
-### 📊 `yerd status` - System Status
-Shows YERD configuration, system conflicts, and detailed information about installed PHP versions.
-
-**Usage**: `yerd status`  
-**Permissions**: None required
-
-```bash
-$ yerd status
-📦 Installed PHP Versions
-├─ 📌 PHP 8.3
-│  ├─ Binary: /opt/yerd/bin/php8.3
-│  ├─ Config: /opt/yerd/etc/php8.3/php.ini
-│  └─ Install: /opt/yerd/php/php8.3/
-│
-└─ 🎯 PHP 8.4 (Current CLI)
-   ├─ Binary: /opt/yerd/bin/php8.4
-   ├─ Config: /opt/yerd/etc/php8.4/php.ini
-   └─ Install: /opt/yerd/php/php8.4/
-```
-
-## 🔧 PHP Management Commands
-
-### 📋 `yerd php list` - List PHP Versions  
-Lists all available PHP versions and their installation status.
-
-**Usage**: `yerd php list`  
-**Permissions**: None required
-
-```bash
-$ yerd php list
-+---------+-----------+-----+----------------+
-| VERSION | INSTALLED | CLI |    UPDATES     |
-+---------+-----------+-----+----------------+
-| PHP 8.1 | No        |     | Latest: 8.1.30 |
-| PHP 8.2 | No        |     | Latest: 8.2.29 |
-| PHP 8.3 | Yes       |     | Yes            |
-| PHP 8.4 | Yes       | *   | No             |
-+---------+-----------+-----+----------------+
-```
-
-**Legend:**
-- ✅ **Yes**: Version is installed
-- ❌ **No**: Version not installed  
-- ⭐ **\***: Current CLI version
-- 🔄 **Yes/No**: Update available for installed versions
-- 📦 **Latest: X.X.X**: Latest available version for uninstalled versions
-
-### ⬇️ `yerd php add <version>` - Build PHP from Source
-Downloads and builds a specific PHP version from official source code.
-
-**Usage**: 
-- `sudo yerd php add 8.4` (install with cached version data)
-- `sudo yerd php add 8.4 -u` (bypass cache for latest version info)
-
-**Permissions**: Requires `sudo`  
-**Supported Versions**: `8.1`, `8.2`, `8.3`, `8.4` (with or without `php` prefix)
-
-**Flags**:
-- `-u, --uncached`: Bypass cache to get the latest version information from PHP.net
-
-```bash
-$ sudo yerd php add 8.4
-📦 Installing latest PHP 8.4: 8.4.11
-📋 Detected: Arch Linux
-⚠️  Installing build dependencies...
-✓ Build dependencies installed
-Building PHP 8.4 from source...
-[/] Downloading php-8.4.11.tar.gz...
-✓ Download complete
-[|] Extracting source code...
-✓ Source extracted
-[-] Configuring build...
-✓ Configure complete
-[\] Building PHP (this may take several minutes)...
-✓ Build complete
-[/] Installing PHP...
-✓ Install complete
-✓ PHP 8.4 built and installed successfully
-✓ Default php.ini created
-✓ PHP 8.4 installed successfully
-```
-
-### 🗑️ `yerd php remove <version>` - Remove PHP Version
-Removes an installed PHP version and cleans up symlinks.
-
-**Usage**: `sudo yerd php remove 8.3` or `sudo yerd php remove php8.3`  
-**Permissions**: Requires `sudo`
-
-```bash
-$ sudo yerd php remove 8.3
-⚠️  Warning: You are about to remove PHP 8.3
-Continue? (y/N): y
-🗑️  Removing PHP 8.3...
-✓ PHP 8.3 removed successfully
-```
-
-### 🔄 `yerd php cli <version>` - Set CLI Version
-Sets the default PHP version for command line usage.
-
-**Usage**: `sudo yerd php cli 8.4` or `sudo yerd php cli php8.4`  
-**Permissions**: Requires `sudo`
-
-```bash
-$ sudo yerd php cli 8.4
-Setting PHP 8.4 as CLI version...
-✓ PHP 8.4 is now the default CLI version
-Verify with: php -v
-```
-
-### 🔄 `yerd php update [version]` - Update PHP Versions
-Updates installed PHP versions to their latest releases.
-
-**Usage**: 
-- `sudo yerd php update` (update all versions)
-- `sudo yerd php update 8.4` (update specific version)
-- `sudo yerd php update -y` (auto-confirm updates)
-
-**Permissions**: Requires `sudo`
-
-```bash
-$ sudo yerd php update -y
-🔄 Auto-updating all 2 PHP version(s)...
-📦 Installing updated PHP 8.3...
-✅ PHP 8.3 updated successfully to 8.3.15
-📦 Installing updated PHP 8.4...  
-✅ PHP 8.4 updated successfully to 8.4.12
-```
-
-### 🩺 `yerd php doctor [version]` - Diagnostic Tool
-Runs comprehensive diagnostics to troubleshoot installation issues.
-
-**Usage**: 
-- `yerd php doctor` (general diagnostics)
-- `yerd php doctor 8.4` (version-specific diagnostics)
-
-**Permissions**: None required
-
-```bash
-$ yerd php doctor 8.4
-🩺 YERD Doctor - System Diagnostics
-
-1️⃣  System Requirements
-├─ ✅ Build tool: gcc (Available)
-├─ ✅ Build tool: make (Available)
-└─ ✅ All requirements satisfied
-
-4️⃣  PHP 8.4 Diagnostics  
-├─ ✅ YERD status: Installed
-├─ ✅ Binary found: /usr/local/bin/php8.4
-└─ ℹ️  Version info: PHP 8.4.11 (cli) (built: Aug 12 2025 18:52:45) (NTS)
-
-✅ Diagnostics complete. No issues found.
-```
+- **Repository**: https://github.com/LumoSolutions/yerd
+- **Issues**: https://github.com/LumoSolutions/yerd/issues
+- **Releases**: https://github.com/LumoSolutions/yerd/releases
+- **Developer**: [LumoSolutions](https://github.com/LumoSolutions)
 
 ---
 
-*This documentation reflects the latest YERD CLI structure with PHP subcommands and flexible version format support.*
+*Made with ❤️ for the PHP community*

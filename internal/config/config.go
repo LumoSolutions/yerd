@@ -21,6 +21,7 @@ type PHPInfo struct {
 	InstallPath string    `json:"install_path"`
 	InstallDate time.Time `json:"install_date"`
 	IsCLI       bool      `json:"is_cli"`
+	Extensions  []string  `json:"extensions"`
 }
 
 func GetConfigPath() (string, error) {
@@ -159,6 +160,89 @@ func (c *Config) AddInstalledPHP(version, installPath string) {
 		InstallPath: installPath,
 		InstallDate: time.Now(),
 		IsCLI:       c.CurrentCLI == version,
+		Extensions:  getDefaultExtensions(),
+	}
+}
+
+func (c *Config) AddInstalledPHPWithExtensions(version, installPath string, extensions []string) {
+	if c.InstalledPHP == nil {
+		c.InstalledPHP = make(map[string]PHPInfo)
+	}
+	
+	c.InstalledPHP[version] = PHPInfo{
+		Version:     version,
+		InstallPath: installPath,
+		InstallDate: time.Now(),
+		IsCLI:       c.CurrentCLI == version,
+		Extensions:  extensions,
+	}
+}
+
+func (c *Config) UpdatePHPExtensions(version string, extensions []string) bool {
+	if info, exists := c.InstalledPHP[version]; exists {
+		info.Extensions = extensions
+		c.InstalledPHP[version] = info
+		return true
+	}
+	return false
+}
+
+func (c *Config) GetPHPExtensions(version string) ([]string, bool) {
+	if info, exists := c.InstalledPHP[version]; exists {
+		return info.Extensions, true
+	}
+	return nil, false
+}
+
+func getDefaultExtensions() []string {
+	return []string{
+		"mbstring",
+		"bcmath", 
+		"opcache",
+		"curl",
+		"openssl",
+		"zip",
+		"sockets",
+		"mysqli",
+		"pdo-mysql",
+		"gd",
+		"jpeg",
+		"freetype",
+	}
+}
+
+// ConfigSnapshot represents a backup of configuration state
+type ConfigSnapshot struct {
+	Version    string
+	Extensions []string
+}
+
+// CreateSnapshot creates a backup of the current extensions for a version
+func (c *Config) CreateSnapshot(version string) *ConfigSnapshot {
+	if info, exists := c.InstalledPHP[version]; exists {
+		// Make a deep copy of the extensions slice
+		extensionsCopy := make([]string, len(info.Extensions))
+		copy(extensionsCopy, info.Extensions)
+		
+		return &ConfigSnapshot{
+			Version:    version,
+			Extensions: extensionsCopy,
+		}
+	}
+	
+	return &ConfigSnapshot{
+		Version:    version,
+		Extensions: []string{},
+	}
+}
+
+// RestoreSnapshot restores configuration from a snapshot
+func (c *Config) RestoreSnapshot(snapshot *ConfigSnapshot) {
+	if info, exists := c.InstalledPHP[snapshot.Version]; exists {
+		// Restore the extensions from the snapshot
+		info.Extensions = make([]string, len(snapshot.Extensions))
+		copy(info.Extensions, snapshot.Extensions)
+		c.InstalledPHP[snapshot.Version] = info
 	}
 }
 
