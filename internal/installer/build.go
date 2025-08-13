@@ -8,6 +8,7 @@ import (
 	"github.com/LumoSolutions/yerd/internal/dependencies"
 	"github.com/LumoSolutions/yerd/internal/utils"
 	"github.com/LumoSolutions/yerd/pkg/php"
+	"github.com/LumoSolutions/yerd/pkg/constants"
 )
 
 // buildAndInstall performs complete PHP build and installation from source with default extensions.
@@ -15,10 +16,7 @@ import (
 func buildAndInstall(versionInfo php.VersionInfo, sourceDir string, logger *utils.Logger) error {
 	utils.SafeLog(logger, "Starting build process in: %s", sourceDir)
 
-	defaultExtensions := []string{
-		"mbstring", "bcmath", "opcache", "curl", "openssl", "zip",
-		"sockets", "mysqli", "pdo-mysql", "gd", "jpeg", "freetype",
-	}
+	defaultExtensions := constants.DefaultPHPExtensions
 
 	depMgr, err := dependencies.NewDependencyManager()
 	if err != nil {
