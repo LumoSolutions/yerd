@@ -43,11 +43,15 @@ curl -sSL https://raw.githubusercontent.com/LumoSolutions/yerd/main/install.sh |
 # Install PHP 8.4
 sudo yerd php add 8.4
 
+# Install Composer (optional)
+sudo yerd php composer
+
 # Set as default CLI version  
 sudo yerd php cli 8.4
 
 # Verify installation
 php -v  # PHP 8.4.11 (cli)
+composer --version  # Latest Composer
 
 # View all versions
 yerd php list
@@ -78,6 +82,7 @@ yerd php list
 |---------|-------------|---------|
 | `sudo yerd php add 8.4` | Install PHP version from source | Builds PHP 8.4 with default extensions |
 | `sudo yerd php remove 8.3` | Remove PHP version | Cleans up completely |
+| `sudo yerd php composer` | Install/update Composer | Downloads latest stable Composer |
 
 #### Management
 
@@ -129,6 +134,33 @@ sudo yerd php extensions add 8.3 mysqli gd curl
 sudo yerd php extensions replace 8.3 mbstring opcache curl
 ```
 
+## 📦 Composer Management
+
+YERD includes integrated Composer management for PHP dependency handling:
+
+**Features:**
+- 🚀 **Latest Version**: Always downloads the latest stable Composer
+- 🔄 **Easy Updates**: Simple command to update to newest version
+- 🌐 **Global Access**: Available system-wide via `/usr/local/bin/composer`
+- 🛡️ **YERD Integration**: Stored in YERD directory structure for consistency
+
+```bash
+# Install or update Composer
+sudo yerd php composer
+
+# Verify installation
+composer --version
+
+# Use Composer normally
+composer install
+composer require vendor/package
+composer update
+```
+
+**File Locations:**
+- **Source**: `/opt/yerd/bin/composer.phar`
+- **Global Link**: `/usr/local/bin/composer`
+
 ## 🔧 Advanced Features
 
 ### Multi-Distribution Support
@@ -165,13 +197,15 @@ YERD automatically detects your Linux distribution and installs appropriate depe
 │   └── php8.4/                # PHP 8.4 installation
 ├── bin/                        # YERD-managed binaries
 │   ├── php8.3 -> /opt/yerd/php/php8.3/bin/php
-│   └── php8.4 -> /opt/yerd/php/php8.4/bin/php
+│   ├── php8.4 -> /opt/yerd/php/php8.4/bin/php
+│   └── composer.phar           # Composer installation
 └── etc/                        # Configuration files
 
 /usr/local/bin/                 # Global symlinks
 ├── php -> /opt/yerd/bin/php8.4 # Current CLI version
 ├── php8.3 -> /opt/yerd/bin/php8.3
-└── php8.4 -> /opt/yerd/bin/php8.4
+├── php8.4 -> /opt/yerd/bin/php8.4
+└── composer -> /opt/yerd/bin/composer.phar
 
 ~/.config/yerd/config.json      # User configuration
 ```
@@ -187,6 +221,9 @@ sudo yerd php add 8.2
 sudo yerd php add 8.3
 sudo yerd php add 8.4
 
+# Install Composer for dependency management
+sudo yerd php composer
+
 # Set 8.3 as default CLI
 sudo yerd php cli 8.3
 
@@ -195,6 +232,7 @@ php8.1 -v  # PHP 8.1.x
 php8.2 -v  # PHP 8.2.x
 php8.3 -v  # PHP 8.3.x (also available as 'php')
 php8.4 -v  # PHP 8.4.x
+composer --version  # Composer globally available
 ```
 
 ### Production Server Management
@@ -202,6 +240,9 @@ php8.4 -v  # PHP 8.4.x
 ```bash
 # Install specific version for production
 sudo yerd php add 8.3
+
+# Install Composer for dependency management
+sudo yerd php composer
 
 # Add production extensions
 sudo yerd php extensions add 8.3 mysqli pdo-mysql opcache gd curl openssl

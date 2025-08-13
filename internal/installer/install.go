@@ -7,8 +7,8 @@ import (
 	"github.com/LumoSolutions/yerd/internal/config"
 	"github.com/LumoSolutions/yerd/internal/utils"
 	"github.com/LumoSolutions/yerd/internal/versions"
-	"github.com/LumoSolutions/yerd/pkg/php"
 	"github.com/LumoSolutions/yerd/pkg/constants"
+	"github.com/LumoSolutions/yerd/pkg/php"
 )
 
 // InstallPHP performs complete PHP installation from source with comprehensive logging and validation.
@@ -238,7 +238,6 @@ func updateConfiguration(cfg *config.Config, version string, logger *utils.Logge
 
 	return nil
 }
-
 
 // installFromSource handles complete source-based PHP installation with dependency management.
 // versionInfo: PHP version and download details, logger: Logger instance. Returns error if build fails.

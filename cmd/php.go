@@ -20,4 +20,5 @@ func init() {
 	phpCmd.AddCommand(php.UpdateCmd)
 	phpCmd.AddCommand(php.RebuildCmd)
 	phpCmd.AddCommand(php.ExtensionsCmd)
+	phpCmd.AddCommand(php.ComposerCmd)
 }

@@ -217,7 +217,6 @@ func (c *Config) GetPHPExtensions(version string) ([]string, bool) {
 	return nil, false
 }
 
-
 type ConfigSnapshot struct {
 	Version    string
 	Extensions []string
