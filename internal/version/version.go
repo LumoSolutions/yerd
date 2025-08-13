@@ -6,7 +6,7 @@ import (
 	"github.com/fatih/color"
 )
 
-const Version = "1.0.8"
+const Version = "1.1.0"
 
 // PrintSplash displays the YERD ASCII art logo and version information with colors.
 func PrintSplash() {
@@ -29,10 +29,12 @@ func PrintSplash() {
 	yellow.Printf("                     v%s\n", Version)
 	fmt.Println()
 
-	white.Println("A powerful, developer-friendly tool for managing PHP versions")
-	white.Println("and local development environments with ease")
+	white.Println("A powerful, developer-friendly tool for managing")
+	white.Println("multiple PHP versions and local development ")
+	white.Println("environments via nginx and dnsmasq with ease")
 	fmt.Println()
 	gray.Println("https://github.com/LumoSolutions/yerd")
+	gray.Println("Consider contributing today, YERD is Open-Source MIT")
 	fmt.Println()
 }
 
