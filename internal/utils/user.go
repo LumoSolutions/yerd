@@ -17,30 +17,34 @@ type UserContext struct {
 	GID      int
 }
 
+// CheckInstallPermissions verifies write access to directories required for YERD operations.
+// Returns error if insufficient permissions, nil if all required paths are writable.
 func CheckInstallPermissions() error {
 	if os.Geteuid() == 0 {
 		return nil
 	}
-	
+
 	requiredPaths := map[string]string{
 		YerdBaseDir:  "YERD installation directory",
 		SystemBinDir: "system binary directory",
 	}
-	
+
 	var failedPaths []string
 	for path, desc := range requiredPaths {
 		if !canWriteToPath(path) {
 			failedPaths = append(failedPaths, fmt.Sprintf("%s (%s)", path, desc))
 		}
 	}
-	
+
 	if len(failedPaths) > 0 {
 		return fmt.Errorf("cannot write to required directories: %s", strings.Join(failedPaths, ", "))
 	}
-	
+
 	return nil
 }
 
+// testWriteAccess attempts to create and remove a test file to verify write permissions.
+// dir: Directory to test. Returns true if write access is available.
 func testWriteAccess(dir string) bool {
 	testFile := filepath.Join(dir, ".yerd_test_write")
 	file, err := os.Create(testFile)
@@ -52,6 +56,8 @@ func testWriteAccess(dir string) bool {
 	return true
 }
 
+// canWriteToPath checks write permissions by traversing up directory tree to find writable parent.
+// path: Target path to check. Returns true if path or parent directory is writable.
 func canWriteToPath(path string) bool {
 	for current := path; current != "/" && current != "."; current = filepath.Dir(current) {
 		if info, err := os.Stat(current); err == nil {
@@ -67,10 +73,12 @@ func canWriteToPath(path string) bool {
 	return false
 }
 
+// GetRealUser determines the actual user context, handling sudo scenarios correctly.
+// Returns UserContext with user details including UID/GID or error if user lookup fails.
 func GetRealUser() (*UserContext, error) {
 	var realUser *user.User
 	var err error
-	
+
 	sudoUser := os.Getenv("SUDO_USER")
 	if sudoUser != "" {
 		realUser, err = user.Lookup(sudoUser)
@@ -83,17 +91,17 @@ func GetRealUser() (*UserContext, error) {
 			return nil, fmt.Errorf("failed to get current user: %v", err)
 		}
 	}
-	
+
 	uid, err := strconv.Atoi(realUser.Uid)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse UID: %v", err)
 	}
-	
+
 	gid, err := strconv.Atoi(realUser.Gid)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse GID: %v", err)
 	}
-	
+
 	return &UserContext{
 		User:     realUser,
 		Username: realUser.Username,
@@ -103,21 +111,45 @@ func GetRealUser() (*UserContext, error) {
 	}, nil
 }
 
+// GetUserConfigDir returns the YERD configuration directory path for the real user.
+// Returns config directory path or error if user context cannot be determined.
 func GetUserConfigDir() (string, error) {
 	userCtx, err := GetRealUser()
 	if err != nil {
 		return "", err
 	}
-	
+
 	return filepath.Join(userCtx.HomeDir, ".config", "yerd"), nil
 }
 
+// GetSudoUserIDs retrieves UID and GID for a specific sudo user by username.
+// sudoUser: Username to lookup. Returns UID, GID integers or error if lookup fails.
+func GetSudoUserIDs(sudoUser string) (int, int, error) {
+	realUser, err := user.Lookup(sudoUser)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	uid, err := strconv.Atoi(realUser.Uid)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	gid, err := strconv.Atoi(realUser.Gid)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return uid, gid, nil
+}
+
+// CheckAndPromptForSudo verifies permissions and provides helpful sudo guidance if needed.
+// operation: Description of operation, command: Command name, args: Command arguments. Returns true if permissions OK.
 func CheckAndPromptForSudo(operation, command string, args ...string) bool {
 	if err := CheckInstallPermissions(); err != nil {
 		fmt.Printf("❌ Error: %s requires elevated permissions\n", operation)
 		fmt.Printf("💡 This is needed to:\n")
-		
-		// Show operation-specific reasons
+
 		switch operation {
 		case "PHP installation":
 			fmt.Printf("   • Create directories in /opt/yerd/\n")
@@ -138,7 +170,7 @@ func CheckAndPromptForSudo(operation, command string, args ...string) bool {
 		default:
 			fmt.Printf("   • Manage files in /opt/yerd/ and /usr/local/bin/\n")
 		}
-		
+
 		fmt.Printf("   • Update system-wide configuration\n\n")
 		fmt.Printf("Please run with sudo:\n")
 		if command == "update" && operation == "YERD update" {

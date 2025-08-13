@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
 	"github.com/LumoSolutions/yerd/cmd/php"
+	"github.com/spf13/cobra"
 )
 
 var phpCmd = &cobra.Command{
@@ -18,4 +18,6 @@ func init() {
 	phpCmd.AddCommand(php.ListCmd)
 	phpCmd.AddCommand(php.DoctorCmd)
 	phpCmd.AddCommand(php.UpdateCmd)
+	phpCmd.AddCommand(php.RebuildCmd)
+	phpCmd.AddCommand(php.ExtensionsCmd)
 }

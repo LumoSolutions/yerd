@@ -3,12 +3,12 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
 	"github.com/LumoSolutions/yerd/internal/config"
 	"github.com/LumoSolutions/yerd/internal/utils"
 	"github.com/LumoSolutions/yerd/internal/version"
 	"github.com/LumoSolutions/yerd/internal/versions"
 	"github.com/LumoSolutions/yerd/pkg/php"
+	"github.com/spf13/cobra"
 )
 
 var statusCmd = &cobra.Command{
@@ -19,30 +19,33 @@ var statusCmd = &cobra.Command{
 }
 
 type statusContext struct {
-	cfg         *config.Config
+	cfg          *config.Config
 	phpConflicts *utils.SystemPHPResult
-	dirStatus   []utils.DirectoryStatus
-	sysReq      *utils.SystemRequirementsResult
+	dirStatus    []utils.DirectoryStatus
+	sysReq       *utils.SystemRequirementsResult
 }
 
+// runStatus executes the status command, displaying comprehensive system information.
 func runStatus(cmd *cobra.Command, args []string) {
 	version.PrintSplash()
-	
+
 	ctx, err := initializeStatusContext()
 	if err != nil {
 		return
 	}
-	
+
 	displayAllStatusSections(ctx)
 }
 
+// initializeStatusContext loads configuration and gathers system information for status display.
+// Returns a statusContext struct containing all necessary data or an error if config loading fails.
 func initializeStatusContext() (*statusContext, error) {
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		fmt.Printf("❌ Error loading config: %v\n", err)
 		return nil, err
 	}
-	
+
 	return &statusContext{
 		cfg:          cfg,
 		phpConflicts: utils.CheckSystemPHPConflicts(),
@@ -51,6 +54,8 @@ func initializeStatusContext() (*statusContext, error) {
 	}, nil
 }
 
+// displayAllStatusSections renders all status information sections in order.
+// Takes a statusContext containing pre-gathered system information.
 func displayAllStatusSections(ctx *statusContext) {
 	displayYERDStatus(ctx.cfg)
 	displaySystemPHPCheck(ctx.phpConflicts)
@@ -60,6 +65,8 @@ func displayAllStatusSections(ctx *statusContext) {
 	displayPHPUpdateStatus(ctx.cfg)
 }
 
+// displayYERDStatus shows basic YERD installation information including installed versions and current CLI.
+// cfg: Configuration object containing installed PHP versions and CLI settings.
 func displayYERDStatus(cfg *config.Config) {
 	fmt.Printf("📊 YERD Status\n")
 	fmt.Printf("├─ Installed versions: %d\n", len(cfg.InstalledPHP))
@@ -72,6 +79,8 @@ func displayYERDStatus(cfg *config.Config) {
 	fmt.Println()
 }
 
+// displaySystemPHPCheck shows system PHP conflict detection results.
+// phpConflicts: Result of system PHP detection including conflict status and version info.
 func displaySystemPHPCheck(phpConflicts *utils.SystemPHPResult) {
 	fmt.Printf("🔍 System PHP Check\n")
 	if phpConflicts.Error != nil {
@@ -84,6 +93,8 @@ func displaySystemPHPCheck(phpConflicts *utils.SystemPHPResult) {
 	fmt.Println()
 }
 
+// displaySystemPHPConflict shows detailed information when system PHP conflicts are detected.
+// phpConflicts: SystemPHPResult containing details about the conflicting PHP installation.
 func displaySystemPHPConflict(phpConflicts *utils.SystemPHPResult) {
 	fmt.Printf("├─ ⚠️  System PHP detected\n")
 	fmt.Printf("├─ Version: %s\n", phpConflicts.PHPInfo)
@@ -93,12 +104,14 @@ func displaySystemPHPConflict(phpConflicts *utils.SystemPHPResult) {
 	fmt.Printf("💡 Note: Remove system PHP to use YERD CLI versions\n")
 }
 
+// displayDirectoryStatus shows the existence status of YERD directories.
+// dirStatus: Slice of DirectoryStatus objects indicating which directories exist and their purposes.
 func displayDirectoryStatus(dirStatus []utils.DirectoryStatus) {
 	fmt.Printf("📁 Directory Status\n")
 	for i, dir := range dirStatus {
 		isLast := i == len(dirStatus)-1
 		prefix := getTreePrefix(isLast)
-		
+
 		if dir.Exists {
 			fmt.Printf("%s ✅ %s (%s)\n", prefix, dir.Path, dir.Description)
 		} else {
@@ -109,38 +122,42 @@ func displayDirectoryStatus(dirStatus []utils.DirectoryStatus) {
 	fmt.Println()
 }
 
+// displayBuildEnvironment shows availability of required build tools for PHP compilation.
+// sysReq: SystemRequirementsResult containing build tool availability status.
 func displayBuildEnvironment(sysReq *utils.SystemRequirementsResult) {
 	fmt.Printf("🔧 Build Environment\n")
-	
+
 	buildTools := []string{"gcc", "make", "wget", "tar"}
 	for i, tool := range buildTools {
 		isLast := i == len(buildTools)-1
 		prefix := getTreePrefix(isLast)
-		
+
 		if available, exists := sysReq.BuildTools[tool]; exists && available {
 			fmt.Printf("%s ✅ %s: Available\n", prefix, tool)
 		} else {
 			fmt.Printf("%s ❌ %s: Missing\n", prefix, tool)
 		}
 	}
-	
+
 	if !sysReq.AllAvailable {
 		fmt.Printf("\n💡 Note: Missing build tools will be installed automatically during PHP installation\n")
 	}
 	fmt.Println()
 }
 
+// displayInstalledPHPVersions shows detailed information about all installed PHP versions.
+// cfg: Configuration object containing installed PHP version details.
 func displayInstalledPHPVersions(cfg *config.Config) {
 	fmt.Printf("📦 Installed PHP Versions\n")
-	
+
 	if len(cfg.InstalledPHP) == 0 {
 		fmt.Printf("└─ No PHP versions installed\n")
 		return
 	}
-	
+
 	versionCount := len(cfg.InstalledPHP)
 	currentIndex := 0
-	
+
 	for majorMinor, phpInfo := range cfg.InstalledPHP {
 		currentIndex++
 		isLast := currentIndex == versionCount
@@ -149,44 +166,50 @@ func displayInstalledPHPVersions(cfg *config.Config) {
 	fmt.Println()
 }
 
+// displaySinglePHPVersion renders information for one PHP installation.
+// cfg: Configuration object, majorMinor: PHP version string, phpInfo: Installation details, isLast: Controls tree formatting.
 func displaySinglePHPVersion(cfg *config.Config, majorMinor string, phpInfo config.PHPInfo, isLast bool) {
 	prefix := getTreePrefix(isLast)
 	versionStatus := getPHPVersionStatus(cfg, majorMinor)
-	
+
 	fmt.Printf("%s %s\n", prefix, versionStatus)
-	
+
 	subPrefix := getSubTreePrefix(isLast)
 	binaryPath := getPHPBinaryPath(majorMinor)
 	iniPath := getPHPIniPath(majorMinor)
-	
+
 	fmt.Printf("%s├─ Binary: %s\n", subPrefix, binaryPath)
 	fmt.Printf("%s├─ Config: %s\n", subPrefix, iniPath)
 	fmt.Printf("%s└─ Install: %s\n", subPrefix, phpInfo.InstallPath)
-	
+
 	if !isLast {
 		fmt.Printf("│\n")
 	}
 }
 
+// displayPHPUpdateStatus checks and displays update availability for installed PHP versions.
+// cfg: Configuration object containing installed PHP version information.
 func displayPHPUpdateStatus(cfg *config.Config) {
 	fmt.Printf("🔄 PHP Update Status\n")
-	
+
 	if len(cfg.InstalledPHP) == 0 {
 		fmt.Printf("└─ No PHP versions to check\n")
 		return
 	}
-	
+
 	installedVersionsMap := buildInstalledVersionsMap(cfg)
 	updateStatus, err := versions.CheckForUpdates(installedVersionsMap)
-	
+
 	if err != nil {
 		fmt.Printf("└─ ❌ Could not check for updates: %v\n", err)
 		return
 	}
-	
+
 	displayUpdateResults(updateStatus)
 }
 
+// buildInstalledVersionsMap creates a map of PHP versions to their actual version strings.
+// cfg: Configuration object. Returns map where keys are major.minor versions and values are full version strings.
 func buildInstalledVersionsMap(cfg *config.Config) map[string]string {
 	installedVersionsMap := make(map[string]string)
 	for majorMinor, phpInfo := range cfg.InstalledPHP {
@@ -200,6 +223,8 @@ func buildInstalledVersionsMap(cfg *config.Config) map[string]string {
 	return installedVersionsMap
 }
 
+// displayUpdateResults shows which PHP versions have updates available.
+// updateStatus: Map where keys are PHP versions and values indicate if updates are available.
 func displayUpdateResults(updateStatus map[string]bool) {
 	hasUpdates := false
 	for majorMinor, hasUpdate := range updateStatus {
@@ -210,7 +235,7 @@ func displayUpdateResults(updateStatus map[string]bool) {
 			fmt.Printf("├─ ✅ PHP %s: Up to date\n", majorMinor)
 		}
 	}
-	
+
 	if hasUpdates {
 		fmt.Printf("└─ 💡 Run 'yerd list' to see available updates\n")
 	} else {
@@ -218,6 +243,8 @@ func displayUpdateResults(updateStatus map[string]bool) {
 	}
 }
 
+// getTreePrefix returns appropriate tree drawing characters for list formatting.
+// isLast: If true, returns characters for final item; otherwise returns characters for middle items.
 func getTreePrefix(isLast bool) string {
 	if isLast {
 		return "└─"
@@ -225,6 +252,8 @@ func getTreePrefix(isLast bool) string {
 	return "├─"
 }
 
+// getSubTreePrefix returns appropriate indentation for sub-items in tree display.
+// isLast: If true, returns spacing for final parent item; otherwise returns continued tree line.
 func getSubTreePrefix(isLast bool) string {
 	if isLast {
 		return "   "
@@ -232,6 +261,8 @@ func getSubTreePrefix(isLast bool) string {
 	return "│  "
 }
 
+// getPHPVersionStatus returns a formatted status string for a PHP version.
+// cfg: Configuration object, majorMinor: PHP version to check. Returns string with emoji and CLI indicator.
 func getPHPVersionStatus(cfg *config.Config, majorMinor string) string {
 	if cfg.CurrentCLI == majorMinor {
 		return fmt.Sprintf("🎯 PHP %s (Current CLI)", majorMinor)
@@ -239,6 +270,8 @@ func getPHPVersionStatus(cfg *config.Config, majorMinor string) string {
 	return fmt.Sprintf("📌 PHP %s", majorMinor)
 }
 
+// getPHPBinaryPath returns the path to a PHP version's binary or an error message.
+// majorMinor: PHP version string. Returns formatted binary path or error description.
 func getPHPBinaryPath(majorMinor string) string {
 	binaryPath, err := utils.GetPHPBinaryPath(majorMinor)
 	if err != nil {
@@ -247,6 +280,8 @@ func getPHPBinaryPath(majorMinor string) string {
 	return binaryPath
 }
 
+// getPHPIniPath returns the path to a PHP version's ini file or an error message.
+// majorMinor: PHP version string. Returns formatted ini path or error description.
 func getPHPIniPath(majorMinor string) string {
 	iniPath, err := utils.GetPHPIniPath(majorMinor)
 	if err != nil {

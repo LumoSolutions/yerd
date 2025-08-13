@@ -3,11 +3,11 @@ package php
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
 	"github.com/LumoSolutions/yerd/internal/config"
 	"github.com/LumoSolutions/yerd/internal/manager"
 	"github.com/LumoSolutions/yerd/internal/utils"
 	"github.com/LumoSolutions/yerd/internal/version"
+	"github.com/spf13/cobra"
 )
 
 var RemoveCmd = &cobra.Command{
@@ -23,49 +23,50 @@ Examples:
 	Run:  runRemove,
 }
 
+// runRemove executes PHP version removal with CLI version safety checks and user confirmation.
 func runRemove(cmd *cobra.Command, args []string) {
 	version.PrintSplash()
-	
+
 	if !utils.CheckAndPromptForSudo("PHP removal", "remove", args[0]) {
 		return
 	}
-	
+
 	versionArg := args[0]
 	phpVersion := utils.NormalizePHPVersion(versionArg)
-	
+
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		fmt.Printf("Error loading config: %v\n", err)
 		return
 	}
-	
+
 	if _, exists := cfg.InstalledPHP[phpVersion]; !exists {
 		fmt.Printf("Error: PHP %s is not installed\n", phpVersion)
 		return
 	}
-	
+
 	if cfg.CurrentCLI == phpVersion {
 		fmt.Printf("⚠️  Warning: PHP %s is currently set as CLI version\n", phpVersion)
 		fmt.Printf("This will remove the CLI symlink and 'php' command will no longer work.\n")
 		fmt.Printf("Continue? (y/N): ")
-		
+
 		var response string
 		fmt.Scanln(&response)
-		
+
 		if response != "y" && response != "Y" && response != "yes" && response != "Yes" {
 			fmt.Printf("❌ Operation cancelled\n")
 			return
 		}
 		fmt.Println()
 	}
-	
+
 	fmt.Printf("Removing PHP %s...\n", phpVersion)
-	
+
 	err = manager.RemovePHP(phpVersion)
 	if err != nil {
 		fmt.Printf("Error removing PHP %s: %v\n", phpVersion, err)
 		return
 	}
-	
+
 	fmt.Printf("✓ PHP %s removed successfully\n", phpVersion)
 }

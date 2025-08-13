@@ -8,8 +8,11 @@ import (
 	"github.com/LumoSolutions/yerd/internal/utils"
 	"github.com/LumoSolutions/yerd/internal/versions"
 	"github.com/LumoSolutions/yerd/pkg/php"
+	"github.com/LumoSolutions/yerd/pkg/constants"
 )
 
+// InstallPHP performs complete PHP installation from source with comprehensive logging and validation.
+// version: PHP version to install, uncached: If true, bypasses version cache. Returns error if installation fails.
 func InstallPHP(version string, uncached bool) error {
 	logger, err := utils.NewLogger(version)
 	if err != nil {
@@ -48,6 +51,8 @@ func InstallPHP(version string, uncached bool) error {
 	return nil
 }
 
+// cleanupLogger handles log file cleanup based on installation success status.
+// logger: Logger instance, installSuccess: Pointer to success status.
 func cleanupLogger(logger *utils.Logger, installSuccess *bool) {
 	if logger == nil {
 		return
@@ -65,6 +70,8 @@ func cleanupLogger(logger *utils.Logger, installSuccess *bool) {
 	fmt.Printf("   tail -f %s\n", logPath)
 }
 
+// setupInstallEnvironment ensures all required YERD directories exist before installation.
+// logger: Logger for operation tracking. Returns error if directory creation fails.
 func setupInstallEnvironment(logger *utils.Logger) error {
 	utils.SafeLog(logger, "Ensuring YERD directories exist...")
 
@@ -77,6 +84,8 @@ func setupInstallEnvironment(logger *utils.Logger) error {
 	return nil
 }
 
+// fetchAndValidateVersion retrieves and validates PHP version information from php.net.
+// version: PHP version, logger: Logger instance, uncached: Bypass cache flag. Returns version info or error.
 func fetchAndValidateVersion(version string, logger *utils.Logger, uncached bool) (php.VersionInfo, error) {
 	utils.SafeLog(logger, "Getting latest PHP version info for: %s", version)
 	if uncached {
@@ -86,7 +95,7 @@ func fetchAndValidateVersion(version string, logger *utils.Logger, uncached bool
 	var latestVersions map[string]string
 	var downloadURLs map[string]string
 	var err error
-	
+
 	if uncached {
 		latestVersions, downloadURLs, err = versions.GetLatestVersionsFresh()
 	} else {
@@ -100,7 +109,7 @@ func fetchAndValidateVersion(version string, logger *utils.Logger, uncached bool
 
 	jsonBytes, _ := json.Marshal(latestVersions)
 	utils.SafeLog(logger, "Successfully fetched latest versions")
-	utils.SafeLog(logger, "latest versions: "+string(jsonBytes))
+	utils.SafeLog(logger, "latest versions: %s", string(jsonBytes))
 	versionInfo, exists := php.GetLatestVersionInfo(version, latestVersions, downloadURLs)
 
 	if !exists {
@@ -117,6 +126,8 @@ func fetchAndValidateVersion(version string, logger *utils.Logger, uncached bool
 	return versionInfo, nil
 }
 
+// printVersionFetchError displays helpful error message when version fetching fails.
+// version: PHP version that failed to fetch.
 func printVersionFetchError(version string) {
 	fmt.Printf("❌ Could not fetch latest PHP versions from PHP.net\n")
 	fmt.Printf("💡 This is required to:\n")
@@ -129,6 +140,8 @@ func printVersionFetchError(version string) {
 	fmt.Printf("   • Try again in a few moments\n")
 }
 
+// validateInstallationConfig loads config and checks for existing installations.
+// version: PHP version to check, logger: Logger instance. Returns config or error if already installed.
 func validateInstallationConfig(version string, logger *utils.Logger) (*config.Config, error) {
 	utils.SafeLog(logger, "Loading YERD configuration...")
 
@@ -147,6 +160,8 @@ func validateInstallationConfig(version string, logger *utils.Logger) (*config.C
 	return cfg, nil
 }
 
+// checkSystemPHPConflicts detects and warns about existing system PHP installations.
+// logger: Logger instance for conflict detection logging.
 func checkSystemPHPConflicts(logger *utils.Logger) {
 	utils.SafeLog(logger, "Checking for existing system PHP...")
 
@@ -169,6 +184,8 @@ func checkSystemPHPConflicts(logger *utils.Logger) {
 	fmt.Printf("Continuing with installation...\n\n")
 }
 
+// performInstallation executes the complete PHP build and installation process.
+// version: PHP version, versionInfo: Version details, logger: Logger instance. Returns error if installation fails.
 func performInstallation(version string, versionInfo php.VersionInfo, logger *utils.Logger) error {
 	installPath := php.GetInstallPath(version)
 	binaryPath := php.GetBinaryPath(version)
@@ -201,11 +218,15 @@ func performInstallation(version string, versionInfo php.VersionInfo, logger *ut
 	return nil
 }
 
+// updateConfiguration adds the newly installed PHP version to YERD configuration.
+// cfg: Config object, version: PHP version, logger: Logger instance. Returns error if config save fails.
 func updateConfiguration(cfg *config.Config, version string, logger *utils.Logger) error {
 	utils.SafeLog(logger, "Updating YERD configuration...")
 
 	installPath := php.GetInstallPath(version)
-	cfg.AddInstalledPHP(version, installPath)
+
+	defaultExtensions := constants.DefaultPHPExtensions
+	cfg.AddInstalledPHPWithExtensions(version, installPath, defaultExtensions)
 
 	if err := cfg.Save(); err != nil {
 		utils.SafeLog(logger, "Failed to save config: %v", err)
@@ -213,11 +234,14 @@ func updateConfiguration(cfg *config.Config, version string, logger *utils.Logge
 	}
 
 	utils.SafeLog(logger, "Configuration updated successfully")
-	utils.SafeLog(logger, "PHP %s installation completed successfully!", version)
+	utils.SafeLog(logger, "PHP %s installation completed with extensions: %v", version, defaultExtensions)
 
 	return nil
 }
 
+
+// installFromSource handles complete source-based PHP installation with dependency management.
+// versionInfo: PHP version and download details, logger: Logger instance. Returns error if build fails.
 func installFromSource(versionInfo php.VersionInfo, logger *utils.Logger) error {
 	utils.SafeLog(logger, "Starting source installation for PHP %s", versionInfo.Version)
 	utils.SafeLog(logger, "Download URL: %s", versionInfo.DownloadURL)

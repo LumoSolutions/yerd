@@ -8,6 +8,7 @@ import (
 
 const Version = "1.0.3"
 
+// PrintSplash displays the YERD ASCII art logo and version information with colors.
 func PrintSplash() {
 	cyan := color.New(color.FgCyan, color.Bold)
 	yellow := color.New(color.FgYellow, color.Bold)
@@ -35,6 +36,7 @@ func PrintSplash() {
 	fmt.Println()
 }
 
+// GetVersion returns the current YERD version string.
 func GetVersion() string {
 	return Version
 }
