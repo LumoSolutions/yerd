@@ -11,22 +11,39 @@ import (
 
 var ComposerCmd = &cobra.Command{
 	Use:   "composer",
-	Short: "Install or update Composer",
-	Long: `Install or update Composer PHP dependency manager.
+	Short: "Install, update, or remove Composer",
+	Long: `Install, update, or remove Composer PHP dependency manager.
 	
 Composer will be installed in the YERD directory structure and symlinked
 to make it available globally.
 
 Examples:
-  yerd php composer    # Install or update Composer`,
+  yerd php composer       # Install or update Composer
+  yerd php composer -r    # Remove Composer
+  yerd php composer --remove  # Remove Composer`,
 	Args: cobra.NoArgs,
 	Run:  runComposer,
 }
 
-// runComposer executes Composer installation/update with validation and error handling.
+func init() {
+	ComposerCmd.Flags().BoolP("remove", "r", false, "Remove Composer installation")
+}
+
+// runComposer executes Composer installation/update or removal with validation and error handling.
 func runComposer(cmd *cobra.Command, args []string) {
 	version.PrintSplash()
 
+	remove, _ := cmd.Flags().GetBool("remove")
+
+	if remove {
+		handleComposerRemoval()
+	} else {
+		handleComposerInstallation()
+	}
+}
+
+// handleComposerInstallation manages the composer installation process.
+func handleComposerInstallation() {
 	if !utils.CheckAndPromptForSudo("Composer installation", "composer") {
 		return
 	}
@@ -42,4 +59,21 @@ func runComposer(cmd *cobra.Command, args []string) {
 
 	fmt.Printf("✓ Composer installed/updated successfully\n")
 	fmt.Printf("💡 You can now use 'composer' command globally\n")
+}
+
+// handleComposerRemoval manages the composer removal process.
+func handleComposerRemoval() {
+	if !utils.CheckAndPromptForSudo("Composer removal", "composer", "--remove") {
+		return
+	}
+
+	fmt.Println("Removing Composer...")
+
+	err := manager.RemoveComposer()
+	if err != nil {
+		fmt.Printf("\n❌ Composer removal failed: %v\n", err)
+		return
+	}
+
+	fmt.Printf("✓ Composer removed successfully\n")
 }

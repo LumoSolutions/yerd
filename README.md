@@ -83,6 +83,7 @@ yerd php list
 | `sudo yerd php add 8.4` | Install PHP version from source | Builds PHP 8.4 with default extensions |
 | `sudo yerd php remove 8.3` | Remove PHP version | Cleans up completely |
 | `sudo yerd php composer` | Install/update Composer | Downloads latest stable Composer |
+| `sudo yerd php composer -r` | Remove Composer | Removes Composer and global symlink |
 
 #### Management
 
@@ -155,6 +156,11 @@ composer --version
 composer install
 composer require vendor/package
 composer update
+
+# Remove Composer when no longer needed
+sudo yerd php composer -r
+# or
+sudo yerd php composer --remove
 ```
 
 **File Locations:**
