@@ -79,11 +79,6 @@ Thank you for your interest in contributing to YERD! We welcome contributions fr
    ./yerd php --help
    ```
 
-4. **Run tests:**
-   ```bash
-   go test ./...
-   ```
-
 ### Development Workflow
 
 1. **Keep your fork updated:**
@@ -234,14 +229,6 @@ Before submitting a PR, test your changes:
    - If you fixed a bug, verify the fix works
    - If you added a feature, test edge cases
 
-### Automated Tests
-
-Run the test suite:
-```bash
-go test ./...
-go vet ./...
-```
-
 If tests fail, fix them before submitting your PR.
 
 ## 📤 Submitting Changes
@@ -294,8 +281,6 @@ Brief description of changes made.
 
 ## How Has This Been Tested?
 - [ ] Manual testing performed
-- [ ] Unit tests added/updated
-- [ ] Integration tests pass
 
 ## Checklist
 - [ ] Code follows project style guidelines
@@ -317,7 +302,6 @@ Brief description of changes made.
 
 ### Review Process
 
-1. **Automated checks** run first (builds, tests)
 2. **Maintainer review** for code quality and design
 3. **Feedback addressed** through discussion
 4. **Approval and merge** when ready
@@ -357,7 +341,7 @@ We welcome various types of contributions:
 
 ## 🆘 Getting Help
 
-- **Documentation:** Check [README.md](README.md) and [CLAUDE.md](CLAUDE.md)
+- **Documentation:** Check [README.md](README.md)
 - **Issues:** Browse [existing issues](https://github.com/LumoSolutions/yerd/issues)
 - **Discussions:** Use [GitHub Discussions](https://github.com/LumoSolutions/yerd/discussions)
 - **Contact:** Reach out to the maintainers
