@@ -164,6 +164,22 @@ var extensionDependencies = map[string]map[PackageManager][]string{
 		ZYPPER: []string{"pcre2-devel"},
 		APKL:   []string{"pcre2-dev"},
 	},
+	"pcre2": {
+		APT:    []string{"libpcre2-dev"},
+		YUM:    []string{"pcre2-devel"},
+		DNF:    []string{"pcre2-devel"},
+		PACMAN: []string{"pcre2"},
+		ZYPPER: []string{"pcre2-devel"},
+		APKL:   []string{"pcre2-dev"},
+	},
+	"nettle": {
+		APT:    []string{"nettle-dev"},
+		YUM:    []string{"nettle-devel"},
+		DNF:    []string{"nettle-devel"},
+		PACMAN: []string{"nettle"},
+		ZYPPER: []string{"libnettle-devel"},
+		APKL:   []string{"nettle-dev"},
+	},
 }
 
 var buildDependencies = map[PackageManager][]string{
@@ -173,6 +189,15 @@ var buildDependencies = map[PackageManager][]string{
 	PACMAN: []string{"base-devel", "autoconf", "pkgconf", "re2c", "oniguruma", "libxml2", "sqlite"},
 	ZYPPER: []string{"gcc", "gcc-c++", "make", "autoconf", "pkg-config", "re2c", "libonig-devel", "libxml2-devel", "sqlite3-devel"},
 	APKL:   []string{"build-base", "autoconf", "pkgconf", "re2c", "oniguruma-dev", "libxml2-dev", "sqlite-dev"},
+}
+
+var webBuildDependencies = map[PackageManager][]string{
+	APT:    []string{"build-essential", "make", "wget", "tar"},
+	YUM:    []string{"gcc", "gcc-c++", "make", "wget", "tar"},
+	DNF:    []string{"gcc", "gcc-c++", "make", "wget", "tar"},
+	PACMAN: []string{"base-devel", "wget", "tar"},
+	ZYPPER: []string{"gcc", "gcc-c++", "make", "wget", "tar"},
+	APKL:   []string{"build-base", "wget", "tar"},
 }
 
 // NewDependencyManager creates a new dependency manager with auto-detected distribution and package manager.
@@ -285,6 +310,21 @@ func (dm *DependencyManager) InstallBuildDependencies() error {
 	return dm.installPackages(deps, "build dependencies")
 }
 
+// InstallWebBuildDependencies installs essential build tools and dependencies for web service compilation.
+// Returns error if installation fails.
+func (dm *DependencyManager) InstallWebBuildDependencies() error {
+	deps, exists := webBuildDependencies[dm.pm]
+	if !exists {
+		return fmt.Errorf("no web build dependencies defined for package manager: %s", dm.pm)
+	}
+
+	if !dm.quiet {
+		color.New(color.FgYellow).Printf("Installing web build dependencies for %s...\n", dm.distro)
+	}
+
+	return dm.installPackages(deps, "web build dependencies")
+}
+
 // InstallExtensionDependencies installs libraries required for specific PHP extensions.
 // extensions: List of PHP extensions needing dependencies. Returns error if installation fails.
 func (dm *DependencyManager) InstallExtensionDependencies(extensions []string) error {
@@ -374,7 +414,6 @@ func (dm *DependencyManager) installPackages(packages []string, description stri
 	}
 	return nil
 }
-
 
 // contains checks if a string slice contains a specific item.
 // slice: String slice to search, item: Item to find. Returns true if found.

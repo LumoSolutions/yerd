@@ -22,13 +22,12 @@ func GetServiceConfig(serviceName string) (*ServiceConfig, bool) {
 	configs := map[string]*ServiceConfig{
 		"nginx": {
 			Name:        "nginx",
-			Version:     "1.24.0",
-			DownloadURL: "http://nginx.org/download/nginx-1.24.0.tar.gz",
+			Version:     "1.29.1",
+			DownloadURL: "http://nginx.org/download/nginx-1.29.1.tar.gz",
 			BuildFlags: []string{
 				"--prefix=" + GetServiceInstallPath("nginx"),
 				"--conf-path=" + GetServiceConfigPath("nginx") + "/nginx.conf",
 				"--error-log-path=" + GetServiceLogPath("nginx") + "/error.log",
-				"--access-log-path=" + GetServiceLogPath("nginx") + "/access.log",
 				"--pid-path=" + GetServiceRunPath("nginx") + "/nginx.pid",
 				"--lock-path=" + GetServiceRunPath("nginx") + "/nginx.lock",
 				"--http-client-body-temp-path=" + GetServiceTempPath("nginx") + "/client_temp",
@@ -58,21 +57,23 @@ func GetServiceConfig(serviceName string) (*ServiceConfig, bool) {
 			Dependencies: []string{"pcre2", "zlib", "openssl"},
 			InstallPath:  GetServiceInstallPath("nginx"),
 		},
+		"dnsmasq": {
+			Name:        "dnsmasq",
+			Version:     "2.91",
+			DownloadURL: "https://thekelleys.org.uk/dnsmasq/dnsmasq-2.91.tar.gz",
+			BuildFlags: []string{
+				"PREFIX=" + GetServiceInstallPath("dnsmasq"),
+				"BINDIR=" + GetServiceInstallPath("dnsmasq") + "/bin",
+				"MANDIR=" + GetServiceInstallPath("dnsmasq") + "/man",
+				"LOCALEDIR=" + GetServiceInstallPath("dnsmasq") + "/locale",
+			},
+			Dependencies: []string{"nettle"},
+			InstallPath:  GetServiceInstallPath("dnsmasq"),
+		},
 	}
 
 	config, exists := configs[strings.ToLower(serviceName)]
 	return config, exists
-}
-
-// GetSupportedServices returns a list of all supported web services
-func GetSupportedServices() []string {
-	return []string{"nginx"}
-}
-
-// IsValidService checks if a service name is supported
-func IsValidService(serviceName string) bool {
-	_, exists := GetServiceConfig(serviceName)
-	return exists
 }
 
 // GetServiceInstallPath returns the installation path for a service
@@ -102,5 +103,10 @@ func GetServiceTempPath(serviceName string) string {
 
 // GetServiceBinaryPath returns the binary path for a service
 func GetServiceBinaryPath(serviceName string) string {
-	return filepath.Join(GetServiceInstallPath(serviceName), "sbin", serviceName)
+	switch serviceName {
+	case "dnsmasq":
+		return filepath.Join(GetServiceInstallPath(serviceName), "bin", serviceName)
+	default:
+		return filepath.Join(GetServiceInstallPath(serviceName), "sbin", serviceName)
+	}
 }

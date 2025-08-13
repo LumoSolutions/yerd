@@ -13,16 +13,16 @@ type Extension struct {
 
 var AvailableExtensions = map[string]Extension{
 	"mbstring": {
-		Name:        "mbstring",
-		ConfigFlag:  "--enable-mbstring",
+		Name:       "mbstring",
+		ConfigFlag: "--enable-mbstring",
 	},
 	"bcmath": {
-		Name:        "bcmath",
-		ConfigFlag:  "--enable-bcmath",
+		Name:       "bcmath",
+		ConfigFlag: "--enable-bcmath",
 	},
 	"opcache": {
-		Name:        "opcache",
-		ConfigFlag:  "--enable-opcache",
+		Name:       "opcache",
+		ConfigFlag: "--enable-opcache",
 	},
 	"curl": {
 		Name:         "curl",
@@ -40,8 +40,8 @@ var AvailableExtensions = map[string]Extension{
 		Dependencies: []string{"libzip"},
 	},
 	"sockets": {
-		Name:        "sockets",
-		ConfigFlag:  "--enable-sockets",
+		Name:       "sockets",
+		ConfigFlag: "--enable-sockets",
 	},
 	"mysqli": {
 		Name:         "mysqli",
@@ -69,24 +69,24 @@ var AvailableExtensions = map[string]Extension{
 		Dependencies: []string{"freetype2"},
 	},
 	"xml": {
-		Name:        "xml",
-		ConfigFlag:  "--enable-xml",
+		Name:       "xml",
+		ConfigFlag: "--enable-xml",
 	},
 	"json": {
-		Name:        "json",
-		ConfigFlag:  "--enable-json",
+		Name:       "json",
+		ConfigFlag: "--enable-json",
 	},
 	"session": {
-		Name:        "session",
-		ConfigFlag:  "--enable-session",
+		Name:       "session",
+		ConfigFlag: "--enable-session",
 	},
 	"hash": {
-		Name:        "hash",
-		ConfigFlag:  "--enable-hash",
+		Name:       "hash",
+		ConfigFlag: "--enable-hash",
 	},
 	"filter": {
-		Name:        "filter",
-		ConfigFlag:  "--enable-filter",
+		Name:       "filter",
+		ConfigFlag: "--enable-filter",
 	},
 	"pcre": {
 		Name:         "pcre",
@@ -104,8 +104,8 @@ var AvailableExtensions = map[string]Extension{
 		Dependencies: []string{"bzip2"},
 	},
 	"iconv": {
-		Name:        "iconv",
-		ConfigFlag:  "--with-iconv",
+		Name:       "iconv",
+		ConfigFlag: "--with-iconv",
 	},
 	"intl": {
 		Name:         "intl",
@@ -133,12 +133,12 @@ var AvailableExtensions = map[string]Extension{
 		Dependencies: []string{"sqlite"},
 	},
 	"fileinfo": {
-		Name:        "fileinfo",
-		ConfigFlag:  "--enable-fileinfo",
+		Name:       "fileinfo",
+		ConfigFlag: "--enable-fileinfo",
 	},
 	"exif": {
-		Name:        "exif",
-		ConfigFlag:  "--enable-exif",
+		Name:       "exif",
+		ConfigFlag: "--enable-exif",
 	},
 	"gettext": {
 		Name:         "gettext",
@@ -156,16 +156,16 @@ var AvailableExtensions = map[string]Extension{
 		Dependencies: []string{"openldap"},
 	},
 	"soap": {
-		Name:        "soap",
-		ConfigFlag:  "--enable-soap",
+		Name:       "soap",
+		ConfigFlag: "--enable-soap",
 	},
 	"ftp": {
-		Name:        "ftp",
-		ConfigFlag:  "--enable-ftp",
+		Name:       "ftp",
+		ConfigFlag: "--enable-ftp",
 	},
 	"pcntl": {
-		Name:        "pcntl",
-		ConfigFlag:  "--enable-pcntl",
+		Name:       "pcntl",
+		ConfigFlag: "--enable-pcntl",
 	},
 }
 
@@ -175,7 +175,6 @@ func GetExtension(name string) (Extension, bool) {
 	ext, exists := AvailableExtensions[name]
 	return ext, exists
 }
-
 
 // ValidateExtensions separates provided extensions into valid and invalid lists.
 // extensions: Extension names to validate. Returns valid extensions slice and invalid extensions slice.
@@ -228,7 +227,6 @@ func GetDependencies(extensions []string) []string {
 	sort.Strings(deps)
 	return deps
 }
-
 
 // SuggestSimilarExtensions finds extension names similar to an invalid extension name.
 // invalid: Invalid extension name to find suggestions for. Returns sorted slice of similar extension names.
