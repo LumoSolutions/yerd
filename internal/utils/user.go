@@ -171,6 +171,10 @@ func CheckAndPromptForSudo(operation, command string, args ...string) bool {
 			fmt.Printf("   • Create directories in /opt/yerd/web/\n")
 			fmt.Printf("   • Install web service binaries and configurations\n")
 			fmt.Printf("   • Manage system package dependencies\n")
+		case "Web services management":
+			fmt.Printf("   • Start and stop web services (nginx, dnsmasq)\n")
+			fmt.Printf("   • Manage service configurations and processes\n")
+			fmt.Printf("   • Access service runtime files and logs\n")
 		default:
 			fmt.Printf("   • Manage files in /opt/yerd/ and /usr/local/bin/\n")
 		}
@@ -179,7 +183,7 @@ func CheckAndPromptForSudo(operation, command string, args ...string) bool {
 		fmt.Printf("Please run with sudo:\n")
 		if command == "update" && operation == "YERD update" {
 			fmt.Printf("   sudo yerd %s", command)
-		} else if operation == "Web services installation" {
+		} else if operation == "Web services installation" || operation == "Web services management" {
 			fmt.Printf("   sudo yerd web %s", command)
 		} else {
 			fmt.Printf("   sudo yerd php %s", command)

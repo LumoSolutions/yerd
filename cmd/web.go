@@ -13,4 +13,6 @@ var webCmd = &cobra.Command{
 
 func init() {
 	webCmd.AddCommand(web.InstallCmd)
+	webCmd.AddCommand(web.StartCmd)
+	webCmd.AddCommand(web.StopCmd)
 }

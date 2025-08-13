@@ -19,7 +19,7 @@ https://github.com/LumoSolutions/yerd
 
 ## 🎯 What is YERD?
 
-YERD is a Linux PHP version manager that compiles PHP from official source code, giving you complete control over your PHP installations. Perfect for both production servers and development environments.
+YERD is a comprehensive development environment manager that compiles PHP from official source code and manages web services for complete local development environments. Perfect for both production servers and development setups.
 
 **Key Benefits:**
 - 🚀 **Multiple PHP versions** running simultaneously
@@ -28,6 +28,7 @@ YERD is a Linux PHP version manager that compiles PHP from official source code,
 - 🧩 **Rich extension support** with automatic dependencies
 - 🏗️ **Source-based builds** for maximum reliability
 - 🌐 **Multi-distro support** - works on all major Linux distributions
+- 🌐 **Web services management** - nginx and dnsmasq for local development
 
 ## 🚀 Quick Start
 
@@ -49,9 +50,16 @@ sudo yerd php composer
 # Set as default CLI version  
 sudo yerd php cli 8.4
 
+# Install web services for local development
+sudo yerd web install
+
+# Start web services
+sudo yerd web start
+
 # Verify installation
 php -v  # PHP 8.4.11 (cli)
 composer --version  # Latest Composer
+curl -I http://localhost  # nginx running
 
 # View all versions
 yerd php list
@@ -71,6 +79,8 @@ yerd php list
 | Command | Description | Example |
 |---------|-------------|---------|
 | `yerd status` | System status overview | Shows conflicts, paths |
+| `yerd php` | PHP version management | See PHP Commands below |
+| `yerd web` | Web services management | See Web Services Commands below |
 | `yerd --help` | Show help information | Display usage guide |
 | `yerd --version` | Show YERD version | Display current version |
 
@@ -107,6 +117,42 @@ yerd php list
 | `sudo yerd php rebuild 8.3` | Force rebuild | Useful for troubleshooting |
 | `sudo yerd php update` | Update versions | Gets latest patches |
 | `yerd php doctor` | Diagnostics | Troubleshoot issues |
+
+### Web Services Commands
+
+YERD includes comprehensive web services management for local development environments:
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `sudo yerd web install` | Install nginx and dnsmasq from source | Complete web stack setup |
+| `sudo yerd web install -f` | Force reinstall web services | Rebuilds from source |
+| `sudo yerd web start` | Start nginx and dnsmasq services | Ready for development |
+| `sudo yerd web stop` | Stop all web services | Clean shutdown |
+
+**Web Services Included:**
+- **nginx 1.29.1** - High-performance HTTP server and reverse proxy
+- **dnsmasq 2.91** - Lightweight DNS forwarder for local development
+
+**Features:**
+- 🏗️ **Source-based installation** - Compiled for maximum compatibility
+- 🔧 **Pre-configured** - Ready for PHP development out of the box
+- 🌐 **Local DNS** - `.dev` domain support for local projects
+- ⚡ **High performance** - Optimized configurations
+- 🛡️ **Isolated** - No conflicts with system services
+
+```bash
+# Install web services
+sudo yerd web install
+
+# Start services (nginx on port 80, dnsmasq on port 5353)
+sudo yerd web start
+
+# Stop services when done
+sudo yerd web stop
+
+# Force reinstall if needed
+sudo yerd web install -f
+```
 
 ## 🧩 Extension Management
 
@@ -201,6 +247,18 @@ YERD automatically detects your Linux distribution and installs appropriate depe
 ├── php/                        # PHP installations
 │   ├── php8.3/                # PHP 8.3 installation
 │   └── php8.4/                # PHP 8.4 installation
+├── web/                        # Web services
+│   ├── nginx/                  # nginx installation
+│   │   ├── sbin/nginx         # nginx binary
+│   │   ├── conf/nginx.conf    # nginx configuration
+│   │   ├── logs/              # access and error logs
+│   │   ├── run/               # PID and lock files
+│   │   └── temp/              # temporary files
+│   └── dnsmasq/               # dnsmasq installation
+│       ├── bin/dnsmasq        # dnsmasq binary
+│       ├── conf/dnsmasq.conf  # DNS configuration
+│       ├── logs/              # DNS query logs
+│       └── run/               # PID files
 ├── bin/                        # YERD-managed binaries
 │   ├── php8.3 -> /opt/yerd/php/php8.3/bin/php
 │   ├── php8.4 -> /opt/yerd/php/php8.4/bin/php
@@ -233,12 +291,22 @@ sudo yerd php composer
 # Set 8.3 as default CLI
 sudo yerd php cli 8.3
 
+# Install web services for local development
+sudo yerd web install
+
+# Start web services
+sudo yerd web start
+
 # Test with different versions
 php8.1 -v  # PHP 8.1.x
 php8.2 -v  # PHP 8.2.x
 php8.3 -v  # PHP 8.3.x (also available as 'php')
 php8.4 -v  # PHP 8.4.x
 composer --version  # Composer globally available
+
+# Test web services
+curl -I http://localhost  # nginx serving on port 80
+# Local .dev domains work automatically
 ```
 
 ### Production Server Management
@@ -299,6 +367,37 @@ yerd status
 yerd --help
 yerd php --help
 yerd php extensions --help
+yerd web --help
+```
+
+### Web Services Configuration
+
+YERD's web services come pre-configured for local development:
+
+**nginx Configuration:**
+- **Port**: 80 (HTTP)
+- **Document Root**: `/var/www/html`
+- **PHP Support**: FastCGI on port 9000
+- **Configuration**: `/opt/yerd/web/nginx/conf/nginx.conf`
+
+**dnsmasq Configuration:**
+- **Port**: 5353 (DNS)
+- **Local Domain**: `.dev`
+- **Interface**: localhost only
+- **Configuration**: `/opt/yerd/web/dnsmasq/conf/dnsmasq.conf`
+
+**Service Management:**
+```bash
+# Check if services are running
+sudo ps aux | grep nginx
+sudo ps aux | grep dnsmasq
+
+# Test nginx
+curl -I http://localhost
+
+# Check service logs
+sudo tail -f /opt/yerd/web/nginx/logs/error.log
+sudo tail -f /opt/yerd/web/dnsmasq/logs/dnsmasq.log
 ```
 
 ## 🏗️ Building from Source

@@ -97,12 +97,15 @@ func (wi *WebInstaller) Install() error {
 
 // installDependencies handles both build and service dependency installation
 func (wi *WebInstaller) installDependencies() error {
-	// Install dependencies
-	if err := wi.installDependencies(); err != nil {
-		return err
+	if len(wi.config.Dependencies) == 0 {
+		return nil
 	}
 
-	return nil
+	spinner := utils.NewLoadingSpinner(fmt.Sprintf("Installing dependencies for %s...", wi.config.Name))
+	spinner.Start()
+	defer spinner.Stop("✓ Dependencies installed")
+
+	return wi.depManager.InstallExtensionDependencies(wi.config.Dependencies)
 }
 
 // executeWithSpinner runs a command with a loading spinner
@@ -147,33 +150,8 @@ func (wi *WebInstaller) installWithBackup() error {
 		return fmt.Errorf("insufficient permissions: %v", err)
 	}
 
-	// Create a temporary install path
-	tempInstallPath := wi.config.InstallPath + ".tmp"
+	// Store original install path
 	originalInstallPath := wi.config.InstallPath
-
-	// Temporarily modify the config to install to temp location
-	wi.config.InstallPath = tempInstallPath
-	
-	// Update all paths to use temp location
-	tempConfig := &ServiceConfig{
-		Name:         wi.config.Name,
-		Version:      wi.config.Version,
-		DownloadURL:  wi.config.DownloadURL,
-		BuildFlags:   make([]string, len(wi.config.BuildFlags)),
-		Dependencies: wi.config.Dependencies,
-		InstallPath:  tempInstallPath,
-	}
-	
-	// Replace install paths in build flags
-	for i, flag := range wi.config.BuildFlags {
-		tempConfig.BuildFlags[i] = strings.Replace(flag, originalInstallPath, tempInstallPath, -1)
-	}
-	wi.config = tempConfig
-
-	// Create temporary directories
-	if err := wi.createDirectories(); err != nil {
-		return fmt.Errorf("failed to create temporary directories: %v", err)
-	}
 
 	// Install dependencies
 	if err := wi.installDependencies(); err != nil {
@@ -187,32 +165,31 @@ func (wi *WebInstaller) installWithBackup() error {
 	}
 	defer os.RemoveAll(sourceDir)
 
-	// Compile and install to temporary location
-	if err := wi.compileAndInstall(sourceDir); err != nil {
-		return fmt.Errorf("failed to compile and install: %v", err)
-	}
-
-	// Create configuration in temporary location
-	if err := wi.createConfiguration(); err != nil {
-		return fmt.Errorf("failed to create configuration: %v", err)
-	}
-
-	// If we got here, the build was successful. Now replace the existing installation
-	fmt.Printf("\nBuild successful, replacing existing installation...\n")
-	
-	// Remove the old installation
+	// Remove the old installation first (before building)
 	if utils.FileExists(originalInstallPath) {
 		if err := utils.RemoveDirectory(originalInstallPath); err != nil {
-			// Try to clean up temp installation
-			utils.RemoveDirectory(tempInstallPath)
 			return fmt.Errorf("failed to remove existing installation: %v", err)
 		}
 	}
 
-	// Move temp installation to final location
-	if err := os.Rename(tempInstallPath, originalInstallPath); err != nil {
-		return fmt.Errorf("failed to move new installation to final location: %v", err)
+	// Ensure all required directories exist in final location
+	if err := wi.ensureFinalDirectories(); err != nil {
+		return fmt.Errorf("failed to create final directories: %v", err)
 	}
+
+	// Build and install directly to final location
+	if err := wi.compileAndInstall(sourceDir); err != nil {
+		return fmt.Errorf("failed to compile and install: %v", err)
+	}
+
+	// Create configuration in final location
+	// Reset config to use original path for config creation
+	wi.config.InstallPath = originalInstallPath
+	if err := wi.createConfiguration(); err != nil {
+		return fmt.Errorf("failed to create configuration: %v", err)
+	}
+
+	fmt.Printf("\n🎉 Build and installation successful!\n")
 
 	// Mark installation as successful
 	installSuccess = true
@@ -220,6 +197,30 @@ func (wi *WebInstaller) installWithBackup() error {
 	fmt.Println()
 	utils.PrintSuccess("Successfully replaced %s %s", wi.config.Name, wi.config.Version)
 	wi.printBinaryLocation()
+
+	return nil
+}
+
+// ensureFinalDirectories ensures all required directories exist in the final installation
+func (wi *WebInstaller) ensureFinalDirectories() error {
+	// Use the original service name to get the final paths
+	finalDirs := []string{
+		"/opt/yerd/web/" + wi.service + "/conf",
+		"/opt/yerd/web/" + wi.service + "/logs", 
+		"/opt/yerd/web/" + wi.service + "/run",
+	}
+
+	// Add temp path for nginx
+	if wi.service == "nginx" {
+		finalDirs = append(finalDirs, "/opt/yerd/web/nginx/temp")
+	}
+
+	for _, dir := range finalDirs {
+		if err := utils.CreateDirectory(dir); err != nil {
+			return fmt.Errorf("failed to create directory %s: %v", dir, err)
+		}
+		wi.logger.WriteLog("Ensured directory exists: %s", dir)
+	}
 
 	return nil
 }
@@ -402,7 +403,14 @@ func (wi *WebInstaller) createConfiguration() error {
 
 // createNginxConfig creates a basic nginx configuration
 func (wi *WebInstaller) createNginxConfig() error {
-	configPath := filepath.Join(GetServiceConfigPath("nginx"), "nginx.conf")
+	configDir := "/opt/yerd/web/nginx/conf"
+	configPath := filepath.Join(configDir, "nginx.conf")
+	
+	// Ensure config directory exists
+	if err := utils.CreateDirectory(configDir); err != nil {
+		return fmt.Errorf("failed to create config directory: %v", err)
+	}
+	
 	if utils.FileExists(configPath) {
 		return nil // Don't overwrite existing config
 	}
@@ -416,7 +424,18 @@ events {
 }
 
 http {
-    include       mime.types;
+    # Basic MIME types
+    types {
+        text/html                             html htm shtml;
+        text/css                              css;
+        text/xml                              xml;
+        image/gif                             gif;
+        image/jpeg                            jpeg jpg;
+        image/png                             png;
+        application/javascript                js;
+        application/json                      json;
+        text/plain                            txt;
+    }
     default_type  application/octet-stream;
     
     sendfile        on;
@@ -441,11 +460,20 @@ http {
             fastcgi_pass   127.0.0.1:9000;
             fastcgi_index  index.php;
             fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
-            include        fastcgi_params;
+            fastcgi_param  QUERY_STRING     $query_string;
+            fastcgi_param  REQUEST_METHOD   $request_method;
+            fastcgi_param  CONTENT_TYPE     $content_type;
+            fastcgi_param  CONTENT_LENGTH   $content_length;
+            fastcgi_param  REQUEST_URI      $request_uri;
+            fastcgi_param  DOCUMENT_URI     $document_uri;
+            fastcgi_param  DOCUMENT_ROOT    $document_root;
+            fastcgi_param  SERVER_PROTOCOL  $server_protocol;
+            fastcgi_param  GATEWAY_INTERFACE CGI/1.1;
+            fastcgi_param  SERVER_SOFTWARE  nginx/$nginx_version;
         }
     }
 }
-`, GetServiceRunPath("nginx"), GetServiceLogPath("nginx"), GetServiceLogPath("nginx"))
+`, "/opt/yerd/web/nginx/run", "/opt/yerd/web/nginx/logs", "/opt/yerd/web/nginx/logs")
 
 	if err := os.WriteFile(configPath, []byte(config), 0644); err != nil {
 		return fmt.Errorf("failed to write nginx config: %v", err)
@@ -457,7 +485,14 @@ http {
 
 // createDnsmasqConfig creates a basic dnsmasq configuration
 func (wi *WebInstaller) createDnsmasqConfig() error {
-	configPath := filepath.Join(GetServiceConfigPath("dnsmasq"), "dnsmasq.conf")
+	configDir := "/opt/yerd/web/dnsmasq/conf"
+	configPath := filepath.Join(configDir, "dnsmasq.conf")
+	
+	// Ensure config directory exists
+	if err := utils.CreateDirectory(configDir); err != nil {
+		return fmt.Errorf("failed to create config directory: %v", err)
+	}
+	
 	if utils.FileExists(configPath) {
 		return nil // Don't overwrite existing config
 	}
@@ -466,6 +501,9 @@ func (wi *WebInstaller) createDnsmasqConfig() error {
 port=5353
 interface=lo
 bind-interfaces
+
+# Process management
+pid-file=%s/dnsmasq.pid
 
 # Local domain
 local=/dev/
@@ -481,7 +519,7 @@ log-facility=%s/dnsmasq.log
 # Example entries
 address=/example.dev/127.0.0.1
 address=/test.dev/127.0.0.1
-`, GetServiceLogPath("dnsmasq"))
+`, "/opt/yerd/web/dnsmasq/run", "/opt/yerd/web/dnsmasq/logs")
 
 	if err := os.WriteFile(configPath, []byte(config), 0644); err != nil {
 		return fmt.Errorf("failed to write dnsmasq config: %v", err)
