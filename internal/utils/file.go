@@ -21,6 +21,7 @@ func EnsureDirectories() error {
 		YerdBinDir,
 		YerdPHPDir,
 		YerdEtcDir,
+		YerdWebDir,
 	}
 
 	for _, dir := range dirs {

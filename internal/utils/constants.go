@@ -7,6 +7,7 @@ const (
 	YerdBinDir      = "/opt/yerd/bin"
 	YerdPHPDir      = "/opt/yerd/php"
 	YerdEtcDir      = "/opt/yerd/etc"
+	YerdWebDir      = "/opt/yerd/web"
 	SystemBinDir    = "/usr/local/bin"
 	SpinnerInterval = 200 * time.Millisecond
 	LogTimeFormat   = "15:04:05"
