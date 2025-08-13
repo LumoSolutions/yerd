@@ -6,7 +6,7 @@ import (
 	"github.com/fatih/color"
 )
 
-const Version = "1.0.3"
+const Version = "1.0.4"
 
 // PrintSplash displays the YERD ASCII art logo and version information with colors.
 func PrintSplash() {
