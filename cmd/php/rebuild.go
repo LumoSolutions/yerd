@@ -28,63 +28,65 @@ This is useful for:
 	RunE: runRebuild,
 }
 
+// runRebuild forces a complete rebuild of PHP with existing extensions configuration.
+// Returns error if rebuild fails, nil if successful.
 func runRebuild(cmd *cobra.Command, args []string) error {
 	version.PrintSplash()
-	
+
 	if !utils.CheckAndPromptForSudo("PHP rebuild", "rebuild", args[0]) {
 		return nil
 	}
-	
+
 	phpVersion := php.FormatVersion(args[0])
-	
+
 	if !php.IsValidVersion(phpVersion) {
 		color.New(color.FgRed).Printf("✗ Invalid PHP version: %s\n", phpVersion)
 		return nil
 	}
-	
+
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		color.New(color.FgRed).Printf("✗ Failed to load config: %v\n", err)
 		return nil
 	}
-	
+
 	if _, exists := cfg.InstalledPHP[phpVersion]; !exists {
 		color.New(color.FgRed).Printf("✗ PHP %s is not installed. Use 'yerd php add %s' first\n", phpVersion, phpVersion)
 		return nil
 	}
-	
+
 	currentExtensions, exists := cfg.GetPHPExtensions(phpVersion)
 	if !exists {
 		color.New(color.FgRed).Printf("✗ No extension information found for PHP %s\n", phpVersion)
 		return nil
 	}
-	
+
 	if len(currentExtensions) == 0 {
 		color.New(color.FgYellow).Printf("PHP %s has no extensions configured. Adding default extensions.\n", phpVersion)
-		// Use the default extensions if none are configured
 		currentExtensions = []string{
-			"mbstring", "bcmath", "opcache", "curl", "openssl", "zip", 
+			"mbstring", "bcmath", "opcache", "curl", "openssl", "zip",
 			"sockets", "mysqli", "pdo-mysql", "gd", "jpeg", "freetype",
 		}
 		cfg.UpdatePHPExtensions(phpVersion, currentExtensions)
 	}
-	
+
 	color.New(color.FgCyan, color.Bold).Printf("Rebuilding PHP %s with extensions: %s\n", phpVersion, strings.Join(currentExtensions, ", "))
-	
+
 	if err := forceRebuildPHP(cfg, phpVersion, currentExtensions); err != nil {
-		// Error already printed by forceRebuildPHP, just exit
 		return nil
 	}
-	
+
 	return nil
 }
 
+// forceRebuildPHP performs the actual rebuild process with spinner animation.
+// cfg: Configuration object, version: PHP version to rebuild, extensions: Extensions to include.
 func forceRebuildPHP(cfg *config.Config, version string, extensions []string) error {
 	color.New(color.FgYellow).Println("Force rebuilding PHP (no configuration backup needed)...")
-	
+
 	spinner := []string{"|", "/", "-", "\\"}
 	done := make(chan bool)
-	
+
 	go func() {
 		i := 0
 		for {
@@ -98,28 +100,25 @@ func forceRebuildPHP(cfg *config.Config, version string, extensions []string) er
 			}
 		}
 	}()
-	
+
 	phpBuilder := builder.NewBuilder(version, extensions)
 	err := phpBuilder.RebuildPHP()
 	done <- true
 	fmt.Print("\r")
-	
+
 	if err != nil {
 		color.New(color.FgRed).Printf("✗ Failed to rebuild PHP %s: %v\n", version, err)
-		phpBuilder.Cleanup() // Keep logs for debugging
+		phpBuilder.Cleanup()
 		return fmt.Errorf("rebuild failed")
 	}
-	
-	// Save configuration to ensure it's up to date (in case default extensions were added)
+
 	color.New(color.FgYellow).Println("Updating configuration...")
 	if err := cfg.Save(); err != nil {
 		color.New(color.FgRed).Printf("⚠️  Warning: Rebuild succeeded but failed to save configuration: %v\n", err)
 	}
-	
-	// Clean up including log files on success
+
 	phpBuilder.CleanupSuccess()
-	
+
 	color.New(color.FgGreen).Printf("✓ Successfully rebuilt PHP %s with extensions: %s\n", version, strings.Join(extensions, ", "))
 	return nil
 }
-

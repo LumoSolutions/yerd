@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
 	"github.com/LumoSolutions/yerd/cmd/php"
+	"github.com/spf13/cobra"
 )
 
 var phpCmd = &cobra.Command{

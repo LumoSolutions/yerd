@@ -26,7 +26,6 @@ type DependencyManager struct {
 	pmCommand string
 }
 
-// Extension dependency mappings for different package managers
 var extensionDependencies = map[string]map[PackageManager][]string{
 	"curl": {
 		APT:    []string{"libcurl4-openssl-dev"},
@@ -166,7 +165,6 @@ var extensionDependencies = map[string]map[PackageManager][]string{
 	},
 }
 
-// Build tool dependencies
 var buildDependencies = map[PackageManager][]string{
 	APT:    []string{"build-essential", "autoconf", "pkg-config", "re2c", "libonig-dev"},
 	YUM:    []string{"gcc", "gcc-c++", "make", "autoconf", "pkgconfig", "re2c", "oniguruma-devel"},
@@ -195,7 +193,6 @@ func NewDependencyManager() (*DependencyManager, error) {
 }
 
 func detectDistribution() (string, error) {
-	// Check /etc/os-release first
 	if output, err := utils.ExecuteCommand("cat", "/etc/os-release"); err == nil {
 		lines := strings.Split(output, "\n")
 		for _, line := range lines {
@@ -205,12 +202,10 @@ func detectDistribution() (string, error) {
 		}
 	}
 
-	// Fallback to lsb_release
 	if output, err := utils.ExecuteCommand("lsb_release", "-si"); err == nil {
 		return strings.ToLower(strings.TrimSpace(output)), nil
 	}
 
-	// Check specific release files
 	releaseFiles := map[string]string{
 		"/etc/redhat-release": "rhel",
 		"/etc/debian_version": "debian",
@@ -266,7 +261,7 @@ func (dm *DependencyManager) InstallBuildDependencies() error {
 	}
 
 	color.New(color.FgYellow).Printf("Installing build dependencies for %s...\n", dm.distro)
-	
+
 	return dm.installPackages(deps, "build dependencies")
 }
 
@@ -274,12 +269,10 @@ func (dm *DependencyManager) InstallExtensionDependencies(extensions []string) e
 	var allPackages []string
 	missingDeps := make(map[string]bool)
 
-	// Collect all required packages
 	for _, ext := range extensions {
-		// Map extension names to dependency names
 		depName := mapExtensionToDependency(ext)
 		if depName == "" {
-			continue // Extension doesn't require external dependencies
+			continue
 		}
 
 		if deps, exists := extensionDependencies[depName]; exists {
@@ -309,7 +302,7 @@ func (dm *DependencyManager) InstallExtensionDependencies(extensions []string) e
 	}
 
 	color.New(color.FgCyan).Printf("Installing dependencies for extensions: %s\n", strings.Join(extensions, ", "))
-	
+
 	return dm.installPackages(allPackages, "extension dependencies")
 }
 
@@ -319,7 +312,7 @@ func (dm *DependencyManager) installPackages(packages []string, description stri
 	}
 
 	var cmd *exec.Cmd
-	
+
 	switch dm.pm {
 	case APT:
 		args := append([]string{"install", "-y"}, packages...)
@@ -344,7 +337,7 @@ func (dm *DependencyManager) installPackages(packages []string, description stri
 	}
 
 	color.New(color.FgBlue).Printf("Running: %s %s\n", cmd.Path, strings.Join(cmd.Args[1:], " "))
-	
+
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		color.New(color.FgRed).Printf("Failed to install %s:\n%s\n", description, string(output))
@@ -356,28 +349,27 @@ func (dm *DependencyManager) installPackages(packages []string, description stri
 }
 
 func mapExtensionToDependency(extension string) string {
-	// Map PHP extension names to dependency keys
 	mapping := map[string]string{
-		"curl":        "curl",
-		"openssl":     "openssl",
-		"zip":         "zip",
-		"gd":          "gd",
-		"mysqli":      "mysql",
-		"pdo-mysql":   "mysql",
-		"pgsql":       "postgresql",
-		"pdo-pgsql":   "postgresql",
-		"sqlite3":     "sqlite",
-		"pdo-sqlite":  "sqlite",
-		"jpeg":        "libjpeg",
-		"freetype":    "freetype2",
-		"xml":         "libxml2",
-		"zlib":        "zlib",
-		"bz2":         "bzip2",
-		"intl":        "icu",
-		"gettext":     "gettext",
-		"gmp":         "gmp",
-		"ldap":        "openldap",
-		"pcre":        "pcre2",
+		"curl":       "curl",
+		"openssl":    "openssl",
+		"zip":        "zip",
+		"gd":         "gd",
+		"mysqli":     "mysql",
+		"pdo-mysql":  "mysql",
+		"pgsql":      "postgresql",
+		"pdo-pgsql":  "postgresql",
+		"sqlite3":    "sqlite",
+		"pdo-sqlite": "sqlite",
+		"jpeg":       "libjpeg",
+		"freetype":   "freetype2",
+		"xml":        "libxml2",
+		"zlib":       "zlib",
+		"bz2":        "bzip2",
+		"intl":       "icu",
+		"gettext":    "gettext",
+		"gmp":        "gmp",
+		"ldap":       "openldap",
+		"pcre":       "pcre2",
 	}
 
 	return mapping[extension]
@@ -410,22 +402,20 @@ func (dm *DependencyManager) CheckSystemDependencies(extensions []string) []stri
 }
 
 func (dm *DependencyManager) isDependencyAvailable(depName string) bool {
-	// Map dependency names to pkg-config names
 	pkgConfigNames := map[string][]string{
-		"gd":          {"gdlib"},
-		"zip":         {"libzip"},
-		"curl":        {"libcurl"},
-		"openssl":     {"openssl"},
-		"zlib":        {"zlib"},
-		"libxml2":     {"libxml-2.0"},
-		"freetype2":   {"freetype2"},
-		"icu":         {"icu-uc", "icu-io"},
-		"pcre2":       {"libpcre2-8"},
-		"bzip2":       {"bzip2"},
-		"openldap":    {"ldap"},
+		"gd":        {"gdlib"},
+		"zip":       {"libzip"},
+		"curl":      {"libcurl"},
+		"openssl":   {"openssl"},
+		"zlib":      {"zlib"},
+		"libxml2":   {"libxml-2.0"},
+		"freetype2": {"freetype2"},
+		"icu":       {"icu-uc", "icu-io"},
+		"pcre2":     {"libpcre2-8"},
+		"bzip2":     {"bzip2"},
+		"openldap":  {"ldap"},
 	}
 
-	// Check pkg-config names first
 	if pkgNames, exists := pkgConfigNames[depName]; exists {
 		for _, pkgName := range pkgNames {
 			if _, err := exec.Command("pkg-config", "--exists", pkgName).CombinedOutput(); err == nil {
@@ -434,12 +424,10 @@ func (dm *DependencyManager) isDependencyAvailable(depName string) bool {
 		}
 	}
 
-	// Fallback to original name
 	if _, err := exec.Command("pkg-config", "--exists", depName).CombinedOutput(); err == nil {
 		return true
 	}
 
-	// Special cases for dependencies that don't have pkg-config files
 	specialChecks := map[string]func() bool{
 		"mysql": func() bool {
 			return dm.checkCommand("mysql_config") || dm.checkLibrary("libmysqlclient")
@@ -471,14 +459,13 @@ func (dm *DependencyManager) checkCommand(command string) bool {
 }
 
 func (dm *DependencyManager) checkLibrary(libName string) bool {
-	// Check common library paths
 	paths := []string{"/usr/lib", "/usr/local/lib", "/opt/homebrew/lib", "/lib"}
-	
+
 	for _, path := range paths {
 		if _, err := utils.ExecuteCommand("find", path, "-name", libName+"*", "-type", "f"); err == nil {
 			return true
 		}
 	}
-	
+
 	return false
 }

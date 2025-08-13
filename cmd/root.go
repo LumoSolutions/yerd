@@ -20,6 +20,7 @@ var rootCmd = &cobra.Command{
 	},
 }
 
+// Execute runs the root command and handles any errors using cobra's error handler.
 func Execute() {
 	cobra.CheckErr(rootCmd.Execute())
 }

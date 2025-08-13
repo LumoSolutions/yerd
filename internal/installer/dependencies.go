@@ -9,23 +9,21 @@ import (
 
 func checkBuildDependencies(logger *utils.Logger) error {
 	utils.SafeLog(logger, "Checking and installing build dependencies...")
-	
-	// Initialize dependency manager
+
 	depMgr, err := dependencies.NewDependencyManager()
 	if err != nil {
 		utils.SafeLog(logger, "Failed to initialize dependency manager: %v", err)
 		return fmt.Errorf("failed to initialize dependency manager: %v", err)
 	}
-	
+
 	utils.SafeLog(logger, "Detected %s with %s package manager", depMgr.GetDistro(), depMgr.GetPackageManager())
 	fmt.Printf("📋 Detected: %s with %s\n", depMgr.GetDistro(), depMgr.GetPackageManager())
-	
-	// Install build dependencies automatically
+
 	if err := depMgr.InstallBuildDependencies(); err != nil {
 		utils.SafeLog(logger, "Failed to install build dependencies: %v", err)
 		return fmt.Errorf("failed to install build dependencies: %v", err)
 	}
-	
+
 	utils.SafeLog(logger, "Build dependencies installed successfully")
 	return nil
 }

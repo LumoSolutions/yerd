@@ -34,25 +34,25 @@ var AvailableExtensions = map[string]Extension{
 		Category:    "performance",
 	},
 	"curl": {
-		Name:        "curl",
-		ConfigFlag:  "--with-curl",
-		Description: "Client URL Library",
+		Name:         "curl",
+		ConfigFlag:   "--with-curl",
+		Description:  "Client URL Library",
 		Dependencies: []string{"libcurl"},
-		Category:    "network",
+		Category:     "network",
 	},
 	"openssl": {
-		Name:        "openssl",
-		ConfigFlag:  "--with-openssl",
-		Description: "OpenSSL support",
+		Name:         "openssl",
+		ConfigFlag:   "--with-openssl",
+		Description:  "OpenSSL support",
 		Dependencies: []string{"openssl"},
-		Category:    "security",
+		Category:     "security",
 	},
 	"zip": {
-		Name:        "zip",
-		ConfigFlag:  "--with-zip",
-		Description: "Zip Archive support",
+		Name:         "zip",
+		ConfigFlag:   "--with-zip",
+		Description:  "Zip Archive support",
 		Dependencies: []string{"libzip"},
-		Category:    "archive",
+		Category:     "archive",
 	},
 	"sockets": {
 		Name:        "sockets",
@@ -61,39 +61,39 @@ var AvailableExtensions = map[string]Extension{
 		Category:    "network",
 	},
 	"mysqli": {
-		Name:        "mysqli",
-		ConfigFlag:  "--with-mysqli",
-		Description: "MySQL Improved Extension",
+		Name:         "mysqli",
+		ConfigFlag:   "--with-mysqli",
+		Description:  "MySQL Improved Extension",
 		Dependencies: []string{"mysql"},
-		Category:    "database",
+		Category:     "database",
 	},
 	"pdo-mysql": {
-		Name:        "pdo-mysql",
-		ConfigFlag:  "--with-pdo-mysql",
-		Description: "PDO MySQL Driver",
+		Name:         "pdo-mysql",
+		ConfigFlag:   "--with-pdo-mysql",
+		Description:  "PDO MySQL Driver",
 		Dependencies: []string{"mysql"},
-		Category:    "database",
+		Category:     "database",
 	},
 	"gd": {
-		Name:        "gd",
-		ConfigFlag:  "--enable-gd",
-		Description: "GD Graphics Library",
+		Name:         "gd",
+		ConfigFlag:   "--enable-gd",
+		Description:  "GD Graphics Library",
 		Dependencies: []string{"libgd"},
-		Category:    "graphics",
+		Category:     "graphics",
 	},
 	"jpeg": {
-		Name:        "jpeg",
-		ConfigFlag:  "--with-jpeg",
-		Description: "JPEG support for GD",
+		Name:         "jpeg",
+		ConfigFlag:   "--with-jpeg",
+		Description:  "JPEG support for GD",
 		Dependencies: []string{"libjpeg"},
-		Category:    "graphics",
+		Category:     "graphics",
 	},
 	"freetype": {
-		Name:        "freetype",
-		ConfigFlag:  "--with-freetype",
-		Description: "FreeType 2 support",
+		Name:         "freetype",
+		ConfigFlag:   "--with-freetype",
+		Description:  "FreeType 2 support",
 		Dependencies: []string{"freetype2"},
-		Category:    "graphics",
+		Category:     "graphics",
 	},
 	"xml": {
 		Name:        "xml",
@@ -126,25 +126,25 @@ var AvailableExtensions = map[string]Extension{
 		Category:    "security",
 	},
 	"pcre": {
-		Name:        "pcre",
-		ConfigFlag:  "--with-pcre-jit",
-		Description: "Perl Compatible Regular Expressions with JIT",
+		Name:         "pcre",
+		ConfigFlag:   "--with-pcre-jit",
+		Description:  "Perl Compatible Regular Expressions with JIT",
 		Dependencies: []string{"pcre2"},
-		Category:    "core",
+		Category:     "core",
 	},
 	"zlib": {
-		Name:        "zlib",
-		ConfigFlag:  "--with-zlib",
-		Description: "Zlib compression support",
+		Name:         "zlib",
+		ConfigFlag:   "--with-zlib",
+		Description:  "Zlib compression support",
 		Dependencies: []string{"zlib"},
-		Category:    "compression",
+		Category:     "compression",
 	},
 	"bz2": {
-		Name:        "bz2",
-		ConfigFlag:  "--with-bz2",
-		Description: "Bzip2 compression support",
+		Name:         "bz2",
+		ConfigFlag:   "--with-bz2",
+		Description:  "Bzip2 compression support",
 		Dependencies: []string{"bzip2"},
-		Category:    "compression",
+		Category:     "compression",
 	},
 	"iconv": {
 		Name:        "iconv",
@@ -153,39 +153,39 @@ var AvailableExtensions = map[string]Extension{
 		Category:    "core",
 	},
 	"intl": {
-		Name:        "intl",
-		ConfigFlag:  "--enable-intl",
-		Description: "Internationalization extension",
+		Name:         "intl",
+		ConfigFlag:   "--enable-intl",
+		Description:  "Internationalization extension",
 		Dependencies: []string{"icu"},
-		Category:    "i18n",
+		Category:     "i18n",
 	},
 	"pgsql": {
-		Name:        "pgsql",
-		ConfigFlag:  "--with-pgsql",
-		Description: "PostgreSQL support",
+		Name:         "pgsql",
+		ConfigFlag:   "--with-pgsql",
+		Description:  "PostgreSQL support",
 		Dependencies: []string{"postgresql"},
-		Category:    "database",
+		Category:     "database",
 	},
 	"pdo-pgsql": {
-		Name:        "pdo-pgsql",
-		ConfigFlag:  "--with-pdo-pgsql",
-		Description: "PDO PostgreSQL Driver",
+		Name:         "pdo-pgsql",
+		ConfigFlag:   "--with-pdo-pgsql",
+		Description:  "PDO PostgreSQL Driver",
 		Dependencies: []string{"postgresql"},
-		Category:    "database",
+		Category:     "database",
 	},
 	"sqlite3": {
-		Name:        "sqlite3",
-		ConfigFlag:  "--with-sqlite3",
-		Description: "SQLite 3 support",
+		Name:         "sqlite3",
+		ConfigFlag:   "--with-sqlite3",
+		Description:  "SQLite 3 support",
 		Dependencies: []string{"sqlite"},
-		Category:    "database",
+		Category:     "database",
 	},
 	"pdo-sqlite": {
-		Name:        "pdo-sqlite",
-		ConfigFlag:  "--with-pdo-sqlite",
-		Description: "PDO SQLite Driver",
+		Name:         "pdo-sqlite",
+		ConfigFlag:   "--with-pdo-sqlite",
+		Description:  "PDO SQLite Driver",
 		Dependencies: []string{"sqlite"},
-		Category:    "database",
+		Category:     "database",
 	},
 	"fileinfo": {
 		Name:        "fileinfo",
@@ -200,25 +200,25 @@ var AvailableExtensions = map[string]Extension{
 		Category:    "graphics",
 	},
 	"gettext": {
-		Name:        "gettext",
-		ConfigFlag:  "--with-gettext",
-		Description: "GNU gettext support",
+		Name:         "gettext",
+		ConfigFlag:   "--with-gettext",
+		Description:  "GNU gettext support",
 		Dependencies: []string{"gettext"},
-		Category:    "i18n",
+		Category:     "i18n",
 	},
 	"gmp": {
-		Name:        "gmp",
-		ConfigFlag:  "--with-gmp",
-		Description: "GNU MP support",
+		Name:         "gmp",
+		ConfigFlag:   "--with-gmp",
+		Description:  "GNU MP support",
 		Dependencies: []string{"gmp"},
-		Category:    "math",
+		Category:     "math",
 	},
 	"ldap": {
-		Name:        "ldap",
-		ConfigFlag:  "--with-ldap",
-		Description: "LDAP support",
+		Name:         "ldap",
+		ConfigFlag:   "--with-ldap",
+		Description:  "LDAP support",
 		Dependencies: []string{"openldap"},
-		Category:    "directory",
+		Category:     "directory",
 	},
 	"soap": {
 		Name:        "soap",
@@ -234,11 +234,15 @@ var AvailableExtensions = map[string]Extension{
 	},
 }
 
+// GetExtension retrieves extension information by name.
+// name: Extension name to lookup. Returns Extension struct and existence boolean.
 func GetExtension(name string) (Extension, bool) {
 	ext, exists := AvailableExtensions[name]
 	return ext, exists
 }
 
+// GetExtensionsByCategory returns all extensions that belong to a specific category.
+// category: Category name to filter by. Returns slice of Extension structs in that category.
 func GetExtensionsByCategory(category string) []Extension {
 	var extensions []Extension
 	for _, ext := range AvailableExtensions {
@@ -249,12 +253,14 @@ func GetExtensionsByCategory(category string) []Extension {
 	return extensions
 }
 
+// GetAllCategories returns a sorted list of all extension categories available.
+// Returns alphabetically sorted slice of category names.
 func GetAllCategories() []string {
 	categories := make(map[string]bool)
 	for _, ext := range AvailableExtensions {
 		categories[ext.Category] = true
 	}
-	
+
 	var result []string
 	for category := range categories {
 		result = append(result, category)
@@ -263,10 +269,12 @@ func GetAllCategories() []string {
 	return result
 }
 
+// ValidateExtensions separates provided extensions into valid and invalid lists.
+// extensions: Extension names to validate. Returns valid extensions slice and invalid extensions slice.
 func ValidateExtensions(extensions []string) ([]string, []string) {
 	var valid []string
 	var invalid []string
-	
+
 	for _, ext := range extensions {
 		if _, exists := AvailableExtensions[ext]; exists {
 			valid = append(valid, ext)
@@ -274,25 +282,29 @@ func ValidateExtensions(extensions []string) ([]string, []string) {
 			invalid = append(invalid, ext)
 		}
 	}
-	
+
 	return valid, invalid
 }
 
+// GetConfigureFlags returns PHP configure flags for the specified extensions.
+// extensions: Extension names to get flags for. Returns slice of configure flag strings.
 func GetConfigureFlags(extensions []string) []string {
 	var flags []string
-	
+
 	for _, extName := range extensions {
 		if ext, exists := AvailableExtensions[extName]; exists {
 			flags = append(flags, ext.ConfigFlag)
 		}
 	}
-	
+
 	return flags
 }
 
+// GetDependencies returns system dependencies required for the specified extensions.
+// extensions: Extension names to check. Returns sorted slice of unique system dependencies.
 func GetDependencies(extensions []string) []string {
 	depMap := make(map[string]bool)
-	
+
 	for _, extName := range extensions {
 		if ext, exists := AvailableExtensions[extName]; exists {
 			for _, dep := range ext.Dependencies {
@@ -300,7 +312,7 @@ func GetDependencies(extensions []string) []string {
 			}
 		}
 	}
-	
+
 	var deps []string
 	for dep := range depMap {
 		deps = append(deps, dep)
@@ -309,15 +321,17 @@ func GetDependencies(extensions []string) []string {
 	return deps
 }
 
+// FormatExtensionList creates a formatted string representation of extensions.
+// extensions: Extension names, withDescriptions: Include descriptions if true. Returns formatted string.
 func FormatExtensionList(extensions []string, withDescriptions bool) string {
 	if len(extensions) == 0 {
 		return "None"
 	}
-	
+
 	if !withDescriptions {
 		return strings.Join(extensions, ", ")
 	}
-	
+
 	var formatted []string
 	for _, extName := range extensions {
 		if ext, exists := AvailableExtensions[extName]; exists {
@@ -326,21 +340,23 @@ func FormatExtensionList(extensions []string, withDescriptions bool) string {
 			formatted = append(formatted, extName)
 		}
 	}
-	
+
 	return strings.Join(formatted, "\n")
 }
 
+// SuggestSimilarExtensions finds extension names similar to an invalid extension name.
+// invalid: Invalid extension name to find suggestions for. Returns sorted slice of similar extension names.
 func SuggestSimilarExtensions(invalid string) []string {
 	var suggestions []string
 	invalid = strings.ToLower(invalid)
-	
+
 	for name := range AvailableExtensions {
-		if strings.Contains(strings.ToLower(name), invalid) || 
-		   strings.Contains(invalid, strings.ToLower(name)) {
+		if strings.Contains(strings.ToLower(name), invalid) ||
+			strings.Contains(invalid, strings.ToLower(name)) {
 			suggestions = append(suggestions, name)
 		}
 	}
-	
+
 	sort.Strings(suggestions)
 	return suggestions
 }

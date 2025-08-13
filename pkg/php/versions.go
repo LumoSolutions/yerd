@@ -17,10 +17,13 @@ type VersionInfo struct {
 	ConfigureFlags []string
 }
 
+// GetAvailableVersions returns the list of PHP versions supported by YERD.
 func GetAvailableVersions() []string {
 	return availableVersions
 }
 
+// IsValidVersion checks if the provided version string is supported by YERD.
+// version: PHP version string to validate. Returns true if version is supported.
 func IsValidVersion(version string) bool {
 	for _, v := range availableVersions {
 		if v == version {
@@ -30,10 +33,14 @@ func IsValidVersion(version string) bool {
 	return false
 }
 
+// GetVersionInfo retrieves version information for a PHP version (placeholder implementation).
+// version: PHP version string. Returns VersionInfo struct and existence boolean.
 func GetVersionInfo(version string) (VersionInfo, bool) {
 	return VersionInfo{}, false
 }
 
+// GetVersionInfoWithDownloadURL creates VersionInfo with download details and configure flags.
+// version: Major.minor version, downloadURL: Source download URL, fullVersion: Complete version string.
 func GetVersionInfoWithDownloadURL(version, downloadURL, fullVersion string) (VersionInfo, bool) {
 	if downloadURL != "" && fullVersion != "" {
 		return VersionInfo{
@@ -47,6 +54,8 @@ func GetVersionInfoWithDownloadURL(version, downloadURL, fullVersion string) (Ve
 	return VersionInfo{}, false
 }
 
+// GetConfigureFlagsForVersion generates PHP configure flags for compilation with specified extensions.
+// majorMinor: PHP version, extensions: Extension list. Returns complete configure flag slice.
 func GetConfigureFlagsForVersion(majorMinor string, extensions []string) []string {
 	baseFlags := []string{
 		fmt.Sprintf("--prefix=%s/php%s", utils.YerdPHPDir, majorMinor),
@@ -57,72 +66,74 @@ func GetConfigureFlagsForVersion(majorMinor string, extensions []string) []strin
 		"--with-fpm-group=http",
 		"--enable-cli",
 	}
-	
-	// Get extension-specific configure flags
+
 	extensionFlags := getExtensionConfigureFlags(extensions)
-	
+
 	return append(baseFlags, extensionFlags...)
 }
 
+// getExtensionConfigureFlags converts extension names to their configure flags.
+// extensions: Extension name list. Returns slice of configure flags for enabled extensions.
 func getExtensionConfigureFlags(extensions []string) []string {
 	var flags []string
-	
-	// Extension to configure flag mapping
+
 	extensionFlags := map[string]string{
-		"mbstring":    "--enable-mbstring",
-		"bcmath":      "--enable-bcmath",
-		"opcache":     "--enable-opcache",
-		"curl":        "--with-curl",
-		"openssl":     "--with-openssl",
-		"zip":         "--with-zip",
-		"sockets":     "--enable-sockets",
-		"mysqli":      "--with-mysqli",
-		"pdo-mysql":   "--with-pdo-mysql",
-		"gd":          "--enable-gd",
-		"jpeg":        "--with-jpeg",
-		"freetype":    "--with-freetype",
-		"xml":         "--enable-xml",
-		"json":        "--enable-json",
-		"session":     "--enable-session",
-		"hash":        "--enable-hash",
-		"filter":      "--enable-filter",
-		"pcre":        "--with-pcre-jit",
-		"zlib":        "--with-zlib",
-		"bz2":         "--with-bz2",
-		"iconv":       "--with-iconv",
-		"intl":        "--enable-intl",
-		"pgsql":       "--with-pgsql",
-		"pdo-pgsql":   "--with-pdo-pgsql",
-		"sqlite3":     "--with-sqlite3",
-		"pdo-sqlite":  "--with-pdo-sqlite",
-		"fileinfo":    "--enable-fileinfo",
-		"exif":        "--enable-exif",
-		"gettext":     "--with-gettext",
-		"gmp":         "--with-gmp",
-		"ldap":        "--with-ldap",
-		"soap":        "--enable-soap",
-		"ftp":         "--enable-ftp",
+		"mbstring":   "--enable-mbstring",
+		"bcmath":     "--enable-bcmath",
+		"opcache":    "--enable-opcache",
+		"curl":       "--with-curl",
+		"openssl":    "--with-openssl",
+		"zip":        "--with-zip",
+		"sockets":    "--enable-sockets",
+		"mysqli":     "--with-mysqli",
+		"pdo-mysql":  "--with-pdo-mysql",
+		"gd":         "--enable-gd",
+		"jpeg":       "--with-jpeg",
+		"freetype":   "--with-freetype",
+		"xml":        "--enable-xml",
+		"json":       "--enable-json",
+		"session":    "--enable-session",
+		"hash":       "--enable-hash",
+		"filter":     "--enable-filter",
+		"pcre":       "--with-pcre-jit",
+		"zlib":       "--with-zlib",
+		"bz2":        "--with-bz2",
+		"iconv":      "--with-iconv",
+		"intl":       "--enable-intl",
+		"pgsql":      "--with-pgsql",
+		"pdo-pgsql":  "--with-pdo-pgsql",
+		"sqlite3":    "--with-sqlite3",
+		"pdo-sqlite": "--with-pdo-sqlite",
+		"fileinfo":   "--enable-fileinfo",
+		"exif":       "--enable-exif",
+		"gettext":    "--with-gettext",
+		"gmp":        "--with-gmp",
+		"ldap":       "--with-ldap",
+		"soap":       "--enable-soap",
+		"ftp":        "--enable-ftp",
 	}
-	
+
 	for _, ext := range extensions {
 		if flag, exists := extensionFlags[ext]; exists {
 			flags = append(flags, flag)
 		}
 	}
-	
+
 	return flags
 }
 
-// Backward compatibility for existing code
+// getConfigureFlagsForVersion generates configure flags with default extensions for a PHP version.
+// majorMinor: PHP version string. Returns configure flags with standard extension set.
 func getConfigureFlagsForVersion(majorMinor string) []string {
-	// Default extensions for backward compatibility
 	defaultExtensions := []string{
-		"mbstring", "bcmath", "opcache", "curl", "openssl", 
+		"mbstring", "bcmath", "opcache", "curl", "openssl",
 		"zip", "sockets", "mysqli", "pdo-mysql", "gd", "jpeg", "freetype",
 	}
 	return GetConfigureFlagsForVersion(majorMinor, defaultExtensions)
 }
 
+// GetLatestVersionInfo creates VersionInfo from version and URL mappings.
+// majorMinor: PHP version, latestVersions: Version mapping, downloadURLs: URL mapping. Returns VersionInfo or false.
 func GetLatestVersionInfo(majorMinor string, latestVersions, downloadURLs map[string]string) (VersionInfo, bool) {
 	if latestVersion, exists := latestVersions[majorMinor]; exists {
 		if downloadURL, hasURL := downloadURLs[latestVersion]; hasURL {
@@ -133,6 +144,8 @@ func GetLatestVersionInfo(majorMinor string, latestVersions, downloadURLs map[st
 	return VersionInfo{}, false
 }
 
+// ExtractMajorMinor extracts major.minor version from full version string using regex.
+// fullVersion: Complete version string like "8.3.1". Returns major.minor format like "8.3".
 func ExtractMajorMinor(fullVersion string) string {
 	versionRegex := regexp.MustCompile(`^(\d+\.\d+)`)
 	matches := versionRegex.FindStringSubmatch(fullVersion)
@@ -142,18 +155,26 @@ func ExtractMajorMinor(fullVersion string) string {
 	return fullVersion
 }
 
+// GetInstallPath returns the installation directory path for a PHP version.
+// version: PHP version string. Returns full path to PHP installation directory.
 func GetInstallPath(version string) string {
 	return utils.YerdPHPDir + "/php" + version + "/"
 }
 
+// GetBinaryPath returns the symlink path for a PHP version's binary.
+// version: PHP version string. Returns path to PHP binary symlink in YERD bin directory.
 func GetBinaryPath(version string) string {
 	return utils.YerdBinDir + "/php" + version
 }
 
+// GetConfigPath returns the configuration directory path for a PHP version.
+// version: PHP version string. Returns path to PHP configuration directory.
 func GetConfigPath(version string) string {
 	return utils.YerdEtcDir + "/php" + version + "/"
 }
 
+// FormatVersion removes 'php' prefix from version strings for normalization.
+// version: Version string potentially with php prefix. Returns normalized version string.
 func FormatVersion(version string) string {
 	if len(version) > 3 {
 		prefix := strings.ToLower(version[:3])

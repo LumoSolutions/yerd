@@ -17,49 +17,55 @@ type PHPVersionDetails struct {
 	ErrorMsg   string
 }
 
+// CheckForSystemPHP detects if PHP is installed outside of YERD management.
+// Returns hasSystemPHP boolean, PHP type description, and error if detection fails.
 func CheckForSystemPHP() (bool, string, error) {
 	globalPHPPath := filepath.Join(SystemBinDir, "php")
-	
+
 	if !FileExists(globalPHPPath) {
 		return false, "", nil
 	}
-	
+
 	info, err := os.Lstat(globalPHPPath)
 	if err != nil {
 		return false, "", fmt.Errorf("failed to check php binary: %v", err)
 	}
-	
+
 	if info.Mode()&os.ModeSymlink != 0 {
 		target, err := os.Readlink(globalPHPPath)
 		if err != nil {
 			return false, "", fmt.Errorf("failed to read symlink target: %v", err)
 		}
-		
+
 		if strings.Contains(target, YerdBaseDir+"/") {
 			return false, "", nil
 		}
-		
+
 		return true, fmt.Sprintf("symlink to %s", target), nil
 	}
-	
+
 	return true, "system binary", nil
 }
 
+// DetectSystemPHPInfo retrieves version information from system PHP installation.
+// Returns PHP version string or error if version detection fails.
 func DetectSystemPHPInfo() (string, error) {
 	cmd := filepath.Join(SystemBinDir, "php")
 	output, err := ExecuteCommand(cmd, "-v")
 	if err != nil {
 		return "", fmt.Errorf("failed to get PHP version: %v", err)
 	}
-	
+
 	lines := strings.Split(string(output), "\n")
 	if len(lines) > 0 {
 		return strings.TrimSpace(lines[0]), nil
 	}
-	
+
 	return "Unknown PHP version", nil
 }
 
+// GetPHPBinaryPath searches for PHP binary in multiple locations and validates version.
+// version: PHP version string to locate. Returns binary path or error if not found.
 func GetPHPBinaryPath(version string) (string, error) {
 	possiblePaths := []string{
 		YerdBinDir + "/php" + version,
@@ -69,7 +75,7 @@ func GetPHPBinaryPath(version string) (string, error) {
 		"/usr/bin/php" + version,
 		"/usr/bin/php-" + version,
 	}
-	
+
 	for _, path := range possiblePaths {
 		if FileExists(path) {
 			output, err := ExecuteCommand(path, "-v")
@@ -78,25 +84,27 @@ func GetPHPBinaryPath(version string) (string, error) {
 			}
 		}
 	}
-	
+
 	return "", fmt.Errorf("PHP %s binary not found", version)
 }
 
+// GetPHPIniPath locates the php.ini configuration file for a specific PHP version.
+// version: PHP version string. Returns ini file path or error if not found.
 func GetPHPIniPath(version string) (string, error) {
 	binaryPath, err := GetPHPBinaryPath(version)
 	if err != nil {
 		return "", err
 	}
-	
+
 	output, err := ExecuteCommand(binaryPath, "--ini")
 	if err != nil {
 		return "", fmt.Errorf("failed to get ini info: %v", err)
 	}
-	
+
 	lines := strings.Split(output, "\n")
 	var configPath string
 	var loadedIni string
-	
+
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if strings.HasPrefix(line, "Configuration File (php.ini) Path:") {
@@ -105,11 +113,11 @@ func GetPHPIniPath(version string) (string, error) {
 			loadedIni = strings.TrimSpace(strings.TrimPrefix(line, "Loaded Configuration File:"))
 		}
 	}
-	
+
 	if loadedIni != "" && loadedIni != "(none)" {
 		return loadedIni, nil
 	}
-	
+
 	if configPath != "" {
 		potentialIniPath := configPath + phpIniFile
 		if FileExists(potentialIniPath) {
@@ -117,7 +125,7 @@ func GetPHPIniPath(version string) (string, error) {
 		}
 		return fmt.Sprintf("%s (no php.ini)", configPath), nil
 	}
-	
+
 	possibleIniPaths := []string{
 		YerdEtcDir + "/php" + version + phpIniFile,
 		YerdPHPDir + "/php" + version + "/lib/php.ini",
@@ -126,43 +134,47 @@ func GetPHPIniPath(version string) (string, error) {
 		"/usr/local/etc/php/" + version + phpIniFile,
 		"/opt/php/" + version + "/etc/php.ini",
 	}
-	
+
 	for _, path := range possibleIniPaths {
 		if FileExists(path) {
 			return path, nil
 		}
 	}
-	
+
 	return "(none)", nil
 }
 
+// CreatePHPIniForVersion generates a default php.ini configuration file for a PHP version.
+// version: PHP version string. Returns error if ini file already exists or creation fails.
 func CreatePHPIniForVersion(version string) error {
 	configDir := YerdEtcDir + "/php" + version
 	iniPath := configDir + phpIniFile
-	
+
 	if FileExists(iniPath) {
 		return fmt.Errorf("php.ini already exists at: %s", iniPath)
 	}
-	
+
 	if err := os.MkdirAll(configDir, DirPermissions); err != nil {
 		return fmt.Errorf("failed to create config directory: %v", err)
 	}
-	
+
 	iniContent := generateDefaultPHPIni(version)
-	
+
 	if err := os.WriteFile(iniPath, []byte(iniContent), FilePermissions); err != nil {
 		return fmt.Errorf("failed to create php.ini: %v", err)
 	}
-	
+
 	return nil
 }
 
+// generateDefaultPHPIni creates default PHP configuration content with YERD-specific settings.
+// version: PHP version string. Returns complete php.ini file content as string.
 func generateDefaultPHPIni(version string) string {
 	extensionDir := detectExtensionDirectory(version)
 	if extensionDir == "" {
 		extensionDir = fmt.Sprintf("/opt/yerd/php/php%s/lib/php/extensions", version)
 	}
-	
+
 	return fmt.Sprintf(`; Default PHP configuration for YERD-managed PHP %s
 ; Generated by YERD (A powerful, developer-friendly tool for managing PHP versions)
 ; Location: /opt/yerd/etc/php%s/php.ini
@@ -273,60 +285,68 @@ bcmath.scale = 0
 `, version, version, extensionDir)
 }
 
+// detectExtensionDirectory determines the correct extension directory path for PHP version.
+// version: PHP version string. Returns extension directory path or empty string if not found.
 func detectExtensionDirectory(version string) string {
 	if extDir := getExtensionDirFromPHP(version); extDir != "" {
 		return extDir
 	}
-	
+
 	return findFallbackExtensionDir(version)
 }
 
+// getExtensionDirFromPHP queries PHP binary for its extension directory configuration.
+// version: PHP version string. Returns extension directory from PHP or empty string.
 func getExtensionDirFromPHP(version string) string {
 	binaryPath, err := GetPHPBinaryPath(version)
 	if err != nil {
 		return ""
 	}
-	
+
 	output, err := ExecuteCommand(binaryPath, "-r", "echo ini_get('extension_dir');")
 	if err != nil {
 		return ""
 	}
-	
+
 	extDir := strings.TrimSpace(output)
 	if extDir != "" && FileExists(extDir) {
 		return extDir
 	}
-	
+
 	return ""
 }
 
+// findFallbackExtensionDir searches common extension directory locations as fallback.
+// version: PHP version string. Returns found extension directory or empty string.
 func findFallbackExtensionDir(version string) string {
 	installPath := YerdPHPDir + "/php" + version
 	possibleExtDirs := []string{
 		installPath + "/lib/php/extensions",
-		installPath + "/lib64/php/extensions", 
+		installPath + "/lib64/php/extensions",
 		installPath + "/lib/extensions",
 	}
-	
+
 	for _, baseDir := range possibleExtDirs {
 		if extDir := searchExtensionSubDir(baseDir); extDir != "" {
 			return extDir
 		}
 	}
-	
+
 	return ""
 }
 
+// searchExtensionSubDir finds the actual extension directory within a base directory.
+// baseDir: Base directory to search. Returns extension subdirectory path or baseDir.
 func searchExtensionSubDir(baseDir string) string {
 	if !FileExists(baseDir) {
 		return ""
 	}
-	
+
 	output, err := ExecuteCommand("find", baseDir, "-maxdepth", "1", "-type", "d", "-name", "*")
 	if err != nil {
 		return baseDir
 	}
-	
+
 	lines := strings.Split(strings.TrimSpace(output), "\n")
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
@@ -334,10 +354,12 @@ func searchExtensionSubDir(baseDir string) string {
 			return line
 		}
 	}
-	
+
 	return baseDir
 }
 
+// NormalizePHPVersion removes 'php' prefix from version strings for consistency.
+// version: Version string potentially with php prefix. Returns normalized version string.
 func NormalizePHPVersion(version string) string {
 	if len(version) > 3 {
 		prefix := strings.ToLower(version[:3])
