@@ -133,19 +133,10 @@ func (wm *WebManager) downloadSource(config *ServiceConfig, buildDir string) err
 	spinner.Start()
 	defer spinner.Stop("✓ Source downloaded")
 
-	tarballPath := filepath.Join(buildDir, fmt.Sprintf("%s.tar.gz", config.Name))
-
-	_, err := utils.ExecuteCommand("wget", "-O", tarballPath, config.DownloadURL)
+	opts := utils.DefaultDownloadOptions()
+	_, err := utils.DownloadAndExtractTarGz(config.DownloadURL, buildDir, opts)
 	if err != nil {
-		_, err = utils.ExecuteCommand("curl", "-L", "-o", tarballPath, config.DownloadURL)
-		if err != nil {
-			return fmt.Errorf("failed to download with both wget and curl: %w", err)
-		}
-	}
-
-	_, err = utils.ExecuteCommand("tar", "-xzf", tarballPath, "-C", buildDir, "--strip-components=1")
-	if err != nil {
-		return fmt.Errorf("failed to extract tarball: %w", err)
+		return fmt.Errorf("failed to download and extract source: %w", err)
 	}
 
 	return nil

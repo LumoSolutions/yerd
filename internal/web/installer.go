@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/LumoSolutions/yerd/internal/dependencies"
 	"github.com/LumoSolutions/yerd/internal/utils"
@@ -254,63 +253,13 @@ func (wi *WebInstaller) downloadSource() (string, error) {
 	spinner := utils.NewLoadingSpinner("Downloading source code...")
 	spinner.Start()
 
-	// Create temporary directory
 	tempDir := filepath.Join("/tmp", fmt.Sprintf("yerd-web-%s", wi.service))
-	if err := os.MkdirAll(tempDir, 0755); err != nil {
-		spinner.Stop("✗ Failed to create temp directory")
-		return "", err
-	}
-
-	// Download file
-	filename := filepath.Base(wi.config.DownloadURL)
-	downloadPath := filepath.Join(tempDir, filename)
-
-	// Try wget first, then curl
-	var downloadCmd string
-	var downloadArgs []string
-
-	if _, err := utils.ExecuteCommand("which", "wget"); err == nil {
-		downloadCmd = "wget"
-		downloadArgs = []string{"-O", downloadPath, wi.config.DownloadURL}
-	} else if _, err := utils.ExecuteCommand("which", "curl"); err == nil {
-		downloadCmd = "curl"
-		downloadArgs = []string{"-L", "-o", downloadPath, wi.config.DownloadURL}
-	} else {
-		spinner.Stop("✗ Neither wget nor curl found")
-		return "", fmt.Errorf("neither wget nor curl is available for downloading")
-	}
-
-	wi.logger.WriteLog("Downloading with %s: %s", downloadCmd, wi.config.DownloadURL)
-	if _, err := utils.ExecuteCommandWithLogging(wi.logger, downloadCmd, downloadArgs...); err != nil {
+	
+	opts := utils.DefaultDownloadOptions().WithLogger(wi.logger)
+	sourceDir, err := utils.DownloadAndExtractTarGz(wi.config.DownloadURL, tempDir, opts)
+	if err != nil {
 		spinner.Stop("✗ Download failed")
 		return "", fmt.Errorf("download failed: %v", err)
-	}
-
-	// Extract archive
-	wi.logger.WriteLog("Extracting archive: %s", downloadPath)
-	if _, err := utils.ExecuteCommandWithLogging(wi.logger, "tar", "xzf", downloadPath, "-C", tempDir); err != nil {
-		spinner.Stop("✗ Extraction failed")
-		return "", fmt.Errorf("extraction failed: %v", err)
-	}
-
-	// Find extracted directory
-	entries, err := os.ReadDir(tempDir)
-	if err != nil {
-		spinner.Stop("✗ Failed to read temp directory")
-		return "", err
-	}
-
-	var sourceDir string
-	for _, entry := range entries {
-		if entry.IsDir() && strings.Contains(entry.Name(), wi.service) {
-			sourceDir = filepath.Join(tempDir, entry.Name())
-			break
-		}
-	}
-
-	if sourceDir == "" {
-		spinner.Stop("✗ Source directory not found")
-		return "", fmt.Errorf("could not find extracted source directory")
 	}
 
 	spinner.Stop("✓ Source downloaded and extracted")
@@ -389,145 +338,18 @@ func (wi *WebInstaller) compileDnsmasq() error {
 	return nil
 }
 
-// createConfiguration creates basic configuration files
+// createConfiguration downloads configuration files from GitHub
 func (wi *WebInstaller) createConfiguration() error {
 	switch wi.service {
 	case "nginx":
-		return wi.createNginxConfig()
+		return FetchConfigFromGitHub("nginx", "nginx.conf", wi.logger)
 	case "dnsmasq":
-		return wi.createDnsmasqConfig()
+		return FetchConfigFromGitHub("dnsmasq", "dnsmasq.conf", wi.logger)
 	default:
 		return nil // No default config needed
 	}
 }
 
-// createNginxConfig creates a basic nginx configuration
-func (wi *WebInstaller) createNginxConfig() error {
-	configDir := "/opt/yerd/web/nginx/conf"
-	configPath := filepath.Join(configDir, "nginx.conf")
-	
-	// Ensure config directory exists
-	if err := utils.CreateDirectory(configDir); err != nil {
-		return fmt.Errorf("failed to create config directory: %v", err)
-	}
-	
-	if utils.FileExists(configPath) {
-		return nil // Don't overwrite existing config
-	}
-
-	config := fmt.Sprintf(`user nobody;
-worker_processes auto;
-pid %s/nginx.pid;
-
-events {
-    worker_connections 1024;
-}
-
-http {
-    # Basic MIME types
-    types {
-        text/html                             html htm shtml;
-        text/css                              css;
-        text/xml                              xml;
-        image/gif                             gif;
-        image/jpeg                            jpeg jpg;
-        image/png                             png;
-        application/javascript                js;
-        application/json                      json;
-        text/plain                            txt;
-    }
-    default_type  application/octet-stream;
-    
-    sendfile        on;
-    tcp_nopush      on;
-    tcp_nodelay     on;
-    keepalive_timeout  65;
-    
-    access_log %s/access.log;
-    error_log  %s/error.log;
-    
-    server {
-        listen       8080;
-        server_name  localhost;
-        root         /var/www/html;
-        index        index.html index.php;
-        
-        location / {
-            try_files $uri $uri/ =404;
-        }
-        
-        location ~ \.php$ {
-            fastcgi_pass   127.0.0.1:9000;
-            fastcgi_index  index.php;
-            fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
-            fastcgi_param  QUERY_STRING     $query_string;
-            fastcgi_param  REQUEST_METHOD   $request_method;
-            fastcgi_param  CONTENT_TYPE     $content_type;
-            fastcgi_param  CONTENT_LENGTH   $content_length;
-            fastcgi_param  REQUEST_URI      $request_uri;
-            fastcgi_param  DOCUMENT_URI     $document_uri;
-            fastcgi_param  DOCUMENT_ROOT    $document_root;
-            fastcgi_param  SERVER_PROTOCOL  $server_protocol;
-            fastcgi_param  GATEWAY_INTERFACE CGI/1.1;
-            fastcgi_param  SERVER_SOFTWARE  nginx/$nginx_version;
-        }
-    }
-}
-`, "/opt/yerd/web/nginx/run", "/opt/yerd/web/nginx/logs", "/opt/yerd/web/nginx/logs")
-
-	if err := os.WriteFile(configPath, []byte(config), 0644); err != nil {
-		return fmt.Errorf("failed to write nginx config: %v", err)
-	}
-
-	wi.logger.WriteLog("Created nginx configuration: %s", configPath)
-	return nil
-}
-
-// createDnsmasqConfig creates a basic dnsmasq configuration
-func (wi *WebInstaller) createDnsmasqConfig() error {
-	configDir := "/opt/yerd/web/dnsmasq/conf"
-	configPath := filepath.Join(configDir, "dnsmasq.conf")
-	
-	// Ensure config directory exists
-	if err := utils.CreateDirectory(configDir); err != nil {
-		return fmt.Errorf("failed to create config directory: %v", err)
-	}
-	
-	if utils.FileExists(configPath) {
-		return nil // Don't overwrite existing config
-	}
-
-	config := fmt.Sprintf(`# YERD dnsmasq configuration
-port=5353
-interface=lo
-bind-interfaces
-
-# Process management
-pid-file=%s/dnsmasq.pid
-
-# Local domain
-local=/dev/
-domain=dev
-
-# Cache settings
-cache-size=1000
-
-# Log settings
-log-queries
-log-facility=%s/dnsmasq.log
-
-# Example entries
-address=/example.dev/127.0.0.1
-address=/test.dev/127.0.0.1
-`, "/opt/yerd/web/dnsmasq/run", "/opt/yerd/web/dnsmasq/logs")
-
-	if err := os.WriteFile(configPath, []byte(config), 0644); err != nil {
-		return fmt.Errorf("failed to write dnsmasq config: %v", err)
-	}
-
-	wi.logger.WriteLog("Created dnsmasq configuration: %s", configPath)
-	return nil
-}
 
 // GetInstalledServices returns a list of installed web services
 func GetInstalledServices() []string {

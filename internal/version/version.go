@@ -7,6 +7,7 @@ import (
 )
 
 const Version = "1.1.0"
+const Branch = "feat/nginx"
 
 // PrintSplash displays the YERD ASCII art logo and version information with colors.
 func PrintSplash() {
@@ -41,4 +42,11 @@ func PrintSplash() {
 // GetVersion returns the current YERD version string.
 func GetVersion() string {
 	return Version
+}
+
+// GetBranch returns the current branch that files should
+// be downloaded from, useful during development, should
+// be reset to main on build for release
+func GetBranch() string {
+	return Branch
 }

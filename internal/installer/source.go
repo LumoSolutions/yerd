@@ -26,7 +26,7 @@ func prepareBuildDirectory(buildDir string, logger *utils.Logger) error {
 	return nil
 }
 
-// downloadSource downloads PHP source archive from official distribution using wget with progress spinner.
+// downloadSource downloads PHP source archive from official distribution using unified download utilities.
 // versionInfo: PHP version with download URL, buildDir: Directory for downloaded file, logger: Logging instance. Returns error if download fails.
 func downloadSource(versionInfo php.VersionInfo, buildDir string, logger *utils.Logger) error {
 	utils.SafeLog(logger, "Downloading PHP source from: %s", versionInfo.DownloadURL)
@@ -38,11 +38,11 @@ func downloadSource(versionInfo php.VersionInfo, buildDir string, logger *utils.
 	spinner := utils.NewLoadingSpinner(spinnerMessage)
 	spinner.Start()
 
-	output, err := utils.ExecuteCommand("wget", "-O", filePath, versionInfo.DownloadURL)
+	opts := utils.DefaultDownloadOptions().WithLogger(logger)
+	err := utils.DownloadFile(versionInfo.DownloadURL, filePath, opts)
 	if err != nil {
 		spinner.Stop("❌ Download failed")
 		utils.SafeLog(logger, "Download failed: %v", err)
-		utils.SafeLog(logger, "wget output: %s", output)
 		return fmt.Errorf("failed to download PHP source: %v", err)
 	}
 
