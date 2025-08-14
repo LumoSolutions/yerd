@@ -195,6 +195,8 @@ func GetYERDDirectoryStatus() []DirectoryStatus {
 		{"/opt/yerd/bin", "YERD binaries", false},
 		{"/opt/yerd/php", "PHP installations", false},
 		{"/opt/yerd/etc", "PHP configurations", false},
+		{FPMSockDir, "PHP-FPM runtime", false},
+		{FPMLogDir, "PHP-FPM logs", false},
 		{"/usr/local/bin", "System binaries", false},
 	}
 

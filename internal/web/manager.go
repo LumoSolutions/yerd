@@ -175,7 +175,7 @@ func (wm *WebManager) buildService(config *ServiceConfig, buildDir string) error
 	return nil
 }
 
-// StartService starts a web service (nginx or dnsmasq)
+// StartService starts a web service (nginx)
 func (wm *WebManager) StartService(serviceName string) error {
 	_, exists := GetServiceConfig(serviceName)
 	if !exists {
@@ -196,14 +196,12 @@ func (wm *WebManager) StartService(serviceName string) error {
 	switch serviceName {
 	case "nginx":
 		return wm.startNginx(binaryPath)
-	case "dnsmasq":
-		return wm.startDnsmasq(binaryPath)
 	default:
 		return fmt.Errorf("starting %s is not supported yet", serviceName)
 	}
 }
 
-// StopService stops a web service (nginx or dnsmasq)
+// StopService stops a web service (nginx)
 func (wm *WebManager) StopService(serviceName string) error {
 	_, exists := GetServiceConfig(serviceName)
 	if !exists {
@@ -222,16 +220,14 @@ func (wm *WebManager) StopService(serviceName string) error {
 	switch serviceName {
 	case "nginx":
 		return wm.stopNginx()
-	case "dnsmasq":
-		return wm.stopDnsmasq()
 	default:
 		return fmt.Errorf("stopping %s is not supported yet", serviceName)
 	}
 }
 
-// StartAllServices starts nginx and dnsmasq
+// StartAllServices starts nginx
 func (wm *WebManager) StartAllServices() error {
-	services := []string{"nginx", "dnsmasq"}
+	services := []string{"nginx"}
 	var failed []string
 
 	for _, service := range services {
@@ -247,9 +243,9 @@ func (wm *WebManager) StartAllServices() error {
 	return nil
 }
 
-// StopAllServices stops nginx and dnsmasq
+// StopAllServices stops nginx
 func (wm *WebManager) StopAllServices() error {
-	services := []string{"nginx", "dnsmasq"}
+	services := []string{"nginx"}
 	var failed []string
 
 	for _, service := range services {
@@ -314,48 +310,3 @@ func (wm *WebManager) stopNginx() error {
 	return nil
 }
 
-// startDnsmasq starts the dnsmasq service  
-func (wm *WebManager) startDnsmasq(binaryPath string) error {
-	configPath := filepath.Join(GetServiceConfigPath("dnsmasq"), "dnsmasq.conf")
-	
-	if !utils.FileExists(configPath) {
-		return fmt.Errorf("dnsmasq configuration not found at %s. Run 'sudo yerd web install -f' to recreate configurations", configPath)
-	}
-
-	// Test configuration first
-	_, err := utils.ExecuteCommand(binaryPath, "--test", "-C", configPath)
-	if err != nil {
-		return fmt.Errorf("dnsmasq configuration test failed: %w", err)
-	}
-
-	spinner := utils.NewLoadingSpinner("Starting dnsmasq...")
-	spinner.Start()
-	defer spinner.Stop("✓ dnsmasq started")
-
-	_, err = utils.ExecuteCommand(binaryPath, "-C", configPath)
-	if err != nil {
-		return fmt.Errorf("failed to start dnsmasq: %w", err)
-	}
-
-	return nil
-}
-
-// stopDnsmasq stops the dnsmasq service
-func (wm *WebManager) stopDnsmasq() error {
-	pidPath := filepath.Join(GetServiceRunPath("dnsmasq"), "dnsmasq.pid")
-	
-	if !utils.FileExists(pidPath) {
-		return fmt.Errorf("dnsmasq is not running (PID file not found)")
-	}
-
-	spinner := utils.NewLoadingSpinner("Stopping dnsmasq...")
-	spinner.Start()
-	defer spinner.Stop("✓ dnsmasq stopped")
-
-	_, err := utils.ExecuteCommand("pkill", "-f", "dnsmasq")
-	if err != nil {
-		return fmt.Errorf("failed to stop dnsmasq: %w", err)
-	}
-
-	return nil
-}

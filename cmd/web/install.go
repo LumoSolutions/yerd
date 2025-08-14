@@ -12,7 +12,7 @@ import (
 var InstallCmd = &cobra.Command{
 	Use:   "install",
 	Short: "Install web services",
-	Long: `Install nginx and dnsmasq for local development.
+	Long: `Install nginx for local development.
 
 Examples:
   yerd web install       # Install if not already installed
@@ -28,7 +28,7 @@ Examples:
 
 		force, _ := cmd.Flags().GetBool("force")
 		forceConfig, _ := cmd.Flags().GetBool("forceConfig")
-		services := []string{"nginx", "dnsmasq"}
+		services := []string{"nginx"}
 
 		if force {
 			fmt.Printf("Force reinstalling web services:\n")
@@ -40,7 +40,6 @@ Examples:
 			fmt.Printf("Force downloading fresh configuration files from GitHub\n")
 		}
 		fmt.Printf("  • nginx 1.29.1   - High-performance HTTP server and reverse proxy\n")
-		fmt.Printf("  • dnsmasq 2.91   - Lightweight DNS forwarder and DHCP server\n")
 		fmt.Println()
 
 		var failed []string
@@ -87,6 +86,15 @@ Examples:
 		}
 
 		fmt.Println()
+		if len(failed) == 0 {
+			hostsManager := utils.NewHostsManager()
+			if err := hostsManager.Install(); err != nil {
+				utils.PrintWarning("Failed to initialize hosts file management: %v", err)
+			} else {
+				utils.PrintSuccess("Hosts file management initialized")
+			}
+		}
+
 		if len(failed) > 0 {
 			fmt.Printf("❌ Some installations failed:\n")
 			for _, service := range failed {

@@ -12,14 +12,13 @@ import (
 var StartCmd = &cobra.Command{
 	Use:   "start",
 	Short: "Start web services",
-	Long: `Start nginx and dnsmasq services for local development.
+	Long: `Start nginx service for local development.
 
-This command starts both nginx and dnsmasq services:
+This command starts the nginx service:
   • nginx    - HTTP server and reverse proxy
-  • dnsmasq  - DNS forwarder for local development
 
 Example:
-  yerd web start           # Start both nginx and dnsmasq`,
+  yerd web start           # Start nginx`,
 	Run: func(cmd *cobra.Command, args []string) {
 		version.PrintSplash()
 
@@ -33,9 +32,8 @@ Example:
 			return
 		}
 
-		fmt.Printf("Starting all web services:\n")
+		fmt.Printf("Starting web service:\n")
 		fmt.Printf("  • nginx    - HTTP server and reverse proxy\n")
-		fmt.Printf("  • dnsmasq  - DNS forwarder for local development\n")
 		fmt.Println()
 
 		// Check if services are installed first
@@ -48,7 +46,7 @@ Example:
 		}
 
 		missingServices := []string{}
-		requiredServices := []string{"nginx", "dnsmasq"}
+		requiredServices := []string{"nginx"}
 		for _, service := range requiredServices {
 			found := false
 			for _, installed := range installedServices {
@@ -77,6 +75,6 @@ Example:
 			return
 		}
 
-		utils.PrintSuccess("All web services started successfully")
+		utils.PrintSuccess("Web service started successfully")
 	},
 }

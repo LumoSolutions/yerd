@@ -12,14 +12,13 @@ import (
 var StopCmd = &cobra.Command{
 	Use:   "stop",
 	Short: "Stop web services",
-	Long: `Stop nginx and dnsmasq services.
+	Long: `Stop nginx service.
 
-This command stops both nginx and dnsmasq services:
+This command stops the nginx service:
   • nginx    - HTTP server and reverse proxy
-  • dnsmasq  - DNS forwarder for local development
 
 Example:
-  yerd web stop            # Stop both nginx and dnsmasq`,
+  yerd web stop            # Stop nginx`,
 	Run: func(cmd *cobra.Command, args []string) {
 		version.PrintSplash()
 
@@ -33,9 +32,8 @@ Example:
 			return
 		}
 
-		fmt.Printf("Stopping all web services:\n")
+		fmt.Printf("Stopping web service:\n")
 		fmt.Printf("  • nginx    - HTTP server and reverse proxy\n")
-		fmt.Printf("  • dnsmasq  - DNS forwarder for local development\n")
 		fmt.Println()
 
 		// Check if services are installed first
@@ -54,6 +52,6 @@ Example:
 			return
 		}
 
-		utils.PrintSuccess("All web services stopped successfully")
+		utils.PrintSuccess("Web service stopped successfully")
 	},
 }

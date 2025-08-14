@@ -314,8 +314,6 @@ func (wi *WebInstaller) compileAndInstall(sourceDir string) error {
 	switch wi.service {
 	case "nginx":
 		return wi.compileNginx()
-	case "dnsmasq":
-		return wi.compileDnsmasq()
 	default:
 		return fmt.Errorf("unknown service type: %s", wi.service)
 	}
@@ -348,23 +346,6 @@ func (wi *WebInstaller) compileNginx() error {
 	return nil
 }
 
-// compileDnsmasq compiles dnsmasq with make
-func (wi *WebInstaller) compileDnsmasq() error {
-	// Build with custom flags
-	makeArgs := append([]string{fmt.Sprintf("-j%d", utils.GetProcessorCount())}, wi.config.BuildFlags...)
-	wi.logger.WriteLog("Building dnsmasq with flags: %v", makeArgs)
-	if err := wi.executeWithSpinner("Building dnsmasq...", "Build completed", "make", makeArgs...); err != nil {
-		return err
-	}
-
-	// Install with custom flags
-	installArgs := append([]string{"install"}, wi.config.BuildFlags...)
-	wi.logger.WriteLog("Installing dnsmasq with flags: %v", installArgs)
-	if err := wi.executeWithSpinner("Installing dnsmasq...", "🎉 Dnsmasq compiled and installed", "make", installArgs...); err != nil {
-		return err
-	}
-	return nil
-}
 
 // createConfiguration downloads configuration files from GitHub
 func (wi *WebInstaller) createConfiguration() error {
@@ -372,9 +353,6 @@ func (wi *WebInstaller) createConfiguration() error {
 	case "nginx":
 		configPath := filepath.Join(GetServiceConfigPath("nginx"), "nginx.conf")
 		return utils.FetchConfigFromGitHubWithForce("nginx", "nginx.conf", configPath, wi.forceConfig, wi.logger)
-	case "dnsmasq":
-		configPath := filepath.Join(GetServiceConfigPath("dnsmasq"), "dnsmasq.conf")
-		return utils.FetchConfigFromGitHubWithForce("dnsmasq", "dnsmasq.conf", configPath, wi.forceConfig, wi.logger)
 	default:
 		return nil
 	}
@@ -384,7 +362,7 @@ func (wi *WebInstaller) createConfiguration() error {
 // GetInstalledServices returns a list of installed web services
 func GetInstalledServices() []string {
 	var installed []string
-	services := []string{"nginx", "dnsmasq"}
+	services := []string{"nginx"}
 
 	for _, service := range services {
 		binaryPath := GetServiceBinaryPath(service)

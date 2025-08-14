@@ -326,6 +326,96 @@ func searchExtensionSubDir(baseDir string) string {
 	return baseDir
 }
 
+// CreateFPMPoolConfig creates a PHP-FPM pool configuration file for a specific PHP version.
+// Downloads base configuration from GitHub and customizes it for the version.
+// version: PHP version string. Returns error if pool config creation fails.
+func CreateFPMPoolConfig(version string) error {
+	if version == "" {
+		return fmt.Errorf("PHP version cannot be empty")
+	}
+
+	configDir := filepath.Join(YerdEtcDir, "php"+version)
+	poolConfigDir := filepath.Join(configDir, "php-fpm.d")
+	poolConfigPath := filepath.Join(poolConfigDir, "www.conf")
+
+	if FileExists(poolConfigPath) {
+		return fmt.Errorf("FPM pool config already exists at: %s", poolConfigPath)
+	}
+
+	if err := os.MkdirAll(poolConfigDir, DirPermissions); err != nil {
+		return fmt.Errorf("failed to create FPM config directory %s: %v", poolConfigDir, err)
+	}
+
+	// Create a temporary logger for this operation
+	logger, err := NewLogger(fmt.Sprintf("php-fpm-pool-%s", version))
+	if err != nil {
+		// Proceed without logger if creation fails
+		return downloadAndCustomizeFPMPool(version, poolConfigPath, nil)
+	}
+	defer func() {
+		if logger != nil {
+			logger.DeleteLogFile() // Clean up successful operations
+		}
+	}()
+
+	return downloadAndCustomizeFPMPool(version, poolConfigPath, logger)
+}
+
+// downloadAndCustomizeFPMPool downloads the base FPM pool config and customizes it for the version
+func downloadAndCustomizeFPMPool(version, poolConfigPath string, logger *Logger) error {
+	if err := FetchConfigFromGitHub("php", "www.conf", poolConfigPath, logger); err != nil {
+		return fmt.Errorf("failed to download FPM pool config from GitHub: %v", err)
+	}
+
+	return customizeFPMPool(version, poolConfigPath, logger)
+}
+
+// customizeFPMPool reads the downloaded pool config and updates version-specific settings
+func customizeFPMPool(version, poolConfigPath string, logger *Logger) error {
+	if version == "" || poolConfigPath == "" {
+		return fmt.Errorf("version and poolConfigPath cannot be empty")
+	}
+
+	// Build template data with version-specific paths
+	data := TemplateData{
+		"version":    version,
+		"sock_path":  filepath.Join(FPMSockDir, fmt.Sprintf("php%s-fpm.sock", version)),
+		"pid_path":   filepath.Join(FMPPidDir, fmt.Sprintf("php%s-fpm.pid", version)), 
+		"log_path":   filepath.Join(FMPLogDir, fmt.Sprintf("php%s-fpm.log", version)),
+		"user":       FPMUser,
+		"group":      FPMGroup,
+	}
+
+	SafeLog(logger, "Reading FPM pool template from: %s", poolConfigPath)
+
+	// Read the downloaded template
+	content, err := os.ReadFile(poolConfigPath)
+	if err != nil {
+		return fmt.Errorf("failed to read FPM pool config template from %s: %v", poolConfigPath, err)
+	}
+
+	if len(content) == 0 {
+		return fmt.Errorf("FPM pool config template is empty")
+	}
+
+	SafeLog(logger, "Applying template substitutions for PHP %s", version)
+
+	// Apply template substitutions
+	customizedContent := Template(string(content), data)
+
+	if customizedContent == string(content) {
+		SafeLog(logger, "Warning: No template substitutions were made")
+	}
+
+	// Write the customized content back
+	if err := os.WriteFile(poolConfigPath, []byte(customizedContent), FilePermissions); err != nil {
+		return fmt.Errorf("failed to write customized FPM pool config to %s: %v", poolConfigPath, err)
+	}
+
+	SafeLog(logger, "Successfully customized FPM pool config for PHP %s with %s user/group", version, FPMUser)
+	return nil
+}
+
 // NormalizePHPVersion removes 'php' prefix from version strings for consistency.
 // version: Version string potentially with php prefix. Returns normalized version string.
 func NormalizePHPVersion(version string) string {

@@ -2,11 +2,13 @@ package cmd
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/LumoSolutions/yerd/internal/config"
 	"github.com/LumoSolutions/yerd/internal/utils"
 	"github.com/LumoSolutions/yerd/internal/version"
 	"github.com/LumoSolutions/yerd/internal/versions"
+	"github.com/LumoSolutions/yerd/internal/web"
 	"github.com/LumoSolutions/yerd/pkg/php"
 	"github.com/spf13/cobra"
 )
@@ -62,6 +64,7 @@ func displayAllStatusSections(ctx *statusContext) {
 	displayDirectoryStatus(ctx.dirStatus)
 	displayBuildEnvironment(ctx.sysReq)
 	displayInstalledPHPVersions(ctx.cfg)
+	displayWebServicesStatus()
 	displayPHPUpdateStatus(ctx.cfg)
 }
 
@@ -177,9 +180,13 @@ func displaySinglePHPVersion(cfg *config.Config, majorMinor string, phpInfo conf
 	subPrefix := getSubTreePrefix(isLast)
 	binaryPath := getPHPBinaryPath(majorMinor)
 	iniPath := getPHPIniPath(majorMinor)
+	fpmSockPath := getFPMSocketPath(majorMinor)
+	fpmPoolConfig := getFPMPoolConfigPath(majorMinor)
 
 	fmt.Printf("%s├─ Binary: %s\n", subPrefix, binaryPath)
 	fmt.Printf("%s├─ Config: %s\n", subPrefix, iniPath)
+	fmt.Printf("%s├─ FPM Socket: %s\n", subPrefix, fpmSockPath)
+	fmt.Printf("%s├─ FPM Pool: %s\n", subPrefix, fpmPoolConfig)
 	fmt.Printf("%s└─ Install: %s\n", subPrefix, phpInfo.InstallPath)
 
 	if !isLast {
@@ -289,3 +296,115 @@ func getPHPIniPath(majorMinor string) string {
 	}
 	return iniPath
 }
+
+// displayWebServicesStatus shows information about installed web services (nginx)
+func displayWebServicesStatus() {
+	services := []string{"nginx"}
+	installedServices := make([]string, 0)
+
+	for _, service := range services {
+		if web.IsServiceInstalled(service) {
+			installedServices = append(installedServices, service)
+		}
+	}
+
+	if len(installedServices) == 0 {
+		return
+	}
+
+	fmt.Printf("🌐 Web Services\n")
+
+	for i, service := range installedServices {
+		isLast := i == len(installedServices)-1
+		displaySingleWebService(service, isLast)
+	}
+	fmt.Println()
+}
+
+// displaySingleWebService shows detailed information for one web service
+func displaySingleWebService(service string, isLast bool) {
+	prefix := getTreePrefix(isLast)
+	config, _ := web.GetServiceConfig(service)
+	
+	serviceStatus := getWebServiceStatus(service)
+	fmt.Printf("%s %s %s %s\n", prefix, serviceStatus, service, config.Version)
+
+	subPrefix := getSubTreePrefix(isLast)
+	binaryPath := web.GetServiceBinaryPath(service)
+	configPath := getWebServiceConfigPath(service)
+	runningStatus := getWebServiceRunningStatus(service)
+
+	fmt.Printf("%s├─ Binary: %s\n", subPrefix, binaryPath)
+	fmt.Printf("%s├─ Config: %s\n", subPrefix, configPath)
+	fmt.Printf("%s└─ Status: %s\n", subPrefix, runningStatus)
+
+	if !isLast {
+		fmt.Printf("│\n")
+	}
+}
+
+// getWebServiceStatus returns a formatted status string for a web service
+func getWebServiceStatus(service string) string {
+	return "🔧"
+}
+
+// getWebServiceConfigPath returns the configuration file path for a web service
+func getWebServiceConfigPath(service string) string {
+	switch service {
+	case "nginx":
+		return filepath.Join(web.GetServiceConfigPath(service), "nginx.conf")
+	default:
+		return web.GetServiceConfigPath(service)
+	}
+}
+
+// getWebServiceRunningStatus checks if a web service is currently running
+func getWebServiceRunningStatus(service string) string {
+	switch service {
+	case "nginx":
+		if isNginxRunning() {
+			return "🟢 Running"
+		}
+		return "🔴 Stopped"
+	default:
+		return "❓ Unknown"
+	}
+}
+
+// isNginxRunning checks if nginx is currently running by checking for the process
+func isNginxRunning() bool {
+	binaryPath := web.GetServiceBinaryPath("nginx")
+	pidPath := filepath.Join(web.GetServiceRunPath("nginx"), "nginx.pid")
+	
+	if utils.FileExists(pidPath) {
+		if _, err := utils.ExecuteCommand("pgrep", "-f", binaryPath); err == nil {
+			return true
+		}
+	}
+	
+	if _, err := utils.ExecuteCommand("pgrep", "-f", binaryPath); err == nil {
+		return true
+	}
+	
+	return false
+}
+
+// getFPMSocketPath returns the FPM socket path for a PHP version
+func getFPMSocketPath(majorMinor string) string {
+	sockPath := filepath.Join(utils.FPMSockDir, fmt.Sprintf("php%s-fpm.sock", majorMinor))
+	if utils.FileExists(sockPath) {
+		return sockPath
+	}
+	return fmt.Sprintf("❌ %s (not found)", sockPath)
+}
+
+// getFPMPoolConfigPath returns the FPM pool configuration path for a PHP version
+func getFPMPoolConfigPath(majorMinor string) string {
+	configDir := filepath.Join(utils.YerdEtcDir, "php"+majorMinor)
+	poolConfigPath := filepath.Join(configDir, "php-fpm.d", "www.conf")
+	if utils.FileExists(poolConfigPath) {
+		return poolConfigPath
+	}
+	return fmt.Sprintf("❌ %s (not found)", poolConfigPath)
+}
+

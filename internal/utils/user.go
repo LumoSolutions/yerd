@@ -172,7 +172,7 @@ func CheckAndPromptForSudo(operation, command string, args ...string) bool {
 			fmt.Printf("   • Install web service binaries and configurations\n")
 			fmt.Printf("   • Manage system package dependencies\n")
 		case "Web services management":
-			fmt.Printf("   • Start and stop web services (nginx, dnsmasq)\n")
+			fmt.Printf("   • Start and stop web services (nginx)\n")
 			fmt.Printf("   • Manage service configurations and processes\n")
 			fmt.Printf("   • Access service runtime files and logs\n")
 		default:

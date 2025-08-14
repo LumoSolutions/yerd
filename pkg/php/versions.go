@@ -64,8 +64,8 @@ func GetConfigureFlagsForVersion(majorMinor string, extensions []string) []strin
 		fmt.Sprintf("--with-config-file-path=%s/php%s", utils.YerdEtcDir, majorMinor),
 		fmt.Sprintf("--with-config-file-scan-dir=%s/php%s/conf.d", utils.YerdEtcDir, majorMinor),
 		"--enable-fpm",
-		"--with-fpm-user=http",
-		"--with-fpm-group=http",
+		fmt.Sprintf("--with-fpm-user=%s", utils.FPMUser),
+		fmt.Sprintf("--with-fpm-group=%s", utils.FPMGroup),
 		"--enable-cli",
 	}
 

@@ -28,7 +28,7 @@ YERD is a comprehensive development environment manager that compiles PHP from o
 - 🧩 **Rich extension support** with automatic dependencies
 - 🏗️ **Source-based builds** for maximum reliability
 - 🌐 **Multi-distro support** - works on all major Linux distributions
-- 🌐 **Web services management** - nginx and dnsmasq for local development
+- 🌐 **Web services management** - nginx for local development
 
 ## 🚀 Quick Start
 
@@ -124,19 +124,17 @@ YERD includes comprehensive web services management for local development enviro
 
 | Command | Description | Example |
 |---------|-------------|---------|
-| `sudo yerd web install` | Install nginx and dnsmasq from source | Complete web stack setup |
+| `sudo yerd web install` | Install nginx from source | Complete web stack setup |
 | `sudo yerd web install -f` | Force reinstall web services | Rebuilds from source |
-| `sudo yerd web start` | Start nginx and dnsmasq services | Ready for development |
+| `sudo yerd web start` | Start nginx service | Ready for development |
 | `sudo yerd web stop` | Stop all web services | Clean shutdown |
 
 **Web Services Included:**
 - **nginx 1.29.1** - High-performance HTTP server and reverse proxy
-- **dnsmasq 2.91** - Lightweight DNS forwarder for local development
 
 **Features:**
 - 🏗️ **Source-based installation** - Compiled for maximum compatibility
 - 🔧 **Pre-configured** - Ready for PHP development out of the box
-- 🌐 **Local DNS** - `.dev` domain support for local projects
 - ⚡ **High performance** - Optimized configurations
 - 🛡️ **Isolated** - No conflicts with system services
 
@@ -144,7 +142,7 @@ YERD includes comprehensive web services management for local development enviro
 # Install web services
 sudo yerd web install
 
-# Start services (nginx on port 80, dnsmasq on port 5353)
+# Start service (nginx on port 80)
 sudo yerd web start
 
 # Stop services when done
@@ -254,11 +252,6 @@ YERD automatically detects your Linux distribution and installs appropriate depe
 │   │   ├── logs/              # access and error logs
 │   │   ├── run/               # PID and lock files
 │   │   └── temp/              # temporary files
-│   └── dnsmasq/               # dnsmasq installation
-│       ├── bin/dnsmasq        # dnsmasq binary
-│       ├── conf/dnsmasq.conf  # DNS configuration
-│       ├── logs/              # DNS query logs
-│       └── run/               # PID files
 ├── bin/                        # YERD-managed binaries
 │   ├── php8.3 -> /opt/yerd/php/php8.3/bin/php
 │   ├── php8.4 -> /opt/yerd/php/php8.4/bin/php
@@ -306,7 +299,6 @@ composer --version  # Composer globally available
 
 # Test web services
 curl -I http://localhost  # nginx serving on port 80
-# Local .dev domains work automatically
 ```
 
 ### Production Server Management
@@ -380,24 +372,16 @@ YERD's web services come pre-configured for local development:
 - **PHP Support**: FastCGI on port 9000
 - **Configuration**: `/opt/yerd/web/nginx/conf/nginx.conf`
 
-**dnsmasq Configuration:**
-- **Port**: 5353 (DNS)
-- **Local Domain**: `.dev`
-- **Interface**: localhost only
-- **Configuration**: `/opt/yerd/web/dnsmasq/conf/dnsmasq.conf`
-
 **Service Management:**
 ```bash
-# Check if services are running
+# Check if service is running
 sudo ps aux | grep nginx
-sudo ps aux | grep dnsmasq
 
 # Test nginx
 curl -I http://localhost
 
-# Check service logs
+# Check nginx logs
 sudo tail -f /opt/yerd/web/nginx/logs/error.log
-sudo tail -f /opt/yerd/web/dnsmasq/logs/dnsmasq.log
 ```
 
 ## 🏗️ Building from Source
