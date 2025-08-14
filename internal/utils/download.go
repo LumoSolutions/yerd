@@ -8,11 +8,14 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/LumoSolutions/yerd/internal/version"
 )
 
 const (
 	DefaultTimeout   = 30 * time.Second
 	DefaultUserAgent = "YERD/1.0"
+	ConfigRepoBase   = "https://raw.githubusercontent.com/LumoSolutions/yerd"
 )
 
 // DownloadOptions configures download behavior
@@ -225,4 +228,24 @@ func FetchTextContent(url string, opts *DownloadOptions) (string, error) {
 
 	SafeLog(opts.Logger, "Fetched text content from: %s", url)
 	return string(content), nil
+}
+
+// FetchConfigFromGitHub downloads a configuration file from the GitHub repository to the specified path
+func FetchConfigFromGitHub(configCategory, configName, destinationPath string, logger *Logger) error {
+	// Don't overwrite existing config files
+	if FileExists(destinationPath) {
+		SafeLog(logger, "Config file already exists, skipping: %s", destinationPath)
+		return nil
+	}
+
+	configURL := fmt.Sprintf("%s/%s/.config/%s/%s", ConfigRepoBase, version.GetBranch(), configCategory, configName)
+	SafeLog(logger, "Downloading config from: %s", configURL)
+
+	opts := DefaultDownloadOptions().WithLogger(logger)
+	if err := DownloadFile(configURL, destinationPath, opts); err != nil {
+		return fmt.Errorf("failed to download config %s: %v", configName, err)
+	}
+
+	SafeLog(logger, "Downloaded config file: %s", destinationPath)
+	return nil
 }
