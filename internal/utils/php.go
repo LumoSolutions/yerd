@@ -159,13 +159,11 @@ func CreatePHPIniForVersion(version string) error {
 		return fmt.Errorf("failed to create config directory: %v", err)
 	}
 
-	// Create a temporary logger for this operation (since we don't have one passed in)
 	logger, err := NewLogger(fmt.Sprintf("php-ini-%s", version))
 	if err != nil {
-		// Proceed without logger if creation fails
 		return downloadAndCustomizePHPIni(version, iniPath, nil)
 	}
-	defer logger.DeleteLogFile() // Clean up successful operations
+	defer logger.DeleteLogFile()
 
 	return downloadAndCustomizePHPIni(version, iniPath, logger)
 }
@@ -176,11 +174,11 @@ func downloadAndCustomizePHPIni(version, iniPath string, logger *Logger) error {
 		return fmt.Errorf("failed to download php.ini from GitHub: %v", err)
 	}
 
-	return customizePHPIni(version, iniPath, logger)
+	return customizePHPIni(version, logger)
 }
 
 // customizePHPIni reads the downloaded php.ini and updates version-specific settings
-func customizePHPIni(version, iniPath string, logger *Logger) error {
+func customizePHPIni(version string, logger *Logger) error {
 	extensionDir := detectExtensionDirectory(version)
 	if extensionDir == "" {
 		extensionDir = fmt.Sprintf("/opt/yerd/php/php%s/lib/php/extensions", version)
@@ -212,11 +210,11 @@ func UpdatePHPIniSetting(version, settingName, newValue string, logger *Logger) 
 	customizedContent := string(content)
 
 	settingRegex := regexp.MustCompile(fmt.Sprintf(`(?m)^(;?\s*%s\s*=\s*)(.*)$`, regexp.QuoteMeta(settingName)))
-	
+
 	if match := settingRegex.FindStringSubmatch(customizedContent); match != nil {
 		originalValue := strings.TrimSpace(match[2])
 		prefix := match[1]
-		
+
 		var formattedValue string
 		if isQuotedValue(originalValue) {
 			formattedValue = fmt.Sprintf(`"%s"`, newValue)
@@ -225,11 +223,11 @@ func UpdatePHPIniSetting(version, settingName, newValue string, logger *Logger) 
 			formattedValue = newValue
 			SafeLog(logger, "Updating %s from %s to unquoted value: %s", settingName, originalValue, formattedValue)
 		}
-		
+
 		cleanPrefix := regexp.MustCompile(`^;\s*`).ReplaceAllString(prefix, "")
 		replacement := cleanPrefix + formattedValue
 		customizedContent = settingRegex.ReplaceAllString(customizedContent, replacement)
-		
+
 		SafeLog(logger, "Updated %s setting in php.ini", settingName)
 	} else {
 		newLine := fmt.Sprintf("\n; Added by YERD\n%s = \"%s\"\n", settingName, newValue)
@@ -248,8 +246,8 @@ func UpdatePHPIniSetting(version, settingName, newValue string, logger *Logger) 
 // isQuotedValue determines if a value is enclosed in quotes
 func isQuotedValue(value string) bool {
 	value = strings.TrimSpace(value)
-	return len(value) >= 2 && 
-		   ((value[0] == '"' && value[len(value)-1] == '"') || 
+	return len(value) >= 2 &&
+		((value[0] == '"' && value[len(value)-1] == '"') ||
 			(value[0] == '\'' && value[len(value)-1] == '\''))
 }
 
@@ -346,15 +344,13 @@ func CreateFPMPoolConfig(version string) error {
 		return fmt.Errorf("failed to create FPM config directory %s: %v", poolConfigDir, err)
 	}
 
-	// Create a temporary logger for this operation
 	logger, err := NewLogger(fmt.Sprintf("php-fpm-pool-%s", version))
 	if err != nil {
-		// Proceed without logger if creation fails
 		return downloadAndCustomizeFPMPool(version, poolConfigPath, nil)
 	}
 	defer func() {
 		if logger != nil {
-			logger.DeleteLogFile() // Clean up successful operations
+			logger.DeleteLogFile()
 		}
 	}()
 
@@ -376,19 +372,17 @@ func customizeFPMPool(version, poolConfigPath string, logger *Logger) error {
 		return fmt.Errorf("version and poolConfigPath cannot be empty")
 	}
 
-	// Build template data with version-specific paths
 	data := TemplateData{
-		"version":    version,
-		"sock_path":  filepath.Join(FPMSockDir, fmt.Sprintf("php%s-fpm.sock", version)),
-		"pid_path":   filepath.Join(FMPPidDir, fmt.Sprintf("php%s-fpm.pid", version)), 
-		"log_path":   filepath.Join(FMPLogDir, fmt.Sprintf("php%s-fpm.log", version)),
-		"user":       FPMUser,
-		"group":      FPMGroup,
+		"version":   version,
+		"sock_path": filepath.Join(FPMSockDir, fmt.Sprintf("php%s-fpm.sock", version)),
+		"pid_path":  filepath.Join(FPMPidDir, fmt.Sprintf("php%s-fpm.pid", version)),
+		"log_path":  filepath.Join(FPMLogDir, fmt.Sprintf("php%s-fpm.log", version)),
+		"user":      FPMUser,
+		"group":     FPMGroup,
 	}
 
 	SafeLog(logger, "Reading FPM pool template from: %s", poolConfigPath)
 
-	// Read the downloaded template
 	content, err := os.ReadFile(poolConfigPath)
 	if err != nil {
 		return fmt.Errorf("failed to read FPM pool config template from %s: %v", poolConfigPath, err)
@@ -400,14 +394,12 @@ func customizeFPMPool(version, poolConfigPath string, logger *Logger) error {
 
 	SafeLog(logger, "Applying template substitutions for PHP %s", version)
 
-	// Apply template substitutions
 	customizedContent := Template(string(content), data)
 
 	if customizedContent == string(content) {
 		SafeLog(logger, "Warning: No template substitutions were made")
 	}
 
-	// Write the customized content back
 	if err := os.WriteFile(poolConfigPath, []byte(customizedContent), FilePermissions); err != nil {
 		return fmt.Errorf("failed to write customized FPM pool config to %s: %v", poolConfigPath, err)
 	}

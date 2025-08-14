@@ -6,18 +6,19 @@ import (
 	"strings"
 
 	"github.com/LumoSolutions/yerd/internal/utils"
+	depConfig "github.com/LumoSolutions/yerd/pkg/dependencies"
 	"github.com/fatih/color"
 )
 
-type PackageManager string
+type PackageManager = depConfig.PackageManager
 
 const (
-	APT    PackageManager = "apt"
-	YUM    PackageManager = "yum"
-	DNF    PackageManager = "dnf"
-	PACMAN PackageManager = "pacman"
-	ZYPPER PackageManager = "zypper"
-	APKL   PackageManager = "apk"
+	APT    = depConfig.APT
+	YUM    = depConfig.YUM
+	DNF    = depConfig.DNF
+	PACMAN = depConfig.PACMAN
+	ZYPPER = depConfig.ZYPPER
+	APKL   = depConfig.APKL
 )
 
 type DependencyManager struct {
@@ -25,179 +26,6 @@ type DependencyManager struct {
 	pm        PackageManager
 	pmCommand string
 	quiet     bool
-}
-
-var extensionDependencies = map[string]map[PackageManager][]string{
-	"curl": {
-		APT:    []string{"libcurl4-openssl-dev"},
-		YUM:    []string{"libcurl-devel"},
-		DNF:    []string{"libcurl-devel"},
-		PACMAN: []string{"curl"},
-		ZYPPER: []string{"libcurl-devel"},
-		APKL:   []string{"curl-dev"},
-	},
-	"openssl": {
-		APT:    []string{"libssl-dev"},
-		YUM:    []string{"openssl-devel"},
-		DNF:    []string{"openssl-devel"},
-		PACMAN: []string{"openssl"},
-		ZYPPER: []string{"openssl-devel"},
-		APKL:   []string{"openssl-dev"},
-	},
-	"zip": {
-		APT:    []string{"libzip-dev"},
-		YUM:    []string{"libzip-devel"},
-		DNF:    []string{"libzip-devel"},
-		PACMAN: []string{"libzip"},
-		ZYPPER: []string{"libzip-devel"},
-		APKL:   []string{"libzip-dev"},
-	},
-	"gd": {
-		APT:    []string{"libgd-dev"},
-		YUM:    []string{"gd-devel"},
-		DNF:    []string{"gd-devel"},
-		PACMAN: []string{"gd"},
-		ZYPPER: []string{"gd-devel"},
-		APKL:   []string{"gd-dev"},
-	},
-	"mysqli": {
-		APT:    []string{"libmysqlclient-dev"},
-		YUM:    []string{"mysql-devel"},
-		DNF:    []string{"mysql-devel"},
-		PACMAN: []string{"mariadb-libs"},
-		ZYPPER: []string{"libmysqlclient-devel"},
-		APKL:   []string{"mysql-dev"},
-	},
-	"pdo-mysql": {
-		APT:    []string{"libmysqlclient-dev"},
-		YUM:    []string{"mysql-devel"},
-		DNF:    []string{"mysql-devel"},
-		PACMAN: []string{"mariadb-libs"},
-		ZYPPER: []string{"libmysqlclient-devel"},
-		APKL:   []string{"mysql-dev"},
-	},
-	"pgsql": {
-		APT:    []string{"libpq-dev"},
-		YUM:    []string{"postgresql-devel"},
-		DNF:    []string{"postgresql-devel"},
-		PACMAN: []string{"postgresql-libs"},
-		ZYPPER: []string{"postgresql-devel"},
-		APKL:   []string{"postgresql-dev"},
-	},
-	"pdo-pgsql": {
-		APT:    []string{"libpq-dev"},
-		YUM:    []string{"postgresql-devel"},
-		DNF:    []string{"postgresql-devel"},
-		PACMAN: []string{"postgresql-libs"},
-		ZYPPER: []string{"postgresql-devel"},
-		APKL:   []string{"postgresql-dev"},
-	},
-	"jpeg": {
-		APT:    []string{"libjpeg-dev"},
-		YUM:    []string{"libjpeg-turbo-devel"},
-		DNF:    []string{"libjpeg-turbo-devel"},
-		PACMAN: []string{"libjpeg-turbo"},
-		ZYPPER: []string{"libjpeg8-devel"},
-		APKL:   []string{"libjpeg-turbo-dev"},
-	},
-	"freetype": {
-		APT:    []string{"libfreetype6-dev"},
-		YUM:    []string{"freetype-devel"},
-		DNF:    []string{"freetype-devel"},
-		PACMAN: []string{"freetype2"},
-		ZYPPER: []string{"freetype2-devel"},
-		APKL:   []string{"freetype-dev"},
-	},
-	"zlib": {
-		APT:    []string{"zlib1g-dev"},
-		YUM:    []string{"zlib-devel"},
-		DNF:    []string{"zlib-devel"},
-		PACMAN: []string{"zlib"},
-		ZYPPER: []string{"zlib-devel"},
-		APKL:   []string{"zlib-dev"},
-	},
-	"bz2": {
-		APT:    []string{"libbz2-dev"},
-		YUM:    []string{"bzip2-devel"},
-		DNF:    []string{"bzip2-devel"},
-		PACMAN: []string{"bzip2"},
-		ZYPPER: []string{"libbz2-devel"},
-		APKL:   []string{"bzip2-dev"},
-	},
-	"intl": {
-		APT:    []string{"libicu-dev"},
-		YUM:    []string{"libicu-devel"},
-		DNF:    []string{"libicu-devel"},
-		PACMAN: []string{"icu"},
-		ZYPPER: []string{"libicu-devel"},
-		APKL:   []string{"icu-dev"},
-	},
-	"gettext": {
-		APT:    []string{"gettext"},
-		YUM:    []string{"gettext-devel"},
-		DNF:    []string{"gettext-devel"},
-		PACMAN: []string{"gettext"},
-		ZYPPER: []string{"gettext-tools"},
-		APKL:   []string{"gettext-dev"},
-	},
-	"gmp": {
-		APT:    []string{"libgmp-dev"},
-		YUM:    []string{"gmp-devel"},
-		DNF:    []string{"gmp-devel"},
-		PACMAN: []string{"gmp"},
-		ZYPPER: []string{"gmp-devel"},
-		APKL:   []string{"gmp-dev"},
-	},
-	"ldap": {
-		APT:    []string{"libldap2-dev"},
-		YUM:    []string{"openldap-devel"},
-		DNF:    []string{"openldap-devel"},
-		PACMAN: []string{"libldap"},
-		ZYPPER: []string{"openldap2-devel"},
-		APKL:   []string{"openldap-dev"},
-	},
-	"pcre": {
-		APT:    []string{"libpcre2-dev"},
-		YUM:    []string{"pcre2-devel"},
-		DNF:    []string{"pcre2-devel"},
-		PACMAN: []string{"pcre2"},
-		ZYPPER: []string{"pcre2-devel"},
-		APKL:   []string{"pcre2-dev"},
-	},
-	"pcre2": {
-		APT:    []string{"libpcre2-dev"},
-		YUM:    []string{"pcre2-devel"},
-		DNF:    []string{"pcre2-devel"},
-		PACMAN: []string{"pcre2"},
-		ZYPPER: []string{"pcre2-devel"},
-		APKL:   []string{"pcre2-dev"},
-	},
-	"nettle": {
-		APT:    []string{"nettle-dev"},
-		YUM:    []string{"nettle-devel"},
-		DNF:    []string{"nettle-devel"},
-		PACMAN: []string{"nettle"},
-		ZYPPER: []string{"libnettle-devel"},
-		APKL:   []string{"nettle-dev"},
-	},
-}
-
-var buildDependencies = map[PackageManager][]string{
-	APT:    []string{"build-essential", "autoconf", "pkg-config", "re2c", "libonig-dev", "libxml2-dev", "libsqlite3-dev"},
-	YUM:    []string{"gcc", "gcc-c++", "make", "autoconf", "pkgconfig", "re2c", "oniguruma-devel", "libxml2-devel", "sqlite-devel"},
-	DNF:    []string{"gcc", "gcc-c++", "make", "autoconf", "pkgconf", "re2c", "oniguruma-devel", "libxml2-devel", "sqlite-devel"},
-	PACMAN: []string{"base-devel", "autoconf", "pkgconf", "re2c", "oniguruma", "libxml2", "sqlite"},
-	ZYPPER: []string{"gcc", "gcc-c++", "make", "autoconf", "pkg-config", "re2c", "libonig-devel", "libxml2-devel", "sqlite3-devel"},
-	APKL:   []string{"build-base", "autoconf", "pkgconf", "re2c", "oniguruma-dev", "libxml2-dev", "sqlite-dev"},
-}
-
-var webBuildDependencies = map[PackageManager][]string{
-	APT:    []string{"build-essential", "make", "wget", "tar"},
-	YUM:    []string{"gcc", "gcc-c++", "make", "wget", "tar"},
-	DNF:    []string{"gcc", "gcc-c++", "make", "wget", "tar"},
-	PACMAN: []string{"base-devel", "wget", "tar"},
-	ZYPPER: []string{"gcc", "gcc-c++", "make", "wget", "tar"},
-	APKL:   []string{"build-base", "wget", "tar"},
 }
 
 // NewDependencyManager creates a new dependency manager with auto-detected distribution and package manager.
@@ -257,22 +85,9 @@ func detectDistribution() (string, error) {
 // detectPackageManager finds available package manager by checking system commands.
 // Returns PackageManager type, command string, and error if none found.
 func detectPackageManager() (PackageManager, string, error) {
-	managers := []struct {
-		pm      PackageManager
-		command string
-		check   string
-	}{
-		{APT, "apt-get", "apt-get"},
-		{DNF, "dnf", "dnf"},
-		{YUM, "yum", "yum"},
-		{PACMAN, "pacman", "pacman"},
-		{ZYPPER, "zypper", "zypper"},
-		{APKL, "apk", "apk"},
-	}
-
-	for _, mgr := range managers {
-		if _, err := exec.LookPath(mgr.check); err == nil {
-			return mgr.pm, mgr.command, nil
+	for pm, config := range depConfig.PackageManagerConfigs {
+		if _, err := exec.LookPath(config.CheckName); err == nil {
+			return pm, config.Command, nil
 		}
 	}
 
@@ -298,8 +113,8 @@ func (dm *DependencyManager) SetQuiet(quiet bool) {
 // InstallBuildDependencies installs essential build tools and dependencies for PHP compilation.
 // Returns error if installation fails.
 func (dm *DependencyManager) InstallBuildDependencies() error {
-	deps, exists := buildDependencies[dm.pm]
-	if !exists {
+	deps := depConfig.GetBuildDependencies(dm.pm)
+	if len(deps) == 0 {
 		return fmt.Errorf("no build dependencies defined for package manager: %s", dm.pm)
 	}
 
@@ -313,8 +128,8 @@ func (dm *DependencyManager) InstallBuildDependencies() error {
 // InstallWebBuildDependencies installs essential build tools and dependencies for web service compilation.
 // Returns error if installation fails.
 func (dm *DependencyManager) InstallWebBuildDependencies() error {
-	deps, exists := webBuildDependencies[dm.pm]
-	if !exists {
+	deps := depConfig.GetWebBuildDependencies(dm.pm)
+	if len(deps) == 0 {
 		return fmt.Errorf("no web build dependencies defined for package manager: %s", dm.pm)
 	}
 
@@ -328,43 +143,45 @@ func (dm *DependencyManager) InstallWebBuildDependencies() error {
 // InstallExtensionDependencies installs libraries required for specific PHP extensions.
 // extensions: List of PHP extensions needing dependencies. Returns error if installation fails.
 func (dm *DependencyManager) InstallExtensionDependencies(extensions []string) error {
-	var allPackages []string
-	missingDeps := make(map[string]bool)
+	packages := dm.collectUniquePackages(extensions)
+
+	if len(packages) == 0 {
+		dm.logNoPackagesNeeded()
+		return nil
+	}
+
+	return dm.installPackages(packages, "extension dependencies")
+}
+
+// collectUniquePackages gathers unique system packages for the given extensions
+func (dm *DependencyManager) collectUniquePackages(extensions []string) []string {
+	packageSet := make(map[string]bool)
 
 	for _, ext := range extensions {
-		if deps, exists := extensionDependencies[ext]; exists {
-			if packages, hasPM := deps[dm.pm]; hasPM {
-				for _, pkg := range packages {
-					if !contains(allPackages, pkg) {
-						allPackages = append(allPackages, pkg)
-					}
-				}
-			} else {
-				missingDeps[ext] = true
+		if systemPkgs, exists := depConfig.GetSystemPackages(ext, dm.pm); exists {
+			for _, pkg := range systemPkgs {
+				packageSet[pkg] = true
 			}
 		}
 	}
 
-	if len(missingDeps) > 0 && !dm.quiet {
-		var missing []string
-		for dep := range missingDeps {
-			missing = append(missing, dep)
-		}
-		color.New(color.FgYellow).Printf("Warning: No package mappings for dependencies: %s\n", strings.Join(missing, ", "))
-	}
+	return dm.mapKeysToSlice(packageSet)
+}
 
-	if len(allPackages) == 0 {
-		if !dm.quiet {
-			color.New(color.FgGreen).Println("No additional dependencies required for selected extensions")
-		}
-		return nil
+// mapKeysToSlice converts map keys to slice
+func (dm *DependencyManager) mapKeysToSlice(packageSet map[string]bool) []string {
+	packages := make([]string, 0, len(packageSet))
+	for pkg := range packageSet {
+		packages = append(packages, pkg)
 	}
+	return packages
+}
 
+// logNoPackagesNeeded logs when no packages are required
+func (dm *DependencyManager) logNoPackagesNeeded() {
 	if !dm.quiet {
-		// Removed verbose extension dependency listing for cleaner output
+		color.New(color.FgGreen).Println("No additional dependencies required for selected extensions")
 	}
-
-	return dm.installPackages(allPackages, "extension dependencies")
 }
 
 // installPackages executes package installation commands for the detected package manager.
@@ -374,34 +191,13 @@ func (dm *DependencyManager) installPackages(packages []string, description stri
 		return nil
 	}
 
-	var cmd *exec.Cmd
-
-	switch dm.pm {
-	case APT:
-		args := append([]string{"install", "-y"}, packages...)
-		cmd = exec.Command("apt-get", args...)
-	case DNF:
-		args := append([]string{"install", "-y"}, packages...)
-		cmd = exec.Command("dnf", args...)
-	case YUM:
-		args := append([]string{"install", "-y"}, packages...)
-		cmd = exec.Command("yum", args...)
-	case PACMAN:
-		args := append([]string{"-S", "--noconfirm"}, packages...)
-		cmd = exec.Command("pacman", args...)
-	case ZYPPER:
-		args := append([]string{"install", "-y"}, packages...)
-		cmd = exec.Command("zypper", args...)
-	case APKL:
-		args := append([]string{"add"}, packages...)
-		cmd = exec.Command("apk", args...)
-	default:
+	config, exists := depConfig.GetPackageManagerConfig(dm.pm)
+	if !exists {
 		return fmt.Errorf("unsupported package manager: %s", dm.pm)
 	}
 
-	if !dm.quiet {
-		// Removed verbose command output for cleaner installation experience
-	}
+	args := append(config.InstallArgs, packages...)
+	cmd := exec.Command(dm.pmCommand, args...)
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -415,24 +211,13 @@ func (dm *DependencyManager) installPackages(packages []string, description stri
 	return nil
 }
 
-// contains checks if a string slice contains a specific item.
-// slice: String slice to search, item: Item to find. Returns true if found.
-func contains(slice []string, item string) bool {
-	for _, s := range slice {
-		if s == item {
-			return true
-		}
-	}
-	return false
-}
-
 // CheckSystemDependencies verifies which extension dependencies are missing from the system.
 // extensions: List of PHP extensions to check. Returns slice of missing dependency names.
 func (dm *DependencyManager) CheckSystemDependencies(extensions []string) []string {
 	var missing []string
 
 	for _, ext := range extensions {
-		if _, exists := extensionDependencies[ext]; exists {
+		if _, exists := depConfig.GetDependencyConfig(ext); exists {
 			if !dm.isDependencyAvailable(ext) {
 				missing = append(missing, ext)
 			}
@@ -442,58 +227,95 @@ func (dm *DependencyManager) CheckSystemDependencies(extensions []string) []stri
 	return missing
 }
 
-// isDependencyAvailable checks if a system dependency is available using pkg-config and custom checks.
+// isDependencyAvailable checks if a system dependency is available using distro-specific package detection and pkg-config.
 // depName: Dependency name to check. Returns true if available.
 func (dm *DependencyManager) isDependencyAvailable(depName string) bool {
-	pkgConfigNames := map[string][]string{
-		"gd":        {"gdlib"},
-		"zip":       {"libzip"},
-		"curl":      {"libcurl"},
-		"openssl":   {"openssl"},
-		"zlib":      {"zlib"},
-		"libxml2":   {"libxml-2.0"},
-		"freetype2": {"freetype2"},
-		"icu":       {"icu-uc", "icu-io"},
-		"pcre2":     {"libpcre2-8"},
-		"bzip2":     {"bzip2"},
-		"openldap":  {"ldap"},
+	// Check centralized config first
+	if dm.checkConfiguredDependency(depName) {
+		return true
 	}
 
+	// Fallback to legacy pkg-config checks
+	return dm.checkPkgConfig(depName)
+}
+
+// checkConfiguredDependency checks dependencies defined in the centralized config
+func (dm *DependencyManager) checkConfiguredDependency(depName string) bool {
+	config, exists := depConfig.GetDependencyConfig(depName)
+	if !exists {
+		return false
+	}
+
+	return dm.checkSystemPackages(config) ||
+		dm.checkCommands(config) ||
+		dm.checkLibraries(config) ||
+		dm.checkCommonPkgConfig(config)
+}
+
+// checkSystemPackages checks if distro-specific packages are installed
+func (dm *DependencyManager) checkSystemPackages(config *depConfig.DependencyConfig) bool {
+	distroPackages, hasDistro := config.SystemPackages[dm.pm]
+	if !hasDistro {
+		return false
+	}
+
+	for _, pkgName := range distroPackages {
+		if dm.isPackageInstalled(pkgName) {
+			return true
+		}
+	}
+	return false
+}
+
+// checkCommands checks if required commands are available
+func (dm *DependencyManager) checkCommands(config *depConfig.DependencyConfig) bool {
+	for _, cmd := range config.Commands {
+		if dm.checkCommand(cmd) {
+			return true
+		}
+	}
+	return false
+}
+
+// checkLibraries checks if required libraries are available
+func (dm *DependencyManager) checkLibraries(config *depConfig.DependencyConfig) bool {
+	for _, lib := range config.Libraries {
+		if dm.checkLibrary(lib) {
+			return true
+		}
+	}
+	return false
+}
+
+// checkCommonPkgConfig checks common pkg-config names
+func (dm *DependencyManager) checkCommonPkgConfig(config *depConfig.DependencyConfig) bool {
+	for _, pkgName := range config.CommonPkgConfig {
+		if dm.checkPkgConfigName(pkgName) {
+			return true
+		}
+	}
+	return false
+}
+
+// checkPkgConfig performs fallback pkg-config checks
+func (dm *DependencyManager) checkPkgConfig(depName string) bool {
+	// Check legacy pkg-config names
+	pkgConfigNames := dm.getPkgConfigNames()
 	if pkgNames, exists := pkgConfigNames[depName]; exists {
 		for _, pkgName := range pkgNames {
-			if _, err := exec.Command("pkg-config", "--exists", pkgName).CombinedOutput(); err == nil {
+			if dm.checkPkgConfigName(pkgName) {
 				return true
 			}
 		}
 	}
 
-	if _, err := exec.Command("pkg-config", "--exists", depName).CombinedOutput(); err == nil {
-		return true
-	}
+	return dm.checkPkgConfigName(depName)
+}
 
-	specialChecks := map[string]func() bool{
-		"mysql": func() bool {
-			return dm.checkCommand("mysql_config") || dm.checkLibrary("libmysqlclient")
-		},
-		"postgresql": func() bool {
-			return dm.checkCommand("pg_config") || dm.checkLibrary("libpq")
-		},
-		"sqlite": func() bool {
-			return dm.checkLibrary("libsqlite3") || dm.checkCommand("sqlite3")
-		},
-		"gmp": func() bool {
-			return dm.checkLibrary("libgmp")
-		},
-		"gettext": func() bool {
-			return dm.checkCommand("gettext") || dm.checkLibrary("libintl")
-		},
-	}
-
-	if checker, exists := specialChecks[depName]; exists {
-		return checker()
-	}
-
-	return false
+// checkPkgConfigName checks a single pkg-config name
+func (dm *DependencyManager) checkPkgConfigName(pkgName string) bool {
+	_, err := exec.Command("pkg-config", "--exists", pkgName).CombinedOutput()
+	return err == nil
 }
 
 // checkCommand verifies if a system command is available in PATH.
@@ -515,4 +337,47 @@ func (dm *DependencyManager) checkLibrary(libName string) bool {
 	}
 
 	return false
+}
+
+// getPkgConfigNames returns distro-specific pkg-config package names for dependency detection.
+// Returns map where keys are extension names and values are pkg-config package names to check.
+func (dm *DependencyManager) getPkgConfigNames() map[string][]string {
+	result := make(map[string][]string)
+
+	// Get all dependencies from centralized config
+	for _, depName := range depConfig.GetAllDependencyNames() {
+		if config, exists := depConfig.GetDependencyConfig(depName); exists {
+			if len(config.CommonPkgConfig) > 0 {
+				result[depName] = append(result[depName], config.CommonPkgConfig...)
+			}
+
+			if distroNames, hasDistro := config.PkgConfigNames[dm.pm]; hasDistro {
+				result[depName] = append(result[depName], distroNames...)
+			}
+		}
+	}
+
+	return result
+}
+
+// isPackageInstalled checks if a specific package is installed using the appropriate package manager.
+// pkgName: Package name to check. Returns true if package is installed.
+func (dm *DependencyManager) isPackageInstalled(pkgName string) bool {
+	config, exists := depConfig.GetPackageManagerConfig(dm.pm)
+	if !exists {
+		return dm.checkLibrary(pkgName)
+	}
+
+	args := append(config.QueryArgs, pkgName)
+	output, err := utils.ExecuteCommand(config.QueryCmd, args...)
+
+	if err != nil {
+		return false
+	}
+
+	if dm.pm == APT {
+		return strings.Contains(output, "ii")
+	}
+
+	return true
 }

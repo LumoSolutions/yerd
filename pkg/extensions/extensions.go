@@ -153,7 +153,7 @@ var AvailableExtensions = map[string]Extension{
 	"ldap": {
 		Name:         "ldap",
 		ConfigFlag:   "--with-ldap",
-		Dependencies: []string{"openldap"},
+		Dependencies: []string{"ldap"},
 	},
 	"soap": {
 		Name:       "soap",

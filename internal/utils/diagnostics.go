@@ -148,9 +148,6 @@ func DiagnosePHPVersion(version string, availableVersions []string) *PHPVersionR
 
 	installDir := "/opt/yerd/php/php" + version
 	result.InstallDir = installDir
-	if FileExists(installDir) {
-
-	}
 
 	possiblePaths := []string{
 		"/usr/bin/php" + version,
@@ -191,13 +188,13 @@ func isValidPHPVersion(version string, availableVersions []string) bool {
 // Returns slice of DirectoryStatus objects with path, description, and existence status.
 func GetYERDDirectoryStatus() []DirectoryStatus {
 	dirs := []DirectoryStatus{
-		{"/opt/yerd", "YERD home", false},
-		{"/opt/yerd/bin", "YERD binaries", false},
-		{"/opt/yerd/php", "PHP installations", false},
-		{"/opt/yerd/etc", "PHP configurations", false},
+		{YerdBaseDir, "YERD home", false},
+		{YerdBinDir, "YERD binaries", false},
+		{YerdPHPDir, "PHP installations", false},
+		{YerdEtcDir, "PHP configurations", false},
 		{FPMSockDir, "PHP-FPM runtime", false},
 		{FPMLogDir, "PHP-FPM logs", false},
-		{"/usr/local/bin", "System binaries", false},
+		{SystemBinDir, "System binaries", false},
 	}
 
 	for i := range dirs {
