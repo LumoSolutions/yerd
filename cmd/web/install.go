@@ -46,10 +46,14 @@ Examples:
 		var failed []string
 
 		for _, service := range services {
-			if !force && web.IsServiceInstalled(service) {
+			if !force && !forceConfig && web.IsServiceInstalled(service) {
 				utils.PrintWarning("Service '%s' is already installed, skipping", service)
 				utils.PrintInfo("Use -f or --force to reinstall")
 				continue
+			}
+
+			if !force && forceConfig && web.IsServiceInstalled(service) {
+				fmt.Printf("Updating configuration for existing %s installation...\n", service)
 			}
 
 			installer, err := web.NewWebInstaller(service)
@@ -61,16 +65,24 @@ Examples:
 
 			installer.SetForceConfig(forceConfig)
 
-			var wasInstalled bool
-			if force && web.IsServiceInstalled(service) {
-				wasInstalled = true
-				fmt.Printf("Replacing existing %s installation...\n", service)
-			}
+			if !force && forceConfig && web.IsServiceInstalled(service) {
+				if err := installer.UpdateConfigOnly(); err != nil {
+					utils.PrintError("Config update failed for %s: %v", service, err)
+					failed = append(failed, service)
+					continue
+				}
+			} else {
+				var wasInstalled bool
+				if force && web.IsServiceInstalled(service) {
+					wasInstalled = true
+					fmt.Printf("Replacing existing %s installation...\n", service)
+				}
 
-			if err := installer.InstallWithReplace(wasInstalled); err != nil {
-				utils.PrintError("Installation failed for %s: %v", service, err)
-				failed = append(failed, service)
-				continue
+				if err := installer.InstallWithReplace(wasInstalled); err != nil {
+					utils.PrintError("Installation failed for %s: %v", service, err)
+					failed = append(failed, service)
+					continue
+				}
 			}
 		}
 

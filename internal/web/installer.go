@@ -52,6 +52,27 @@ func (wi *WebInstaller) SetForceConfig(force bool) {
 	wi.forceConfig = force
 }
 
+// UpdateConfigOnly downloads and updates only the configuration files
+func (wi *WebInstaller) UpdateConfigOnly() error {
+	var installSuccess bool
+	defer wi.cleanupLogger(&installSuccess)
+
+	if err := utils.CheckInstallPermissions(); err != nil {
+		return fmt.Errorf("insufficient permissions: %v", err)
+	}
+
+	if err := wi.createDirectories(); err != nil {
+		return fmt.Errorf("failed to create directories: %v", err)
+	}
+
+	if err := wi.createConfiguration(); err != nil {
+		return fmt.Errorf("failed to create configuration: %v", err)
+	}
+
+	installSuccess = true
+	return nil
+}
+
 // Install performs the complete installation process
 func (wi *WebInstaller) Install() error {
 	var installSuccess bool
