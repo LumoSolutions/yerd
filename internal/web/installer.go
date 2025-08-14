@@ -11,10 +11,11 @@ import (
 
 // WebInstaller handles installation of web services
 type WebInstaller struct {
-	service    string
-	config     *ServiceConfig
-	depManager *dependencies.DependencyManager
-	logger     *utils.Logger
+	service     string
+	config      *ServiceConfig
+	depManager  *dependencies.DependencyManager
+	logger      *utils.Logger
+	forceConfig bool
 }
 
 // NewWebInstaller creates a new web service installer
@@ -38,11 +39,17 @@ func NewWebInstaller(service string) (*WebInstaller, error) {
 	}
 
 	return &WebInstaller{
-		service:    service,
-		config:     config,
-		depManager: depManager,
-		logger:     logger,
+		service:     service,
+		config:      config,
+		depManager:  depManager,
+		logger:      logger,
+		forceConfig: false,
 	}, nil
+}
+
+// SetForceConfig enables or disables forced configuration file downloads
+func (wi *WebInstaller) SetForceConfig(force bool) {
+	wi.forceConfig = force
 }
 
 // Install performs the complete installation process
@@ -342,11 +349,13 @@ func (wi *WebInstaller) compileDnsmasq() error {
 func (wi *WebInstaller) createConfiguration() error {
 	switch wi.service {
 	case "nginx":
-		return FetchConfigFromGitHub("nginx", "nginx.conf", wi.logger)
+		configPath := filepath.Join(GetServiceConfigPath("nginx"), "nginx.conf")
+		return utils.FetchConfigFromGitHubWithForce("nginx", "nginx.conf", configPath, wi.forceConfig, wi.logger)
 	case "dnsmasq":
-		return FetchConfigFromGitHub("dnsmasq", "dnsmasq.conf", wi.logger)
+		configPath := filepath.Join(GetServiceConfigPath("dnsmasq"), "dnsmasq.conf")
+		return utils.FetchConfigFromGitHubWithForce("dnsmasq", "dnsmasq.conf", configPath, wi.forceConfig, wi.logger)
 	default:
-		return nil // No default config needed
+		return nil
 	}
 }
 

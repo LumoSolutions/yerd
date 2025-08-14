@@ -12,11 +12,13 @@ import (
 var InstallCmd = &cobra.Command{
 	Use:   "install",
 	Short: "Install web services",
-	Long:  `Install nginx and dnsmasq for local development.
+	Long: `Install nginx and dnsmasq for local development.
 
 Examples:
-  yerd web install     # Install if not already installed
-  yerd web install -f  # Force reinstall even if already installed`,
+  yerd web install       # Install if not already installed
+  yerd web install -f    # Force reinstall even if already installed
+  yerd web install -c    # Force download fresh config files from GitHub
+  yerd web install -f -c # Force reinstall and download fresh configs`,
 	Run: func(cmd *cobra.Command, args []string) {
 		version.PrintSplash()
 
@@ -25,12 +27,17 @@ Examples:
 		}
 
 		force, _ := cmd.Flags().GetBool("force")
+		forceConfig, _ := cmd.Flags().GetBool("forceConfig")
 		services := []string{"nginx", "dnsmasq"}
 
 		if force {
 			fmt.Printf("Force reinstalling web services:\n")
 		} else {
 			fmt.Printf("Installing web services:\n")
+		}
+
+		if forceConfig {
+			fmt.Printf("Force downloading fresh configuration files from GitHub\n")
 		}
 		fmt.Printf("  • nginx 1.29.1   - High-performance HTTP server and reverse proxy\n")
 		fmt.Printf("  • dnsmasq 2.91   - Lightweight DNS forwarder and DHCP server\n")
@@ -39,14 +46,12 @@ Examples:
 		var failed []string
 
 		for _, service := range services {
-			// Check if service is already installed (skip check if force flag is set)
 			if !force && web.IsServiceInstalled(service) {
 				utils.PrintWarning("Service '%s' is already installed, skipping", service)
 				utils.PrintInfo("Use -f or --force to reinstall")
 				continue
 			}
 
-			// Create installer
 			installer, err := web.NewWebInstaller(service)
 			if err != nil {
 				utils.PrintError("Failed to create installer for %s: %v", service, err)
@@ -54,14 +59,14 @@ Examples:
 				continue
 			}
 
-			// If force flag is set and service is installed, note it for replacement after build
+			installer.SetForceConfig(forceConfig)
+
 			var wasInstalled bool
 			if force && web.IsServiceInstalled(service) {
 				wasInstalled = true
 				fmt.Printf("Replacing existing %s installation...\n", service)
 			}
 
-			// Install the service (this will build to a new location)
 			if err := installer.InstallWithReplace(wasInstalled); err != nil {
 				utils.PrintError("Installation failed for %s: %v", service, err)
 				failed = append(failed, service)
@@ -84,4 +89,5 @@ Examples:
 
 func init() {
 	InstallCmd.Flags().BoolP("force", "f", false, "Force reinstall even if services are already installed")
+	InstallCmd.Flags().BoolP("forceConfig", "c", false, "Force download fresh configuration files from GitHub")
 }

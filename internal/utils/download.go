@@ -232,10 +232,18 @@ func FetchTextContent(url string, opts *DownloadOptions) (string, error) {
 
 // FetchConfigFromGitHub downloads a configuration file from the GitHub repository to the specified path
 func FetchConfigFromGitHub(configCategory, configName, destinationPath string, logger *Logger) error {
-	// Don't overwrite existing config files
-	if FileExists(destinationPath) {
+	return FetchConfigFromGitHubWithForce(configCategory, configName, destinationPath, false, logger)
+}
+
+// FetchConfigFromGitHubWithForce downloads a configuration file with option to force overwrite existing files
+func FetchConfigFromGitHubWithForce(configCategory, configName, destinationPath string, force bool, logger *Logger) error {
+	if !force && FileExists(destinationPath) {
 		SafeLog(logger, "Config file already exists, skipping: %s", destinationPath)
 		return nil
+	}
+
+	if force && FileExists(destinationPath) {
+		SafeLog(logger, "Force overwriting existing config: %s", destinationPath)
 	}
 
 	configURL := fmt.Sprintf("%s/%s/.config/%s/%s", ConfigRepoBase, version.GetBranch(), configCategory, configName)
