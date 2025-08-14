@@ -33,8 +33,8 @@ func PrintSplash() {
 	white.Println("multiple PHP versions and local development ")
 	white.Println("environments via nginx and dnsmasq with ease")
 	fmt.Println()
+	gray.Println("Consider contributing today")
 	gray.Println("https://github.com/LumoSolutions/yerd")
-	gray.Println("Consider contributing today, YERD is Open-Source MIT")
 	fmt.Println()
 }
 
