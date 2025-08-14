@@ -20,4 +20,12 @@ const (
 	FPMSockDir = "/opt/yerd/php/run"
 	FPMPidDir  = "/opt/yerd/php/run"
 	FPMLogDir  = "/opt/yerd/php/logs"
+
+	// FPM Paths and Names
+	FPMPoolDir     = "php-fpm.d"
+	FPMPoolConfig  = "www.conf"
+	SystemdDir     = "/etc/systemd/system"
+	
+	// Error Messages
+	ErrEmptyPHPVersion = "PHP version cannot be empty"
 )

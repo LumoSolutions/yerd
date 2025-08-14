@@ -3,7 +3,6 @@ package php
 import (
 	"fmt"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/LumoSolutions/yerd/internal/builder"
@@ -11,7 +10,6 @@ import (
 	"github.com/LumoSolutions/yerd/internal/utils"
 	"github.com/LumoSolutions/yerd/internal/version"
 	"github.com/LumoSolutions/yerd/pkg/extensions"
-	"github.com/LumoSolutions/yerd/pkg/php"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
@@ -64,19 +62,9 @@ func init() {
 func runExtensions(cmd *cobra.Command, args []string) error {
 	version.PrintSplash()
 
-	phpVersion := php.FormatVersion(args[0])
-
-	if !php.IsValidVersion(phpVersion) {
-		return fmt.Errorf("invalid PHP version: %s", phpVersion)
-	}
-
-	cfg, err := config.LoadConfig()
+	phpVersion, cfg, err := ValidatePHPVersionConfigAndInstallation(args[0])
 	if err != nil {
-		return fmt.Errorf("failed to load config: %v", err)
-	}
-
-	if _, exists := cfg.InstalledPHP[phpVersion]; !exists {
-		return fmt.Errorf("PHP %s is not installed. Use 'yerd php add %s' first", phpVersion, phpVersion)
+		return err
 	}
 
 	return listExtensions(cfg, phpVersion)
@@ -86,46 +74,24 @@ func runExtensions(cmd *cobra.Command, args []string) error {
 func runAddExtensions(cmd *cobra.Command, args []string) error {
 	version.PrintSplash()
 
-	if !utils.CheckAndPromptForSudo("Extension management", "add", args[0]) {
+	if !utils.CheckAndPromptForSudo(OpExtensionManagement, "add", args[0]) {
 		return nil
 	}
 
-	phpVersion := php.FormatVersion(args[0])
-	extensionsToAdd := args[1:]
-
-	if !php.IsValidVersion(phpVersion) {
-		return fmt.Errorf("invalid PHP version: %s", phpVersion)
-	}
-
-	cfg, err := config.LoadConfig()
+	phpVersion, cfg, err := ValidatePHPVersionConfigAndInstallation(args[0])
 	if err != nil {
-		return fmt.Errorf("failed to load config: %v", err)
+		return err
 	}
 
-	if _, exists := cfg.InstalledPHP[phpVersion]; !exists {
-		return fmt.Errorf("PHP %s is not installed. Use 'yerd php add %s' first", phpVersion, phpVersion)
-	}
-
+	extensionsToAdd := args[1:]
 	valid, invalid := extensions.ValidateExtensions(extensionsToAdd)
-	if len(invalid) > 0 {
-		utils.PrintError("Invalid extensions:")
-		utils.PrintExtensionsGrid(invalid)
-		fmt.Println()
-
-		for _, inv := range invalid {
-			suggestions := extensions.SuggestSimilarExtensions(inv)
-			if len(suggestions) > 0 {
-				fmt.Printf("Did you mean '%s'? Suggestions: %s\n", inv, strings.Join(suggestions, ", "))
-			}
-		}
-		return fmt.Errorf("invalid extensions provided")
+	
+	if err := utils.PrintInvalidExtensionsWithSuggestions(invalid); err != nil {
+		return err
 	}
 
 	currentExtensions, _ := cfg.GetPHPExtensions(phpVersion)
-	currentMap := make(map[string]bool)
-	for _, ext := range currentExtensions {
-		currentMap[ext] = true
-	}
+	currentMap := utils.CreateExtensionMap(currentExtensions)
 
 	var newExtensions []string
 	var alreadyInstalled []string
@@ -139,12 +105,7 @@ func runAddExtensions(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if len(alreadyInstalled) > 0 {
-		utils.PrintWarning("Already installed:")
-		sort.Strings(alreadyInstalled)
-		utils.PrintExtensionsGrid(alreadyInstalled)
-		fmt.Println()
-	}
+	utils.PrintExtensionList("Already installed", alreadyInstalled)
 
 	if len(newExtensions) == 0 {
 		utils.PrintWarning("No new extensions to add for PHP %s", phpVersion)
@@ -156,12 +117,7 @@ func runAddExtensions(cmd *cobra.Command, args []string) error {
 	utils.PrintExtensionsGrid(newExtensions)
 	fmt.Println()
 
-	var finalExtensions []string
-	for ext := range currentMap {
-		finalExtensions = append(finalExtensions, ext)
-	}
-	sort.Strings(finalExtensions)
-
+	finalExtensions := utils.SliceFromExtensionMap(currentMap)
 	return applyExtensionChanges(cfg, phpVersion, finalExtensions)
 }
 
@@ -169,31 +125,18 @@ func runAddExtensions(cmd *cobra.Command, args []string) error {
 func runRemoveExtensions(cmd *cobra.Command, args []string) error {
 	version.PrintSplash()
 
-	if !utils.CheckAndPromptForSudo("Extension management", "remove", args[0]) {
+	if !utils.CheckAndPromptForSudo(OpExtensionManagement, "remove", args[0]) {
 		return nil
 	}
 
-	phpVersion := php.FormatVersion(args[0])
-	extensionsToRemove := args[1:]
-
-	if !php.IsValidVersion(phpVersion) {
-		return fmt.Errorf("invalid PHP version: %s", phpVersion)
-	}
-
-	cfg, err := config.LoadConfig()
+	phpVersion, cfg, err := ValidatePHPVersionConfigAndInstallation(args[0])
 	if err != nil {
-		return fmt.Errorf("failed to load config: %v", err)
+		return err
 	}
 
-	if _, exists := cfg.InstalledPHP[phpVersion]; !exists {
-		return fmt.Errorf("PHP %s is not installed. Use 'yerd php add %s' first", phpVersion, phpVersion)
-	}
-
+	extensionsToRemove := args[1:]
 	currentExtensions, _ := cfg.GetPHPExtensions(phpVersion)
-	currentMap := make(map[string]bool)
-	for _, ext := range currentExtensions {
-		currentMap[ext] = true
-	}
+	currentMap := utils.CreateExtensionMap(currentExtensions)
 
 	var removedExtensions []string
 	var notInstalled []string
@@ -207,12 +150,7 @@ func runRemoveExtensions(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if len(notInstalled) > 0 {
-		utils.PrintWarning("Not installed:")
-		sort.Strings(notInstalled)
-		utils.PrintExtensionsGrid(notInstalled)
-		fmt.Println()
-	}
+	utils.PrintExtensionList("Not installed", notInstalled)
 
 	if len(removedExtensions) == 0 {
 		utils.PrintWarning("No extensions to remove from PHP %s", phpVersion)
@@ -224,12 +162,7 @@ func runRemoveExtensions(cmd *cobra.Command, args []string) error {
 	utils.PrintExtensionsGrid(removedExtensions)
 	fmt.Println()
 
-	var finalExtensions []string
-	for ext := range currentMap {
-		finalExtensions = append(finalExtensions, ext)
-	}
-	sort.Strings(finalExtensions)
-
+	finalExtensions := utils.SliceFromExtensionMap(currentMap)
 	return applyExtensionChanges(cfg, phpVersion, finalExtensions)
 }
 
@@ -237,39 +170,20 @@ func runRemoveExtensions(cmd *cobra.Command, args []string) error {
 func runReplaceExtensions(cmd *cobra.Command, args []string) error {
 	version.PrintSplash()
 
-	if !utils.CheckAndPromptForSudo("Extension management", "replace", args[0]) {
+	if !utils.CheckAndPromptForSudo(OpExtensionManagement, "replace", args[0]) {
 		return nil
 	}
 
-	phpVersion := php.FormatVersion(args[0])
-	newExtensions := args[1:]
-
-	if !php.IsValidVersion(phpVersion) {
-		return fmt.Errorf("invalid PHP version: %s", phpVersion)
-	}
-
-	cfg, err := config.LoadConfig()
+	phpVersion, cfg, err := ValidatePHPVersionConfigAndInstallation(args[0])
 	if err != nil {
-		return fmt.Errorf("failed to load config: %v", err)
+		return err
 	}
 
-	if _, exists := cfg.InstalledPHP[phpVersion]; !exists {
-		return fmt.Errorf("PHP %s is not installed. Use 'yerd php add %s' first", phpVersion, phpVersion)
-	}
-
+	newExtensions := args[1:]
 	valid, invalid := extensions.ValidateExtensions(newExtensions)
-	if len(invalid) > 0 {
-		utils.PrintError("Invalid extensions:")
-		utils.PrintExtensionsGrid(invalid)
-		fmt.Println()
-
-		for _, inv := range invalid {
-			suggestions := extensions.SuggestSimilarExtensions(inv)
-			if len(suggestions) > 0 {
-				fmt.Printf("Did you mean '%s'? Suggestions: %s\n", inv, strings.Join(suggestions, ", "))
-			}
-		}
-		return fmt.Errorf("invalid extensions provided")
+	
+	if err := utils.PrintInvalidExtensionsWithSuggestions(invalid); err != nil {
+		return err
 	}
 
 	currentExtensions, _ := cfg.GetPHPExtensions(phpVersion)
@@ -294,7 +208,7 @@ func runReplaceExtensions(cmd *cobra.Command, args []string) error {
 func listExtensions(cfg *config.Config, version string) error {
 	installedExtensions, exists := cfg.GetPHPExtensions(version)
 	if !exists {
-		return fmt.Errorf("no extension information found for PHP %s", version)
+		return fmt.Errorf(ErrNoExtensionInfo, version)
 	}
 
 	utils.PrintInfo("PHP %s Extensions:", version)
@@ -382,7 +296,7 @@ func applyExtensionChanges(cfg *config.Config, version string, extensions []stri
 			color.New(color.FgGreen).Println("✓ Configuration restored successfully")
 		}
 
-		return fmt.Errorf("rebuild failed")
+		return fmt.Errorf(ErrRebuildFailed)
 	}
 
 	color.New(color.FgYellow).Println("Saving new configuration...")
@@ -399,7 +313,7 @@ func applyExtensionChanges(cfg *config.Config, version string, extensions []stri
 func rebuildPHPWithExtensions(version string, extensions []string) error {
 	phpBuilder, err := builder.NewBuilder(version, extensions)
 	if err != nil {
-		return fmt.Errorf("failed to create builder: %v", err)
+		return fmt.Errorf(ErrFailedToCreateBuilder, err)
 	}
 	defer phpBuilder.Cleanup()
 

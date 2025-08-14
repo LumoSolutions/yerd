@@ -6,9 +6,76 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 )
 
 const phpIniFile = "/php.ini"
+
+// Helper functions for common operations
+
+// validatePHPVersion checks if PHP version is not empty and returns an error if it is.
+// version: PHP version string. Returns error if empty.
+func validatePHPVersion(version string) error {
+	if version == "" {
+		return fmt.Errorf(ErrEmptyPHPVersion)
+	}
+	return nil
+}
+
+// getFPMPoolConfigDir returns the FPM pool configuration directory path for a PHP version.
+// version: PHP version string. Returns full directory path.
+func getFPMPoolConfigDir(version string) string {
+	configDir := filepath.Join(YerdEtcDir, "php"+version)
+	return filepath.Join(configDir, FPMPoolDir)
+}
+
+// getFPMPoolConfigFile returns the FPM pool configuration file path for a PHP version.
+// version: PHP version string. Returns full file path.
+func getFPMPoolConfigFile(version string) string {
+	return filepath.Join(getFPMPoolConfigDir(version), FPMPoolConfig)
+}
+
+// GetFPMPoolConfigFile returns the FPM pool configuration file path for a PHP version (public version).
+// version: PHP version string. Returns full file path.
+func GetFPMPoolConfigFile(version string) string {
+	return getFPMPoolConfigFile(version)
+}
+
+// getFPMConfigDir returns the FPM main configuration directory path for a PHP version.
+// version: PHP version string. Returns directory path.
+func getFPMConfigDir(version string) string {
+	return filepath.Join(YerdEtcDir, "php"+version)
+}
+
+// getFPMMainConfigFile returns the FPM main configuration file path for a PHP version.
+// version: PHP version string. Returns full file path.
+func getFPMMainConfigFile(version string) string {
+	return filepath.Join(getFPMConfigDir(version), "php-fpm.conf")
+}
+
+// GetFPMMainConfigFile returns the FPM main configuration file path for a PHP version (public version).
+// version: PHP version string. Returns full file path.
+func GetFPMMainConfigFile(version string) string {
+	return getFPMMainConfigFile(version)
+}
+
+// getSystemdServiceName returns the systemd service name for a PHP version.
+// version: PHP version string. Returns service name.
+func getSystemdServiceName(version string) string {
+	return fmt.Sprintf("yerd-php%s-fpm.service", version)
+}
+
+// getSystemdServicePath returns the systemd service file path for a PHP version.
+// version: PHP version string. Returns full service file path.
+func getSystemdServicePath(version string) string {
+	return filepath.Join(SystemdDir, getSystemdServiceName(version))
+}
+
+// GetSystemdServicePath returns the systemd service file path for a PHP version (public version).
+// version: PHP version string. Returns full service file path.
+func GetSystemdServicePath(version string) string {
+	return getSystemdServicePath(version)
+}
 
 type PHPVersionDetails struct {
 	Version    string
@@ -324,17 +391,97 @@ func searchExtensionSubDir(baseDir string) string {
 	return baseDir
 }
 
+// CreateFPMMainConfig creates the main PHP-FPM configuration file for a specific PHP version.
+// Downloads base configuration from GitHub and customizes it for the version.
+// version: PHP version string. Returns error if main config creation fails.
+func CreateFPMMainConfig(version string) error {
+	if err := validatePHPVersion(version); err != nil {
+		return err
+	}
+
+	mainConfigDir := getFPMConfigDir(version)
+	mainConfigPath := getFPMMainConfigFile(version)
+
+	if FileExists(mainConfigPath) {
+		return fmt.Errorf("FPM main config already exists at: %s", mainConfigPath)
+	}
+
+	if err := os.MkdirAll(mainConfigDir, DirPermissions); err != nil {
+		return fmt.Errorf("failed to create FPM config directory %s: %v", mainConfigDir, err)
+	}
+
+	logger, err := NewLogger(fmt.Sprintf("php-fpm-main-%s", version))
+	if err != nil {
+		return downloadAndCustomizeFPMMain(version, mainConfigPath, nil)
+	}
+	defer func() {
+		if logger != nil {
+			logger.DeleteLogFile()
+		}
+	}()
+
+	return downloadAndCustomizeFPMMain(version, mainConfigPath, logger)
+}
+
+// downloadAndCustomizeFPMMain downloads the main FPM config and customizes it for the version
+func downloadAndCustomizeFPMMain(version, mainConfigPath string, logger *Logger) error {
+	if err := FetchConfigFromGitHub("php", "php-fpm.conf", mainConfigPath, logger); err != nil {
+		return fmt.Errorf("failed to download FPM main config from GitHub: %v", err)
+	}
+
+	return customizeFPMMain(version, mainConfigPath, logger)
+}
+
+// customizeFPMMain reads the downloaded main config and updates version-specific settings
+func customizeFPMMain(version, mainConfigPath string, logger *Logger) error {
+	if version == "" || mainConfigPath == "" {
+		return fmt.Errorf("version and mainConfigPath cannot be empty")
+	}
+
+	data := TemplateData{
+		"version":  version,
+		"pid_path": filepath.Join(FPMSockDir, fmt.Sprintf("php%s-fpm.pid", version)),
+		"log_path": filepath.Join(FPMLogDir, fmt.Sprintf("php%s-fpm.log", version)),
+		"pool_dir": getFPMPoolConfigDir(version),
+	}
+
+	SafeLog(logger, "Reading FPM main config template from: %s", mainConfigPath)
+
+	content, err := os.ReadFile(mainConfigPath)
+	if err != nil {
+		return fmt.Errorf("failed to read FPM main config template from %s: %v", mainConfigPath, err)
+	}
+
+	if len(content) == 0 {
+		return fmt.Errorf("FPM main config template is empty")
+	}
+
+	SafeLog(logger, "Applying template substitutions for PHP %s main config", version)
+
+	customizedContent := Template(string(content), data)
+
+	if customizedContent == string(content) {
+		SafeLog(logger, "Warning: No template substitutions were made for main config")
+	}
+
+	if err := os.WriteFile(mainConfigPath, []byte(customizedContent), FilePermissions); err != nil {
+		return fmt.Errorf("failed to write customized FPM main config to %s: %v", mainConfigPath, err)
+	}
+
+	SafeLog(logger, "Successfully customized FPM main config for PHP %s", version)
+	return nil
+}
+
 // CreateFPMPoolConfig creates a PHP-FPM pool configuration file for a specific PHP version.
 // Downloads base configuration from GitHub and customizes it for the version.
 // version: PHP version string. Returns error if pool config creation fails.
 func CreateFPMPoolConfig(version string) error {
-	if version == "" {
-		return fmt.Errorf("PHP version cannot be empty")
+	if err := validatePHPVersion(version); err != nil {
+		return err
 	}
 
-	configDir := filepath.Join(YerdEtcDir, "php"+version)
-	poolConfigDir := filepath.Join(configDir, "php-fpm.d")
-	poolConfigPath := filepath.Join(poolConfigDir, "www.conf")
+	poolConfigDir := getFPMPoolConfigDir(version)
+	poolConfigPath := getFPMPoolConfigFile(version)
 
 	if FileExists(poolConfigPath) {
 		return fmt.Errorf("FPM pool config already exists at: %s", poolConfigPath)
@@ -375,7 +522,6 @@ func customizeFPMPool(version, poolConfigPath string, logger *Logger) error {
 	data := TemplateData{
 		"version":   version,
 		"sock_path": filepath.Join(FPMSockDir, fmt.Sprintf("php%s-fpm.sock", version)),
-		"pid_path":  filepath.Join(FPMPidDir, fmt.Sprintf("php%s-fpm.pid", version)),
 		"log_path":  filepath.Join(FPMLogDir, fmt.Sprintf("php%s-fpm.log", version)),
 		"user":      FPMUser,
 		"group":     FPMGroup,
@@ -405,6 +551,389 @@ func customizeFPMPool(version, poolConfigPath string, logger *Logger) error {
 	}
 
 	SafeLog(logger, "Successfully customized FPM pool config for PHP %s with %s user/group", version, FPMUser)
+	return nil
+}
+
+// SetupFPMEnvironment creates FPM directories and configuration files for a PHP version.
+// version: PHP version string, forceRecreate: Whether to recreate existing configs, logger: Logger instance.
+// Returns error if FPM setup fails.
+func SetupFPMEnvironment(version string, forceRecreate bool, logger *Logger) error {
+	SafeLog(logger, "Setting up FPM environment for PHP %s", version)
+
+	// Create FPM runtime and log directories
+	if err := CreateFPMDirectories(logger); err != nil {
+		return err
+	}
+
+	// Create or recreate main config
+	if err := CreateFPMConfigIfNeeded(version, "main", GetFPMMainConfigFile(version), CreateFPMMainConfig, forceRecreate, logger); err != nil {
+		return err
+	}
+
+	// Create or recreate pool config
+	if err := CreateFPMConfigIfNeeded(version, "pool", GetFPMPoolConfigFile(version), CreateFPMPoolConfig, forceRecreate, logger); err != nil {
+		return err
+	}
+
+	SafeLog(logger, "FPM environment setup completed for PHP %s", version)
+	return nil
+}
+
+// CreateFPMDirectories creates the required FPM runtime and log directories.
+// logger: Logger instance. Returns error if directory creation fails.
+func CreateFPMDirectories(logger *Logger) error {
+	SafeLog(logger, "Creating FPM runtime directories")
+
+	if err := CreateDirectory(FPMSockDir); err != nil {
+		SafeLog(logger, "Failed to create FPM runtime directory: %v", err)
+		return fmt.Errorf("failed to create FPM runtime directory: %v", err)
+	}
+
+	if err := CreateDirectory(FPMLogDir); err != nil {
+		SafeLog(logger, "Failed to create FPM log directory: %v", err)
+		return fmt.Errorf("failed to create FPM log directory: %v", err)
+	}
+
+	SafeLog(logger, "FPM directories created successfully")
+	return nil
+}
+
+// CreateFPMConfigIfNeeded creates or recreates an FPM configuration file based on conditions.
+// version: PHP version, configType: Type for logging, configPath: Path to config file,
+// createFunc: Function to create config, forceRecreate: Whether to force recreation,
+// logger: Logger instance. Returns error if config creation fails.
+func CreateFPMConfigIfNeeded(version, configType, configPath string, createFunc func(string) error, forceRecreate bool, logger *Logger) error {
+	configExists := FileExists(configPath)
+
+	// Skip creation if file exists and not forcing recreation
+	if configExists && !forceRecreate {
+		SafeLog(logger, "FPM %s configuration already exists, skipping creation", configType)
+		return nil
+	}
+
+	// Remove existing file if forcing recreation
+	if forceRecreate && configExists {
+		SafeLog(logger, "Recreating FPM %s configuration (force enabled)", configType)
+		if err := os.Remove(configPath); err != nil {
+			SafeLog(logger, "Warning: Failed to remove existing FPM %s config: %v", configType, err)
+			// Continue despite removal failure
+		}
+	}
+
+	// Create the configuration
+	if err := createFunc(version); err != nil {
+		SafeLog(logger, "Failed to create FPM %s config: %v", configType, err)
+		return fmt.Errorf("failed to create FPM %s config: %v", configType, err)
+	}
+
+	SafeLog(logger, "FPM %s configuration created successfully", configType)
+	return nil
+}
+
+// StartPHPFPM starts the PHP-FPM process for a specific PHP version using systemd.
+// version: PHP version string. Returns error if FPM startup fails.
+func StartPHPFPM(version string) error {
+	if err := validatePHPVersion(version); err != nil {
+		return err
+	}
+
+	// Create systemd service if it doesn't exist
+	servicePath := getSystemdServicePath(version)
+
+	if !FileExists(servicePath) {
+		if err := CreateSystemdService(version); err != nil {
+			return fmt.Errorf("failed to create systemd service: %v", err)
+		}
+	}
+
+	// Check if service is already active
+	if IsSystemdServiceActive(version) {
+		return fmt.Errorf("PHP-FPM %s is already running via systemd", version)
+	}
+
+	// Start the systemd service
+	if err := StartSystemdService(version); err != nil {
+		return fmt.Errorf("failed to start systemd service: %v", err)
+	}
+
+	// Wait a moment and verify it started
+	time.Sleep(1000 * time.Millisecond)
+	if !IsSystemdServiceActive(version) {
+		return fmt.Errorf("PHP-FPM %s failed to start via systemd", version)
+	}
+
+	return nil
+}
+
+// IsProcessRunning checks if a process with the given PID is running.
+// pid: Process ID as string. Returns true if process is running.
+func IsProcessRunning(pid string) bool {
+	pid = strings.TrimSpace(pid)
+	if pid == "" {
+		return false
+	}
+
+	_, err := ExecuteCommand("kill", "-0", pid)
+	return err == nil
+}
+
+// StopPHPFPM stops the PHP-FPM process for a specific PHP version.
+// version: PHP version string. Returns error if FPM stop fails.
+func StopPHPFPM(version string) error {
+	if err := validatePHPVersion(version); err != nil {
+		return err
+	}
+
+	// Check if service is running
+	if !IsSystemdServiceActive(version) {
+		return fmt.Errorf("PHP-FPM %s is not running via systemd", version)
+	}
+
+	// Stop the systemd service
+	if err := StopSystemdService(version); err != nil {
+		return fmt.Errorf("failed to stop systemd service: %v", err)
+	}
+
+	// Wait a moment and verify it stopped
+	time.Sleep(1000 * time.Millisecond)
+	if IsSystemdServiceActive(version) {
+		return fmt.Errorf("PHP-FPM %s failed to stop via systemd", version)
+	}
+
+	return nil
+}
+
+// CreateSystemdService creates a systemd service file for PHP-FPM to ensure automatic startup on boot.
+// version: PHP version string. Returns error if service creation fails.
+func CreateSystemdService(version string) error {
+	if err := validatePHPVersion(version); err != nil {
+		return err
+	}
+
+	servicePath := getSystemdServicePath(version)
+
+	// Check if service already exists
+	if FileExists(servicePath) {
+		return fmt.Errorf("systemd service already exists at: %s", servicePath)
+	}
+
+	logger, err := NewLogger(fmt.Sprintf("systemd-service-%s", version))
+	if err != nil {
+		return createSystemdServiceFromGitHub(version, servicePath, nil)
+	}
+	defer func() {
+		if logger != nil {
+			logger.DeleteLogFile()
+		}
+	}()
+
+	return createSystemdServiceFromGitHub(version, servicePath, logger)
+}
+
+// CreateSystemdServiceWithForce creates or recreates a systemd service for PHP-FPM with force option.
+// version: PHP version string, force: Whether to overwrite existing service. Returns error if creation fails.
+func CreateSystemdServiceWithForce(version string, force bool) error {
+	if err := validatePHPVersion(version); err != nil {
+		return err
+	}
+
+	servicePath := getSystemdServicePath(version)
+
+	// If force is enabled and service exists, remove it first
+	if force && FileExists(servicePath) {
+		serviceName := getSystemdServiceName(version)
+		// Stop service if running
+		ExecuteCommand("systemctl", "stop", serviceName)
+		// Remove existing service file
+		if err := os.Remove(servicePath); err != nil {
+			return fmt.Errorf("failed to remove existing systemd service file %s: %v", servicePath, err)
+		}
+	} else if FileExists(servicePath) && !force {
+		return fmt.Errorf("systemd service already exists at: %s", servicePath)
+	}
+
+	logger, err := NewLogger(fmt.Sprintf("systemd-service-%s", version))
+	if err != nil {
+		return createSystemdServiceFromGitHub(version, servicePath, nil)
+	}
+	defer func() {
+		if logger != nil {
+			logger.DeleteLogFile()
+		}
+	}()
+
+	return createSystemdServiceFromGitHub(version, servicePath, logger)
+}
+
+// createSystemdServiceFromGitHub downloads the systemd template and customizes it for the version
+func createSystemdServiceFromGitHub(version, servicePath string, logger *Logger) error {
+	// Download systemd template to temporary location
+	tempPath := servicePath + ".tmp"
+	if err := FetchConfigFromGitHub("php", "systemd.conf", tempPath, logger); err != nil {
+		return fmt.Errorf("failed to download systemd service template from GitHub: %v", err)
+	}
+	defer os.Remove(tempPath) // Clean up temp file
+
+	if err := customizeSystemdService(version, tempPath, servicePath, logger); err != nil {
+		return err
+	}
+
+	serviceName := getSystemdServiceName(version)
+
+	// Reload systemd daemon
+	if _, err := ExecuteCommand("systemctl", "daemon-reload"); err != nil {
+		return fmt.Errorf("failed to reload systemd daemon: %v", err)
+	}
+
+	// Enable service for auto-start on boot
+	if _, err := ExecuteCommand("systemctl", "enable", serviceName); err != nil {
+		return fmt.Errorf("failed to enable systemd service %s: %v", serviceName, err)
+	}
+
+	SafeLog(logger, "Successfully created systemd service for PHP %s", version)
+	return nil
+}
+
+// customizeSystemdService reads the downloaded systemd template and updates version-specific settings
+func customizeSystemdService(version, tempPath, servicePath string, logger *Logger) error {
+	fpmBinaryPath := filepath.Join(YerdPHPDir, "php"+version, "sbin", "php-fpm")
+	mainConfigPath := getFPMMainConfigFile(version)
+	pidPath := filepath.Join(FPMSockDir, "php"+version+"-fpm.pid")
+
+	data := TemplateData{
+		"version":          version,
+		"fpm_binary_path":  fpmBinaryPath,
+		"main_config_path": mainConfigPath,
+		"pid_path":         pidPath,
+	}
+
+	SafeLog(logger, "Reading systemd service template from: %s", tempPath)
+
+	content, err := os.ReadFile(tempPath)
+	if err != nil {
+		return fmt.Errorf("failed to read systemd service template from %s: %v", tempPath, err)
+	}
+
+	if len(content) == 0 {
+		return fmt.Errorf("systemd service template is empty")
+	}
+
+	SafeLog(logger, "Applying template substitutions for PHP %s systemd service", version)
+
+	customizedContent := Template(string(content), data)
+
+	if customizedContent == string(content) {
+		SafeLog(logger, "Warning: No template substitutions were made for systemd service")
+	}
+
+	// Write service file
+	if err := WriteToFile(servicePath, []byte(customizedContent), FilePermissions); err != nil {
+		return fmt.Errorf("failed to create systemd service file %s: %v", servicePath, err)
+	}
+
+	SafeLog(logger, "Successfully customized systemd service for PHP %s", version)
+	return nil
+}
+
+// StartSystemdService starts the systemd service for PHP-FPM.
+// version: PHP version string. Returns error if service start fails.
+func StartSystemdService(version string) error {
+	if err := validatePHPVersion(version); err != nil {
+		return err
+	}
+
+	serviceName := getSystemdServiceName(version)
+
+	if _, err := ExecuteCommand("systemctl", "start", serviceName); err != nil {
+		return fmt.Errorf("failed to start systemd service %s: %v", serviceName, err)
+	}
+
+	return nil
+}
+
+// StopSystemdService stops the systemd service for PHP-FPM.
+// version: PHP version string. Returns error if service stop fails.
+func StopSystemdService(version string) error {
+	if err := validatePHPVersion(version); err != nil {
+		return err
+	}
+
+	serviceName := getSystemdServiceName(version)
+
+	if _, err := ExecuteCommand("systemctl", "stop", serviceName); err != nil {
+		return fmt.Errorf("failed to stop systemd service %s: %v", serviceName, err)
+	}
+
+	return nil
+}
+
+// RemoveSystemdService disables and removes the systemd service for PHP-FPM.
+// version: PHP version string. Returns error if service removal fails.
+func RemoveSystemdService(version string) error {
+	if err := validatePHPVersion(version); err != nil {
+		return err
+	}
+
+	serviceName := getSystemdServiceName(version)
+	servicePath := getSystemdServicePath(version)
+
+	// Stop service if running
+	ExecuteCommand("systemctl", "stop", serviceName)
+
+	// Disable service
+	ExecuteCommand("systemctl", "disable", serviceName)
+
+	// Remove service file
+	if FileExists(servicePath) {
+		if err := os.Remove(servicePath); err != nil {
+			return fmt.Errorf("failed to remove systemd service file %s: %v", servicePath, err)
+		}
+	}
+
+	// Reload systemd daemon
+	if _, err := ExecuteCommand("systemctl", "daemon-reload"); err != nil {
+		return fmt.Errorf("failed to reload systemd daemon: %v", err)
+	}
+
+	return nil
+}
+
+// IsSystemdServiceActive checks if the systemd service for PHP-FPM is active.
+// version: PHP version string. Returns true if service is active.
+func IsSystemdServiceActive(version string) bool {
+	if err := validatePHPVersion(version); err != nil {
+		return false
+	}
+
+	serviceName := getSystemdServiceName(version)
+	_, err := ExecuteCommand("systemctl", "is-active", serviceName)
+	return err == nil
+}
+
+// RemoveFPMPoolConfig removes the PHP-FPM pool configuration file for a specific PHP version.
+// version: PHP version string. Returns error if removal fails.
+func RemoveFPMPoolConfig(version string) error {
+	if err := validatePHPVersion(version); err != nil {
+		return err
+	}
+
+	poolConfigPath := getFPMPoolConfigFile(version)
+	poolConfigDir := getFPMPoolConfigDir(version)
+
+	// Remove pool config file
+	if FileExists(poolConfigPath) {
+		if err := os.Remove(poolConfigPath); err != nil {
+			return fmt.Errorf("failed to remove FPM pool config %s: %v", poolConfigPath, err)
+		}
+	}
+
+	// Remove php-fpm.d directory if empty
+	if FileExists(poolConfigDir) {
+		if err := os.Remove(poolConfigDir); err != nil {
+			// Ignore error if directory is not empty
+		}
+	}
+
 	return nil
 }
 

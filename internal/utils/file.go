@@ -107,3 +107,17 @@ func CreateDirectory(path string) error {
 	}
 	return nil
 }
+
+// WriteToFile writes content to a file with specified permissions, overwriting if it exists
+func WriteToFile(filename string, content []byte, perm os.FileMode) error {
+	err := os.WriteFile(filename, content, perm)
+	if err != nil {
+		return fmt.Errorf("failed to write file %s: %w", filename, err)
+	}
+	return nil
+}
+
+// WriteStringToFile writes string content to a file with specified permissions
+func WriteStringToFile(filename string, content string, perm os.FileMode) error {
+	return WriteToFile(filename, []byte(content), perm)
+}

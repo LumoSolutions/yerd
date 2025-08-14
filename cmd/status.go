@@ -187,6 +187,7 @@ func displaySinglePHPVersion(cfg *config.Config, majorMinor string, phpInfo conf
 	fmt.Printf("%s├─ Config: %s\n", subPrefix, iniPath)
 	fmt.Printf("%s├─ FPM Socket: %s\n", subPrefix, fpmSockPath)
 	fmt.Printf("%s├─ FPM Pool: %s\n", subPrefix, fpmPoolConfig)
+	fmt.Printf("%s├─ FPM Service: %s\n", subPrefix, getFPMServiceStatus(majorMinor))
 	fmt.Printf("%s└─ Install: %s\n", subPrefix, phpInfo.InstallPath)
 
 	if !isLast {
@@ -345,8 +346,12 @@ func displaySingleWebService(service string, isLast bool) {
 
 // getWebServiceStatus returns a formatted status string for a web service
 func getWebServiceStatus(service string) string {
-	return "🔧"
+	if service == "nginx" && isNginxRunning() {
+		return "🟢"
+	}
+	return "🔴"
 }
+
 
 // getWebServiceConfigPath returns the configuration file path for a web service
 func getWebServiceConfigPath(service string) string {
@@ -406,5 +411,13 @@ func getFPMPoolConfigPath(majorMinor string) string {
 		return poolConfigPath
 	}
 	return fmt.Sprintf("❌ %s (not found)", poolConfigPath)
+}
+
+// getFPMServiceStatus returns the systemd service status for a PHP version
+func getFPMServiceStatus(majorMinor string) string {
+	if utils.IsSystemdServiceActive(majorMinor) {
+		return "🟢 Running"
+	}
+	return "🔴 Stopped"
 }
 

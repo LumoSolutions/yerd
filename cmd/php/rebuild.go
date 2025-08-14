@@ -26,6 +26,12 @@ This is useful for:
 	RunE: runRebuild,
 }
 
+var resetConfig bool
+
+func init() {
+	RebuildCmd.Flags().BoolVarP(&resetConfig, "config", "c", false, "Reset and regenerate FPM configuration files")
+}
+
 // runRebuild forces a complete rebuild of PHP with existing extensions configuration.
 // Returns error if rebuild fails, nil if successful.
 func runRebuild(cmd *cobra.Command, args []string) error {
@@ -68,8 +74,12 @@ func runRebuild(cmd *cobra.Command, args []string) error {
 	utils.PrintInfo("Rebuilding PHP %s with extensions:", phpVersion)
 	utils.PrintExtensionsGrid(currentExtensions)
 	fmt.Println()
+	
+	if resetConfig {
+		utils.PrintInfo("Config reset enabled: FPM configuration will be regenerated")
+	}
 
-	if err := forceRebuildPHP(cfg, phpVersion, currentExtensions); err != nil {
+	if err := forceRebuildPHP(cfg, phpVersion, currentExtensions, resetConfig); err != nil {
 		return nil
 	}
 
@@ -77,15 +87,15 @@ func runRebuild(cmd *cobra.Command, args []string) error {
 }
 
 // forceRebuildPHP performs the actual rebuild process with spinner animation.
-// cfg: Configuration object, version: PHP version to rebuild, extensions: Extensions to include.
-func forceRebuildPHP(cfg *config.Config, version string, extensions []string) error {
+// cfg: Configuration object, version: PHP version to rebuild, extensions: Extensions to include, resetConfig: Whether to reset FPM configuration.
+func forceRebuildPHP(cfg *config.Config, version string, extensions []string, resetConfig bool) error {
 	utils.PrintWarning("Force rebuilding PHP (no configuration backup needed)...")
 	fmt.Println()
 
 	spinner := utils.NewLoadingSpinner(fmt.Sprintf("Building PHP %s with extensions", version))
 	spinner.Start()
 
-	phpBuilder, err := builder.NewBuilder(version, extensions)
+	phpBuilder, err := builder.NewBuilderWithConfig(version, extensions, resetConfig)
 	if err != nil {
 		spinner.Stop("✗ Failed to create builder")
 		utils.PrintError("Failed to create builder: %v", err)
