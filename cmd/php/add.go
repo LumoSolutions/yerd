@@ -52,7 +52,7 @@ func runAdd(cmd *cobra.Command, args []string) {
 	fmt.Printf("Installing PHP %s with extensions:\n", phpVersion)
 	utils.PrintExtensionsGrid(constants.DefaultPHPExtensions)
 	fmt.Println()
-	
+
 	if uncached {
 		fmt.Printf("ℹ️  Bypassing cache to get latest version information\n")
 		fmt.Println()
@@ -68,4 +68,3 @@ func runAdd(cmd *cobra.Command, args []string) {
 
 	fmt.Printf("✓ PHP %s installed successfully\n", phpVersion)
 }
-

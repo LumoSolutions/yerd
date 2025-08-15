@@ -215,6 +215,11 @@ func performInstallation(version string, versionInfo php.VersionInfo, logger *ut
 		return err
 	}
 
+	if err := setupFPM(version, logger); err != nil {
+		utils.SafeLog(logger, "Failed to setup PHP-FPM: %v", err)
+		return err
+	}
+
 	return nil
 }
 
@@ -275,5 +280,23 @@ func installFromSource(versionInfo php.VersionInfo, logger *utils.Logger) error 
 	utils.SafeLog(logger, "Source installation completed successfully")
 
 	fmt.Printf("✓ PHP %s built and installed successfully\n", versionInfo.Version)
+	return nil
+}
+
+// setupFPM creates FPM directories, configuration, and starts the FPM process.
+// version: PHP version, logger: Logger instance. Returns error if FPM setup fails.
+func setupFPM(version string, logger *utils.Logger) error {
+	// Setup FPM environment (directories and config files)
+	if err := utils.SetupFPMEnvironment(version, false, logger); err != nil {
+		return err
+	}
+
+	// Start PHP-FPM
+	if err := utils.StartPHPFPM(version); err != nil {
+		utils.SafeLog(logger, "Failed to start PHP-FPM: %v", err)
+		return fmt.Errorf("failed to start PHP-FPM: %v", err)
+	}
+
+	utils.SafeLog(logger, "PHP-FPM setup completed successfully")
 	return nil
 }

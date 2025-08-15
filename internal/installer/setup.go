@@ -68,25 +68,44 @@ func verifyInstallation(binaryPath string, logger *utils.Logger) error {
 	return nil
 }
 
+// handleConfigCreation handles config file creation with consistent error handling and logging
+func handleConfigCreation(createFunc func() error, configName, version string, logger *utils.Logger, successMsg string) error {
+	utils.SafeLog(logger, "Creating %s for PHP %s", configName, version)
+	
+	err := createFunc()
+	if err != nil {
+		if strings.Contains(err.Error(), "already exists") {
+			utils.SafeLog(logger, "%s already exists for PHP %s", configName, version)
+			fmt.Printf("✓ %s already exists\n", configName)
+		} else {
+			utils.SafeLog(logger, "Failed to create %s: %v", configName, err)
+			return err
+		}
+	} else {
+		utils.SafeLog(logger, "%s created successfully for PHP %s", configName, version)
+		fmt.Printf("✓ %s\n", successMsg)
+	}
+	return nil
+}
+
 // createDefaultPHPIni generates a default php.ini configuration file for the specified PHP version.
 // version: PHP version string, logger: Logging instance. Returns error if php.ini creation fails.
 func createDefaultPHPIni(version string, logger *utils.Logger) error {
-	utils.SafeLog(logger, "Creating default php.ini for PHP %s", version)
-
-	err := utils.CreatePHPIniForVersion(version)
-	if err != nil {
-		if strings.Contains(err.Error(), "already exists") {
-			utils.SafeLog(logger, "php.ini already exists for PHP %s", version)
-			fmt.Printf("✓ php.ini already exists\n")
-			return nil
-		}
-
-		utils.SafeLog(logger, "Failed to create php.ini: %v", err)
+	// Create php.ini
+	if err := handleConfigCreation(
+		func() error { return utils.CreatePHPIniForVersion(version) },
+		"php.ini", version, logger, "Default php.ini created",
+	); err != nil {
 		return err
 	}
 
-	utils.SafeLog(logger, "Default php.ini created successfully for PHP %s", version)
+	// Create FPM pool configuration
+	if err := handleConfigCreation(
+		func() error { return utils.CreateFPMPoolConfig(version) },
+		"FPM pool config", version, logger, "FPM pool configuration created with nobody user",
+	); err != nil {
+		return err
+	}
 
-	fmt.Printf("✓ Default php.ini created\n")
 	return nil
 }

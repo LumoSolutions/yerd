@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/LumoSolutions/yerd/internal/config"
 	"github.com/LumoSolutions/yerd/internal/dependencies"
@@ -15,16 +16,23 @@ import (
 )
 
 type Builder struct {
-	Version    string
-	Extensions []string
-	SourceDir  string
-	InstallDir string
-	logger     *utils.Logger
+	Version     string
+	Extensions  []string
+	SourceDir   string
+	InstallDir  string
+	ResetConfig bool
+	logger      *utils.Logger
 }
 
 // NewBuilder creates a new PHP builder instance with source and install directories.
 // version: PHP version to build, extensions: List of extensions to include. Returns configured Builder.
 func NewBuilder(version string, extensions []string) (*Builder, error) {
+	return NewBuilderWithConfig(version, extensions, false)
+}
+
+// NewBuilderWithConfig creates a new PHP builder instance with configuration reset option.
+// version: PHP version to build, extensions: List of extensions to include, resetConfig: Whether to reset FPM configuration. Returns configured Builder.
+func NewBuilderWithConfig(version string, extensions []string, resetConfig bool) (*Builder, error) {
 	sourceDir := filepath.Join(utils.YerdPHPDir, "src", "php-"+version)
 	installDir := php.GetInstallPath(version)
 
@@ -34,11 +42,12 @@ func NewBuilder(version string, extensions []string) (*Builder, error) {
 	}
 
 	return &Builder{
-		Version:    version,
-		Extensions: extensions,
-		SourceDir:  sourceDir,
-		InstallDir: installDir,
-		logger:     logger,
+		Version:     version,
+		Extensions:  extensions,
+		SourceDir:   sourceDir,
+		InstallDir:  installDir,
+		ResetConfig: resetConfig,
+		logger:      logger,
 	}, nil
 }
 
@@ -67,6 +76,14 @@ func (b *Builder) RebuildPHP() error {
 
 	if err := b.createSymlinks(); err != nil {
 		return fmt.Errorf("symlink creation failed: %v", err)
+	}
+
+	if err := b.createFPMConfig(); err != nil {
+		return fmt.Errorf("FPM configuration creation failed: %v", err)
+	}
+
+	if err := b.startFPM(); err != nil {
+		return fmt.Errorf("FPM startup failed: %v", err)
 	}
 
 	return nil
@@ -317,6 +334,59 @@ func (b *Builder) CleanupSuccess() error {
 		b.logger.DeleteLogFile()
 	}
 
+	return nil
+}
+
+// createFPMConfig creates PHP-FPM configuration and runtime directories for the rebuilt PHP version.
+// Returns error if FPM configuration creation fails.
+func (b *Builder) createFPMConfig() error {
+	return utils.SetupFPMEnvironment(b.Version, b.ResetConfig, b.logger)
+}
+
+// startFPM restarts the PHP-FPM process for the rebuilt PHP version.
+// Returns error if FPM restart fails.
+func (b *Builder) startFPM() error {
+	utils.SafeLog(b.logger, "Restarting PHP-FPM for PHP %s after rebuild", b.Version)
+
+	// Stop FPM if it's running, with extra wait time for proper shutdown
+	if utils.IsSystemdServiceActive(b.Version) {
+		utils.SafeLog(b.logger, "Stopping existing PHP-FPM service")
+		if err := utils.StopSystemdService(b.Version); err != nil {
+			utils.SafeLog(b.logger, "Warning: Failed to stop PHP-FPM service: %v", err)
+		}
+
+		// Wait a bit for service to fully stop
+		utils.SafeLog(b.logger, "Waiting for service shutdown...")
+		time.Sleep(2 * time.Second)
+	}
+
+	// Ensure service file exists and start FPM
+	servicePath := utils.GetSystemdServicePath(b.Version)
+	if !utils.FileExists(servicePath) || b.ResetConfig {
+		if b.ResetConfig && utils.FileExists(servicePath) {
+			utils.SafeLog(b.logger, "Recreating systemd service (--config flag enabled)")
+			if err := utils.CreateSystemdServiceWithForce(b.Version, true); err != nil {
+				utils.SafeLog(b.logger, "Failed to recreate systemd service: %v", err)
+				return fmt.Errorf("failed to recreate systemd service: %v", err)
+			}
+		} else {
+			utils.SafeLog(b.logger, "Creating systemd service")
+			if err := utils.CreateSystemdService(b.Version); err != nil {
+				utils.SafeLog(b.logger, "Failed to create systemd service: %v", err)
+				return fmt.Errorf("failed to create systemd service: %v", err)
+			}
+		}
+	} else {
+		utils.SafeLog(b.logger, "Systemd service already exists, skipping creation")
+	}
+
+	utils.SafeLog(b.logger, "Starting PHP-FPM service")
+	if err := utils.StartSystemdService(b.Version); err != nil {
+		utils.SafeLog(b.logger, "Failed to start PHP-FPM service: %v", err)
+		return fmt.Errorf("failed to start PHP-FPM service: %v", err)
+	}
+
+	utils.SafeLog(b.logger, "PHP-FPM restarted successfully")
 	return nil
 }
 

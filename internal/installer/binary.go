@@ -2,7 +2,6 @@ package installer
 
 import (
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	"github.com/LumoSolutions/yerd/internal/utils"
@@ -122,36 +121,6 @@ func verifyPHPBinary(path, expectedVersion string, logger *utils.Logger) error {
 	utils.SafeLog(logger, "PHP binary verification successful")
 
 	return nil
-}
-
-// searchForPHPInDir searches a directory for PHP binaries using common naming patterns.
-// dir: Directory to search, version: PHP version to find, logger: Logging instance. Returns binary path or error.
-func searchForPHPInDir(dir, version string, logger *utils.Logger) (string, error) {
-	patterns := []string{
-		"php" + version,
-		"php-" + version,
-		"php" + version + "-cli",
-	}
-
-	utils.SafeLog(logger, "Searching directory %s for patterns: %v", dir, patterns)
-
-	for _, pattern := range patterns {
-		path := filepath.Join(dir, pattern)
-		utils.SafeLog(logger, "Checking: %s", path)
-		if utils.FileExists(path) {
-			utils.SafeLog(logger, "File exists, verifying: %s", path)
-			if err := verifyPHPBinary(path, version, logger); err == nil {
-				utils.SafeLog(logger, "Found and verified PHP binary: %s", path)
-				return path, nil
-			} else {
-				utils.SafeLog(logger, "Verification failed for %s: %v", path, err)
-			}
-		}
-	}
-
-	utils.SafeLog(logger, "No matching PHP binary found in %s", dir)
-
-	return "", fmt.Errorf("no matching PHP binary found in %s", dir)
 }
 
 // showInstalledSourceFiles displays debug information about files in installation and system directories.

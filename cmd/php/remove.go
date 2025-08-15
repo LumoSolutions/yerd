@@ -62,6 +62,24 @@ func runRemove(cmd *cobra.Command, args []string) {
 
 	fmt.Printf("Removing PHP %s...\n", phpVersion)
 
+	// Stop and remove systemd service first
+	if utils.IsSystemdServiceActive(phpVersion) {
+		fmt.Printf("Stopping PHP-FPM service...\n")
+		if err := utils.StopPHPFPM(phpVersion); err != nil {
+			utils.PrintWarning("Failed to stop PHP-FPM service: %v", err)
+		}
+	}
+
+	fmt.Printf("Removing systemd service...\n")
+	if err := utils.RemoveSystemdService(phpVersion); err != nil {
+		utils.PrintWarning("Failed to remove systemd service: %v", err)
+	}
+
+	fmt.Printf("Removing FPM pool configuration...\n")
+	if err := utils.RemoveFPMPoolConfig(phpVersion); err != nil {
+		utils.PrintWarning("Failed to remove FPM pool config: %v", err)
+	}
+
 	err = manager.RemovePHP(phpVersion)
 	if err != nil {
 		fmt.Printf("Error removing PHP %s: %v\n", phpVersion, err)
