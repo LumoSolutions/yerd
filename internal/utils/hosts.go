@@ -122,7 +122,7 @@ func (hm *HostsManager) Uninstall() error {
 	}
 
 	newContent := append(content[:bounds[0]], content[bounds[1]+1:]...)
-	
+
 	for len(newContent) > 0 && strings.TrimSpace(newContent[len(newContent)-1]) == "" {
 		newContent = newContent[:len(newContent)-1]
 	}
@@ -178,7 +178,7 @@ func (hm *HostsManager) loadHostsFile() ([]string, error) {
 // writeHostsFile atomically writes content to the hosts file
 func (hm *HostsManager) writeHostsFile(content []string) error {
 	tempPath := hm.hostsPath + ".yerd.tmp"
-	
+
 	file, err := os.Create(tempPath)
 	if err != nil {
 		return err
@@ -198,7 +198,7 @@ func (hm *HostsManager) writeHostsFile(content []string) error {
 // findYerdBounds returns [startIdx, endIdx] of YERD section or nil if not found
 func (hm *HostsManager) findYerdBounds(content []string) []int {
 	startIdx, endIdx := -1, -1
-	
+
 	for i, line := range content {
 		trimmed := strings.TrimSpace(line)
 		if trimmed == YerdStartMarker {
@@ -208,7 +208,7 @@ func (hm *HostsManager) findYerdBounds(content []string) []int {
 			endIdx = i
 		}
 	}
-	
+
 	if startIdx == -1 || endIdx == -1 {
 		return nil
 	}

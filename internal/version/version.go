@@ -8,6 +8,7 @@ import (
 
 const Version = "1.1.0"
 const Branch = "feat/nginx"
+const Repo = "LumoSolutions/yerd"
 
 // PrintSplash displays the YERD ASCII art logo and version information with colors.
 func PrintSplash() {
@@ -49,4 +50,10 @@ func GetVersion() string {
 // be reset to main on build for release
 func GetBranch() string {
 	return Branch
+}
+
+// GetRepo returns the current repo used to store files
+// and will be where the .config files are located
+func GetRepo() string {
+	return Repo
 }
