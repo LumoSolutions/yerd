@@ -11,13 +11,14 @@ import (
 )
 
 type NginxInstaller struct {
-	Info       *constants.NginxConfig
-	IsUpdate   bool
-	Spinner    *utils.Spinner
-	DepManager *manager.DependencyManager
+	Info        *constants.NginxConfig
+	IsUpdate    bool
+	ForceConfig bool
+	Spinner     *utils.Spinner
+	DepManager  *manager.DependencyManager
 }
 
-func NewNginxInstaller(update bool) (*NginxInstaller, error) {
+func NewNginxInstaller(update, forceConfig bool) (*NginxInstaller, error) {
 	s := utils.NewSpinner("Starting Nginx Installer...")
 	s.SetDelay(150)
 
@@ -29,10 +30,11 @@ func NewNginxInstaller(update bool) (*NginxInstaller, error) {
 	}
 
 	return &NginxInstaller{
-		Info:       constants.GetNginxConfig(),
-		IsUpdate:   update,
-		Spinner:    s,
-		DepManager: depMan,
+		Info:        constants.GetNginxConfig(),
+		IsUpdate:    update,
+		ForceConfig: forceConfig,
+		Spinner:     s,
+		DepManager:  depMan,
 	}, nil
 }
 
@@ -44,6 +46,8 @@ func (installer *NginxInstaller) Install() error {
 		func() error { return installer.prepareInstall() },
 		func() error { return installer.downloadSource() },
 		func() error { return installer.compileAndInstall() },
+		func() error { return installer.addNginxConf() },
+		func() error { return installer.addSystemdService() },
 	)
 
 	if err != nil {
@@ -111,6 +115,8 @@ func (installer *NginxInstaller) downloadSource() error {
 		return err
 	}
 
+	installer.Spinner.AddSuccessStatus("Downloaded nginx successfully")
+
 	return nil
 }
 
@@ -150,6 +156,83 @@ func (installer *NginxInstaller) compileAndInstall() error {
 	}
 
 	utils.RemoveFolder(installer.Info.SourcePath)
+
+	return nil
+}
+
+func (installer *NginxInstaller) addNginxConf() error {
+	if installer.IsUpdate && !installer.ForceConfig {
+		installer.Spinner.AddInfoStatus("- Not updating nginx.conf")
+		return nil
+	}
+
+	installer.Spinner.UpdatePhrase("Downloading nginx.conf")
+
+	content, err := utils.FetchFromGitHub("nginx", "nginx.conf")
+	if err != nil {
+		utils.LogError(err, "addConf")
+		installer.Spinner.AddErrorStatus("Failed to download nginx configuration")
+		installer.Spinner.StopWithError("nginx.conf download failed")
+		return err
+	}
+
+	content = utils.Template(content, utils.TemplateData{
+		"user": "root",
+	})
+
+	filePath := filepath.Join(installer.Info.ConfigPath, "nginx.conf")
+
+	err = utils.WriteStringToFile(filePath, content, constants.FilePermissions)
+	if err != nil {
+		utils.LogError(err, "addConf")
+		installer.Spinner.StopWithError("Failed to write to nginx.conf")
+		return err
+	}
+
+	installer.Spinner.AddInfoStatus("- Downloaded Nginx.conf")
+	installer.Spinner.AddInfoStatus("- Stored Nginx.conf")
+	installer.Spinner.AddSuccessStatus("Nginx Configured Successfully")
+	return nil
+}
+
+func (installer *NginxInstaller) addSystemdService() error {
+	if installer.IsUpdate && !installer.ForceConfig {
+		installer.Spinner.AddInfoStatus("- Not updating systemd config")
+		return nil
+	}
+
+	installer.Spinner.UpdatePhrase("Configuring Systemd")
+
+	systemdPath := filepath.Join(constants.SystemdDir, "yerd-nginx.service")
+	content, err := utils.FetchFromGitHub("nginx", "systemd.conf")
+	if err != nil {
+		utils.LogError(err, "systemd")
+		installer.Spinner.AddErrorStatus("Failed to download systemd configuration")
+		installer.Spinner.StopWithError("systemd.conf download failed")
+		return err
+	}
+
+	utils.WriteStringToFile(systemdPath, content, constants.FilePermissions)
+
+	installer.Spinner.AddInfoStatus("Created %s", filepath.Base(systemdPath))
+
+	if err := utils.SystemdReload(); err != nil {
+		utils.LogInfo("setupSystemd", "Unable to reload daemons")
+		return err
+	}
+
+	installer.Spinner.AddInfoStatus("[Systemd] Reloaded daemons")
+
+	serviceName := "yerd-nginx"
+	utils.SystemdStopService(serviceName)
+	if err := utils.SystemdStartService(serviceName); err != nil {
+		utils.LogInfo("setupSystemd", "Unable to start service %s", serviceName)
+		installer.Spinner.StopWithError("Unable to start service %s", serviceName)
+		return fmt.Errorf("unable to start service %s", serviceName)
+	}
+
+	installer.Spinner.AddInfoStatus("[Systemd] Started '%s' successfully", serviceName)
+	installer.Spinner.AddSuccessStatus("Systemd Configured")
 
 	return nil
 }

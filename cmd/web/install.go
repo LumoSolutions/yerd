@@ -23,7 +23,7 @@ func BuildInstallCommand() *cobra.Command {
 				return
 			}
 
-			installer, err := nginx.NewNginxInstaller(false)
+			installer, err := nginx.NewNginxInstaller(false, true)
 			if err != nil {
 				red.Printf("Install failed\n\n")
 			}
