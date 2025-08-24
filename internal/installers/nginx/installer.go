@@ -43,13 +43,13 @@ func (installer *NginxInstaller) Install() error {
 	installer.Spinner.Start()
 
 	err := utils.RunAll(
-		func() error { return installer.installDependencies() },
-		func() error { return installer.prepareInstall() },
-		func() error { return installer.downloadSource() },
-		func() error { return installer.compileAndInstall() },
-		func() error { return installer.addNginxConf() },
-		func() error { return installer.addSystemdService() },
-		func() error { return installer.writeConfig() },
+		// func() error { return installer.installDependencies() },
+		// func() error { return installer.prepareInstall() },
+		// func() error { return installer.downloadSource() },
+		// func() error { return installer.compileAndInstall() },
+		// func() error { return installer.addNginxConf() },
+		// func() error { return installer.addSystemdService() },
+		// func() error { return installer.writeConfig() },
 		func() error { return installer.createCerts() },
 	)
 
@@ -277,7 +277,7 @@ func (installer *NginxInstaller) createCerts() error {
 	utils.CreateDirectory(caPath)
 	utils.CreateDirectory(wildcardPath)
 
-	output, success := utils.ExecuteCommandInDir(caPath, "openssl", "genrsa", "-out ca.key", "4096")
+	output, success := utils.ExecuteCommandInDir(caPath, "openssl", "genrsa", "-out", "ca.key", "4096")
 	if !success {
 		utils.LogInfo("createcerts", "openssl command failed")
 		utils.LogInfo("createcerts", "output: %s", output)
@@ -285,7 +285,7 @@ func (installer *NginxInstaller) createCerts() error {
 	}
 
 	//sudo openssl req -new -x509 -days 3650 -key ca.key -out ca.crt -subj "/CN=Local Development CA"
-	params := []string{"req", "-new", "-x509", "-days 3650", "-key ca.key", "-out ca.crt", "-subj \"/CN=YERD CA\""}
+	params := []string{"req", "-new", "-x509", "-days", "3650", "-key", "ca.key", "-out", "ca.crt", "-subj", "/"}
 	output, success = utils.ExecuteCommandInDir(caPath, "openssl", params...)
 	if !success {
 		utils.LogInfo("createcerts", "openssl command failed")
@@ -294,7 +294,7 @@ func (installer *NginxInstaller) createCerts() error {
 	}
 
 	//openssl genrsa -out wildcard.test.key 2048
-	output, success = utils.ExecuteCommandInDir(wildcardPath, "openssl", "genrsa", "-out wildcard.test.key", "2048")
+	output, success = utils.ExecuteCommandInDir(wildcardPath, "openssl", "genrsa", "-out", "wildcard.test.key", "2048")
 	if !success {
 		utils.LogInfo("createcerts", "openssl command failed")
 		utils.LogInfo("createcerts", "output: %s", output)
@@ -302,7 +302,7 @@ func (installer *NginxInstaller) createCerts() error {
 	}
 
 	//sudo openssl req -new -key wildcard.test.key -out wildcard.test.csr -subj "/CN=*.test"
-	params = []string{"req", "-new", "-key wildcard.test.key", "-out wildcard.test.csr", "-subj \"/CN=*.test\""}
+	params = []string{"req", "-new", "-key", "wildcard.test.key", "-out", "wildcard.test.csr", "-subj", "/"}
 	output, success = utils.ExecuteCommandInDir(wildcardPath, "openssl", params...)
 	if !success {
 		utils.LogInfo("createcerts", "openssl command failed")
@@ -320,7 +320,7 @@ func (installer *NginxInstaller) createCerts() error {
 	utils.WriteStringToFile(wildcardPath+"/wildcard.test.ext", content, constants.FilePermissions)
 
 	// sudo openssl x509 -req -in wildcard.test.csr -CA /opt/yerd/web/certs/ca/ca.crt -CAkey /opt/yerd/web/certs/ca/ca.key -CAcreateserial -out wildcard.test.crt -days 365 -extensions v3_req -extfile wildcard.test.ext
-	params = []string{"x509", "-req", "-in wildcard.test.csr", "-CA /opt/yerd/web/certs/ca/ca/.crt", "-CAkey /opt/yerd/web/certs/ca/ca.key", "-CAcreateserial", "-out wildcard.test.crt", "-days 365", "-extensions v3_req", "-extfile wildcard.test.ext"}
+	params = []string{"x509", "-req", "-in", "wildcard.test.csr", "-CA", "/opt/yerd/web/certs/ca/ca/.crt", "-CAkey", "/opt/yerd/web/certs/ca/ca.key", "-CAcreateserial", "-out", "wildcard.test.crt", "-days", "365", "-extensions", "v3_req", "-extfile", "wildcard.test.ext"}
 	output, success = utils.ExecuteCommandInDir(wildcardPath, "openssl", params...)
 	if !success {
 		utils.LogInfo("createcerts", "openssl command failed")
