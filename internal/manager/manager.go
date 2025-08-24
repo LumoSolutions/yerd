@@ -47,6 +47,67 @@ func NewDependencyManager() (*DependencyManager, error) {
 	}, nil
 }
 
+func (dm *DependencyManager) TrustCertificate(certificate, name string) error {
+	switch dm.distro {
+	case "ubuntu", "debian":
+		if _, success := utils.ExecuteCommand("cp", certificate,
+			fmt.Sprintf("/usr/local/share/ca-certificates/%s-ca.crt", name)); !success {
+			return fmt.Errorf("failed to copy certificate for %s", dm.distro)
+		}
+		if _, success := utils.ExecuteCommand("update-ca-certificates"); !success {
+			return fmt.Errorf("failed to update ca-certificates for %s", dm.distro)
+		}
+		break
+
+	case "arch", "manjaro":
+		if _, success := utils.ExecuteCommand("cp", certificate,
+			fmt.Sprintf("/etc/ca-certificates/trust-source/anchors/%s-ca.crt", name)); !success {
+			return fmt.Errorf("failed to copy certificate for %s", dm.distro)
+		}
+		if _, success := utils.ExecuteCommand("trust", "extract-compat"); !success {
+			if _, success := utils.ExecuteCommand("update-ca-trust"); !success {
+				return fmt.Errorf("failed to update trust store for %s", dm.distro)
+			}
+		}
+		break
+
+	case "rhel", "centos", "fedora", "rocky", "almalinux":
+		if _, success := utils.ExecuteCommand("cp", certificate,
+			fmt.Sprintf("/etc/pki/ca-trust/source/anchors/%s-ca.crt", name)); !success {
+			return fmt.Errorf("failed to copy certificate for %s", dm.distro)
+		}
+		if _, success := utils.ExecuteCommand("update-ca-trust"); !success {
+			return fmt.Errorf("failed to update ca-trust for %s", dm.distro)
+		}
+		break
+
+	case "opensuse", "opensuse-leap", "opensuse-tumbleweed", "sles":
+		if _, success := utils.ExecuteCommand("cp", certificate,
+			fmt.Sprintf("/etc/pki/trust/anchors/%s-ca.crt", name)); !success {
+			return fmt.Errorf("failed to copy certificate for %s", dm.distro)
+		}
+		if _, success := utils.ExecuteCommand("update-ca-certificates"); !success {
+			return fmt.Errorf("failed to update ca-certificates for %s", dm.distro)
+		}
+		break
+
+	case "alpine":
+		if _, success := utils.ExecuteCommand("cp", certificate,
+			fmt.Sprintf("/usr/local/share/ca-certificates/%s-ca.crt", name)); !success {
+			return fmt.Errorf("failed to copy certificate for %s", dm.distro)
+		}
+		if _, success := utils.ExecuteCommand("update-ca-certificates"); !success {
+			return fmt.Errorf("failed to update ca-certificates for %s", dm.distro)
+		}
+		break
+
+	default:
+		return fmt.Errorf("distro '%s' not supported yet", dm.distro)
+	}
+
+	return nil
+}
+
 // detectDistribution identifies the Linux distribution using multiple detection methods.
 // Returns distribution name or error if detection fails.
 func detectDistribution() (string, error) {

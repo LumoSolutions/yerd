@@ -271,68 +271,14 @@ func (installer *NginxInstaller) writeConfig() error {
 }
 
 func (installer *NginxInstaller) createCerts() error {
-	caPath := filepath.Join(constants.CertsDir, "ca")
-	wildcardPath := filepath.Join(constants.CertsDir, "wildcard")
-
-	utils.CreateDirectory(caPath)
-	utils.CreateDirectory(wildcardPath)
-
-	output, success := utils.ExecuteCommandInDir(caPath, "openssl", "genrsa", "-out", "ca.key", "4096")
-	if !success {
-		utils.LogInfo("createcerts", "openssl command failed")
-		utils.LogInfo("createcerts", "output: %s", output)
-		return fmt.Errorf("failed to generate ca key")
-	}
-
-	//sudo openssl req -new -x509 -days 3650 -key ca.key -out ca.crt -subj "/CN=Local Development CA"
-	params := []string{"req", "-new", "-x509", "-days", "3650", "-key", "ca.key", "-out", "ca.crt", "-subj", "/"}
-	output, success = utils.ExecuteCommandInDir(caPath, "openssl", params...)
-	if !success {
-		utils.LogInfo("createcerts", "openssl command failed")
-		utils.LogInfo("createcerts", "output: %s", output)
-		return fmt.Errorf("failed to generate ca cert")
-	}
-
-	//openssl genrsa -out wildcard.test.key 2048
-	output, success = utils.ExecuteCommandInDir(wildcardPath, "openssl", "genrsa", "-out", "wildcard.test.key", "2048")
-	if !success {
-		utils.LogInfo("createcerts", "openssl command failed")
-		utils.LogInfo("createcerts", "output: %s", output)
-		return fmt.Errorf("failed to generate wildcard key")
-	}
-
-	//sudo openssl req -new -key wildcard.test.key -out wildcard.test.csr -subj "/CN=*.test"
-	params = []string{"req", "-new", "-key", "wildcard.test.key", "-out", "wildcard.test.csr", "-subj", "/"}
-	output, success = utils.ExecuteCommandInDir(wildcardPath, "openssl", params...)
-	if !success {
-		utils.LogInfo("createcerts", "openssl command failed")
-		utils.LogInfo("createcerts", "output: %s", output)
-		return fmt.Errorf("failed to generate wildcard csr")
-	}
-
-	content, err := utils.FetchFromGitHub("ssl", "ext.conf")
-	if err != nil {
-		utils.LogError(err, "createcerts")
-		utils.LogInfo("createcerts", "failed to ext.conf")
+	installer.Spinner.UpdatePhrase("Generated Root CA Certificate")
+	certManager := manager.NewCertificateManager()
+	if err := certManager.GenerateCaCertificate("yerd"); err != nil {
+		installer.Spinner.AddErrorStatus("Failed to generate CA Certificate")
 		return err
 	}
 
-	utils.WriteStringToFile(wildcardPath+"/wildcard.test.ext", content, constants.FilePermissions)
-
-	// sudo openssl x509 -req -in wildcard.test.csr -CA /opt/yerd/web/certs/ca/ca.crt -CAkey /opt/yerd/web/certs/ca/ca.key -CAcreateserial -out wildcard.test.crt -days 365 -extensions v3_req -extfile wildcard.test.ext
-	params = []string{"x509", "-req", "-in", "wildcard.test.csr", "-CA", "/opt/yerd/web/certs/ca/ca/.crt", "-CAkey", "/opt/yerd/web/certs/ca/ca.key", "-CAcreateserial", "-out", "wildcard.test.crt", "-days", "365", "-extensions", "v3_req", "-extfile", "wildcard.test.ext"}
-	output, success = utils.ExecuteCommandInDir(wildcardPath, "openssl", params...)
-	if !success {
-		utils.LogInfo("createcerts", "openssl command failed")
-		utils.LogInfo("createcerts", "output: %s", output)
-		return fmt.Errorf("failed to generate wildcard certificate")
-	}
-
-	//sudo cp /opt/yerd/web/certs/ca/ca.crt /etc/ca-certificates/trust-source/anchors/local-dev-ca.crt
-	// sudo trust extract-compat
-
-	utils.ExecuteCommand("cp", caPath+"/ca.cert", "/etc/ca-certificates/trust-source/anchors/yerd-dev-ca.crt")
-	utils.ExecuteCommand("trust", "extract-compat")
+	installer.Spinner.AddSuccessStatus("Root CA Certificate Created")
 
 	return nil
 }

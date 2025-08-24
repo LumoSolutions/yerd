@@ -18,6 +18,8 @@ type SiteManager struct {
 	Spinner      *utils.Spinner
 	WebConfig    *config.WebConfig
 	PublicFolder string
+	CrtFile      string
+	KeyFile      string
 }
 
 func NewSiteManager() (*SiteManager, error) {
@@ -47,6 +49,7 @@ func (siteManager *SiteManager) AddSite(directory, domain, publicFolder, phpVers
 		func() error { return siteManager.validateDirectory() },
 		func() error { return siteManager.validateDomain() },
 		func() error { return siteManager.validatePhpVersion() },
+		func() error { return siteManager.createCertificate() },
 		func() error { return siteManager.createSiteConfig() },
 		//func() error { return siteManager.createHostsEntry() },
 		func() error { return siteManager.restartNginx() },
@@ -94,6 +97,19 @@ func (siteManager *SiteManager) validateDirectory() error {
 	}
 
 	siteManager.Spinner.AddInfoStatus("Serving from /%s", siteManager.PublicFolder)
+
+	return nil
+}
+
+func (sm *SiteManager) createCertificate() error {
+	cm := NewCertificateManager()
+	keyFile, certFile, err := cm.GenerateCert(sm.Domain, "yerd")
+	if err != nil {
+		return err
+	}
+
+	sm.CrtFile = certFile
+	sm.KeyFile = keyFile
 
 	return nil
 }
@@ -156,6 +172,8 @@ func (siteManager *SiteManager) createSiteConfig() error {
 		"domain":      siteManager.Domain,
 		"path":        projectPath,
 		"php_version": siteManager.PhpVersion,
+		"cert":        siteManager.CrtFile,
+		"key":         siteManager.KeyFile,
 	})
 
 	path := filepath.Join(constants.YerdWebDir, "nginx", "sites-enabled", siteManager.Domain+".conf")
