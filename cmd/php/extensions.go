@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/fatih/color"
+	"github.com/lumosolutions/yerd/internal/config"
 	phpinstaller "github.com/lumosolutions/yerd/internal/installers/php"
 	"github.com/lumosolutions/yerd/internal/utils"
 	intVersion "github.com/lumosolutions/yerd/internal/version"
@@ -48,7 +49,7 @@ Examples:
 
 			rebuild, _ := cmd.Flags().GetBool("rebuild")
 			nocache, _ := cmd.Flags().GetBool("nocache")
-			config, _ := cmd.Flags().GetBool("config")
+			configFlag, _ := cmd.Flags().GetBool("config")
 
 			if rebuild {
 				if !utils.CheckAndPromptForSudo() {
@@ -56,7 +57,7 @@ Examples:
 				}
 			}
 
-			data, installed := phpinstaller.IsInstalled(version)
+			data, installed := config.GetInstalledPhpInfo(version)
 			if !installed {
 				red.Println("❌ Error: No action taken")
 				blue.Printf("- PHP %s is not installed, please use\n", version)
@@ -64,7 +65,7 @@ Examples:
 				return
 			}
 
-			extManager := phpinstaller.NewExtensionManager(version, data, nocache, config, rebuild)
+			extManager := phpinstaller.NewExtensionManager(version, data, nocache, configFlag, rebuild)
 			if err := extManager.RunAction(action, extensions); err != nil {
 				return
 			}

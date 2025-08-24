@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/lumosolutions/yerd/internal/config"
 	"github.com/lumosolutions/yerd/internal/constants"
 	phpinstaller "github.com/lumosolutions/yerd/internal/installers/php"
 	intVersion "github.com/lumosolutions/yerd/internal/version"
@@ -25,7 +26,7 @@ func BuildListCmd() *cobra.Command {
 			headers := []string{"VERSION", "INSTALLED", "CLI", "EXTENSIONS", "UPDATES"}
 
 			for _, version := range versions {
-				if data, installed := phpinstaller.IsInstalled(version); installed {
+				if data, installed := config.GetInstalledPhpInfo(version); installed {
 					rows = append(rows, []string{
 						data.Version,
 						data.InstalledVersion,

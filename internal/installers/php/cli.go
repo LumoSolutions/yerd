@@ -26,7 +26,7 @@ func SetCliVersion(info *config.PhpInfo) error {
 			continue
 		}
 
-		if data, installed := IsInstalled(version); installed {
+		if data, installed := config.GetInstalledPhpInfo(version); installed {
 			if data.IsCLI {
 				data.IsCLI = false
 				config.SetStruct(fmt.Sprintf("php.[%s]", data.Version), data)

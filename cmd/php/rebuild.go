@@ -3,6 +3,7 @@ package php
 import (
 	"fmt"
 
+	"github.com/lumosolutions/yerd/internal/config"
 	phpinstaller "github.com/lumosolutions/yerd/internal/installers/php"
 	"github.com/lumosolutions/yerd/internal/utils"
 	intVersion "github.com/lumosolutions/yerd/internal/version"
@@ -20,7 +21,7 @@ func buildRebuildCmd(version string) *cobra.Command {
 				return
 			}
 
-			data, installed := phpinstaller.IsInstalled(version)
+			data, installed := config.GetInstalledPhpInfo(version)
 			if !installed {
 				fmt.Printf("PHP %s is not installed, please use\n", version)
 				fmt.Printf("   'sudo yerd php %s install' instead\n\n", version)
@@ -29,9 +30,9 @@ func buildRebuildCmd(version string) *cobra.Command {
 			}
 
 			nocache, _ := cmd.Flags().GetBool("nocache")
-			config, _ := cmd.Flags().GetBool("config")
+			configFlag, _ := cmd.Flags().GetBool("config")
 
-			if err := phpinstaller.RunRebuild(data, nocache, config); err != nil {
+			if err := phpinstaller.RunRebuild(data, nocache, configFlag); err != nil {
 				fmt.Printf("Failed to rebuild php%s: %v\n", version, err)
 				return
 			}

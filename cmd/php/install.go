@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/fatih/color"
+	"github.com/lumosolutions/yerd/internal/config"
 	phpinstaller "github.com/lumosolutions/yerd/internal/installers/php"
 	"github.com/lumosolutions/yerd/internal/utils"
 	intVersion "github.com/lumosolutions/yerd/internal/version"
@@ -26,7 +27,7 @@ func buildInstallCmd(version string) *cobra.Command {
 			red := color.New(color.FgRed)
 			green := color.New(color.FgGreen)
 
-			if _, installed := phpinstaller.IsInstalled(version); installed {
+			if _, installed := config.GetInstalledPhpInfo(version); installed {
 				yellow.Printf("PHP %s is already installed, please use one of the following:\n", version)
 				blue.Printf("- 'sudo yerd php %s rebuild' to build the current version\n", version)
 				blue.Printf("- 'sudo yerd php %s upgrade' to update PHP %s to the latest version\n\n", version, version)

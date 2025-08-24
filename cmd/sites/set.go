@@ -1,4 +1,4 @@
-package web
+package sites
 
 import (
 	"github.com/fatih/color"

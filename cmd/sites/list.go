@@ -1,4 +1,4 @@
-package web
+package sites
 
 import (
 	"github.com/fatih/color"
@@ -7,10 +7,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func BuildAddCommand() *cobra.Command {
+func BuildListCommand() *cobra.Command {
 	return &cobra.Command{
-		Use:   "add",
-		Short: "Adds a new local development site given a directory",
+		Use:   "list",
+		Short: "Lists development sites & their configuration",
 		Run: func(cmd *cobra.Command, args []string) {
 			version.PrintSplash()
 			green := color.New(color.FgGreen)
@@ -21,6 +21,10 @@ func BuildAddCommand() *cobra.Command {
 			if !utils.CheckAndPromptForSudo() {
 				return
 			}
+
+			hostManager := utils.NewHostsManager()
+			hostManager.Install()
+			hostManager.Add("test.test")
 
 			green.Printf("✓ Web Components Installed Successfully\n")
 		},

@@ -6,6 +6,7 @@ import (
 
 	"github.com/lumosolutions/yerd/cmd/composer"
 	"github.com/lumosolutions/yerd/cmd/php"
+	"github.com/lumosolutions/yerd/cmd/sites"
 	"github.com/lumosolutions/yerd/cmd/web"
 	"github.com/lumosolutions/yerd/internal/constants"
 	"github.com/lumosolutions/yerd/internal/version"
@@ -53,10 +54,13 @@ func init() {
 
 	webCmd.AddCommand(web.BuildInstallCommand())
 	webCmd.AddCommand(web.BuildUninstallCommand())
-	webCmd.AddCommand(web.BuildListCommand())
-	webCmd.AddCommand(web.BuildAddCommand())
-	webCmd.AddCommand(web.BuildRemoveCommand())
-	webCmd.AddCommand(web.BuildSetCommand())
 
 	rootCmd.AddCommand(webCmd)
+
+	sitesCmd.AddCommand(sites.BuildListCommand())
+	sitesCmd.AddCommand(sites.BuildAddCommand())
+	sitesCmd.AddCommand(sites.BuildRemoveCommand())
+	sitesCmd.AddCommand(sites.BuildSetCommand())
+
+	rootCmd.AddCommand(sitesCmd)
 }

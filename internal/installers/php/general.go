@@ -79,17 +79,6 @@ func GetFPMGroup() string {
 	return group.Name
 }
 
-func IsInstalled(version string) (*config.PhpInfo, bool) {
-	var data *config.PhpInfo
-	if err := config.GetStruct(fmt.Sprintf("php.[%s]", version), &data); err != nil {
-		utils.LogError(err, "IsInstalled")
-		return data, false
-	}
-
-	utils.LogInfo("IsInstalled", "Version %s", data.Version)
-	return data, data.Version == version
-}
-
 func getBinaryPath(version string) string {
 	return constants.YerdBinDir + "/php" + version
 }

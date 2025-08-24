@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/fatih/color"
+	"github.com/lumosolutions/yerd/internal/config"
 	phpinstaller "github.com/lumosolutions/yerd/internal/installers/php"
 	"github.com/lumosolutions/yerd/internal/utils"
 	intVersion "github.com/lumosolutions/yerd/internal/version"
@@ -30,7 +31,7 @@ Examples:
 			blue := color.New(color.FgBlue)
 			red := color.New(color.FgRed)
 
-			data, installed := phpinstaller.IsInstalled(version)
+			data, installed := config.GetInstalledPhpInfo(version)
 			if !installed {
 				red.Println("❌ Error: No action taken")
 				blue.Printf("- PHP %s is not installed, please use\n", version)

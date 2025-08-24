@@ -1,6 +1,8 @@
 package constants
 
-import "time"
+import (
+	"time"
+)
 
 const (
 	YerdBaseDir     = "/opt/yerd"
@@ -33,6 +35,9 @@ const (
 
 	// Error Messages
 	ErrEmptyPHPVersion = "PHP version cannot be empty"
+
+	// Web
+	CertsDir = YerdWebDir + "/certs"
 
 	// Config
 	YerdConfigName = "config.json"

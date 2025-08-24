@@ -22,12 +22,12 @@ type PhpConfig map[string]PhpInfo
 // version of php, however, if the version is not installed, then
 // the return of bool will be false
 // version: the version of php to check, eg: 8.1
-func GetInstalledPhpInfo(version string) (PhpInfo, bool) {
-	var info PhpInfo
+func GetInstalledPhpInfo(version string) (*PhpInfo, bool) {
+	info := &PhpInfo{}
 	err := GetStruct(fmt.Sprintf("php.[%s]", version), info)
 	if err == nil {
 		return info, true
 	}
 
-	return PhpInfo{}, false
+	return &PhpInfo{}, false
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/fatih/color"
+	"github.com/lumosolutions/yerd/internal/config"
 	phpinstaller "github.com/lumosolutions/yerd/internal/installers/php"
 	"github.com/lumosolutions/yerd/internal/utils"
 	intVersion "github.com/lumosolutions/yerd/internal/version"
@@ -26,7 +27,7 @@ func buildUpdateCmd(version string) *cobra.Command {
 			red := color.New(color.FgRed)
 			green := color.New(color.FgGreen)
 
-			data, installed := phpinstaller.IsInstalled(version)
+			data, installed := config.GetInstalledPhpInfo(version)
 			if !installed {
 				yellow.Printf("PHP %s is not installed, please use the following command:\n", version)
 				blue.Printf("- 'sudo yerd php %s install'\n\n", version)
@@ -34,7 +35,7 @@ func buildUpdateCmd(version string) *cobra.Command {
 				return
 			}
 
-			config, _ := cmd.Flags().GetBool("config")
+			configFlag, _ := cmd.Flags().GetBool("config")
 			versions, _, err := phpinstaller.GetLatestVersionsFresh()
 			if err != nil {
 				phpinstaller.PrintVersionFetchError(version)
@@ -53,7 +54,7 @@ func buildUpdateCmd(version string) *cobra.Command {
 				return
 			}
 
-			installer, err := phpinstaller.NewPhpInstaller(version, true, config)
+			installer, err := phpinstaller.NewPhpInstaller(version, true, configFlag)
 			if err != nil {
 				red.Printf("Failed to upgrade PHP %s: %v\n", version, err)
 				red.Printf("❌ Operation cancelled\n")

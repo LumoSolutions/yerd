@@ -171,16 +171,20 @@ func SetStruct(name string, value interface{}) error {
 func GetStruct(name string, dest interface{}) error {
 	val, err := getConfig(name)
 	if err != nil {
+		utils.LogInfo("getstruct", "Not found")
+		utils.LogError(err, "getstruct")
 		return err
 	}
 
 	// Convert via JSON marshaling/unmarshaling
 	jsonBytes, err := json.Marshal(val)
 	if err != nil {
+		utils.LogError(err, "getstruct")
 		return fmt.Errorf("failed to marshal config value: %w", err)
 	}
 
 	if err := json.Unmarshal(jsonBytes, dest); err != nil {
+		utils.LogError(err, "getstruct")
 		return fmt.Errorf("failed to unmarshal into struct: %w", err)
 	}
 

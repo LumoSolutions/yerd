@@ -19,6 +19,16 @@ func FileExists(path string) bool {
 	return !os.IsNotExist(err)
 }
 
+// IsDirectory checks if the given path exists and is a directory.
+// Returns false if the path doesn't exist, is a file, or if there's an error accessing it.
+func IsDirectory(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return info.IsDir()
+}
+
 // CanWriteToPath checks write permissions by traversing up directory tree to find writable parent.
 // path: Target path to check. Returns true if path or parent directory is writable.
 func CanWriteToPath(path string) bool {
@@ -318,4 +328,14 @@ func RemoveFolder(folderPath string) error {
 	}
 
 	return nil
+}
+
+func GetWorkingDirectory() (string, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		LogError(err, "pwd")
+		return "", err
+	}
+
+	return dir, nil
 }

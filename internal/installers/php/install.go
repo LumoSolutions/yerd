@@ -375,6 +375,11 @@ func (installer *PhpInstaller) createDefaultConfig() error {
 	fpmPoolConf := filepath.Join(configDir, constants.FPMPoolDir, constants.FPMPoolConfig)
 	phpFpmConf := filepath.Join(configDir, "php-fpm.conf")
 
+	utils.CreateDirectory(filepath.Join(configDir, constants.FPMPoolDir))
+	utils.CreateDirectory(filepath.Join(constants.YerdPHPDir, "logs"))
+	utils.CreateDirectory(constants.FPMSockDir)
+	utils.CreateDirectory(constants.FPMPidDir)
+
 	updateIni := installer.shouldReplaceConfig(iniPath)
 	updatePhpFpmConf := installer.shouldReplaceConfig(phpFpmConf)
 	updateFpmPoolConf := installer.shouldReplaceConfig(fpmPoolConf)
@@ -490,7 +495,12 @@ func (installer *PhpInstaller) writeConfig() error {
 	configPath := fmt.Sprintf("php.[%s]", installer.version)
 
 	if installer.update {
-		existing, _ = IsInstalled(installer.version)
+		existing, _ = config.GetInstalledPhpInfo(installer.version)
+	}
+
+	isCli := false
+	if existing != nil {
+		isCli = existing.IsCLI
 	}
 
 	data := config.PhpInfo{
@@ -499,7 +509,7 @@ func (installer *PhpInstaller) writeConfig() error {
 		InstallDate:      time.Now(),
 		InstalledVersion: installer.info.Version,
 		Extensions:       installer.extensions,
-		IsCLI:            existing.IsCLI,
+		IsCLI:            isCli,
 		RemoveExtensions: []string{},
 		AddExtensions:    []string{},
 	}

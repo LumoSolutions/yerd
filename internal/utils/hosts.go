@@ -30,10 +30,12 @@ func NewHostsManagerWithPath(path string) *HostsManager {
 func (hm *HostsManager) Install() error {
 	content, err := hm.loadHostsFile()
 	if err != nil {
+		LogError(err, "hosts")
 		return err
 	}
 
 	if hm.findYerdBounds(content) != nil {
+		LogInfo("hosts", "bounds identified")
 		return nil
 	}
 

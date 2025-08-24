@@ -1,4 +1,4 @@
-package web
+package sites
 
 import (
 	"github.com/fatih/color"
@@ -7,10 +7,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func BuildListCommand() *cobra.Command {
+func BuildRemoveCommand() *cobra.Command {
 	return &cobra.Command{
-		Use:   "list",
-		Short: "Lists development sites & their configuration",
+		Use:   "remove",
+		Short: "Removes a local development site given a directory",
 		Run: func(cmd *cobra.Command, args []string) {
 			version.PrintSplash()
 			green := color.New(color.FgGreen)
