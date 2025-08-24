@@ -43,14 +43,14 @@ func (installer *NginxInstaller) Install() error {
 	installer.Spinner.Start()
 
 	err := utils.RunAll(
-		// func() error { return installer.installDependencies() },
-		// func() error { return installer.prepareInstall() },
-		// func() error { return installer.downloadSource() },
-		// func() error { return installer.compileAndInstall() },
-		// func() error { return installer.addNginxConf() },
-		// func() error { return installer.addSystemdService() },
-		// func() error { return installer.writeConfig() },
+		func() error { return installer.installDependencies() },
+		func() error { return installer.prepareInstall() },
+		func() error { return installer.downloadSource() },
+		func() error { return installer.compileAndInstall() },
 		func() error { return installer.createCerts() },
+		func() error { return installer.addNginxConf() },
+		func() error { return installer.addSystemdService() },
+		func() error { return installer.writeConfig() },
 	)
 
 	if err != nil {

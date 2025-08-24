@@ -37,6 +37,9 @@ func (certManager *CertificateManager) GenerateCaCertificate(name string) error 
 	depMan, _ := NewDependencyManager()
 	depMan.TrustCertificate(filepath.Join(caPath, certName), name)
 
+	params = []string{"-A", "-n", "YERD CA", "-t", "TCu,Cu,Tu", "-i", filepath.Join(caPath, certName), "-d", "sql:$HOME/.pki/nssdb"}
+	utils.ExecuteCommand("certutil", params...)
+
 	return nil
 }
 
@@ -59,7 +62,7 @@ func (certManager *CertificateManager) GenerateCert(domain, caName string) (stri
 		return "", "", fmt.Errorf("unable to generate site csr")
 	}
 
-	if !certManager.generateSiteCertificate(certPath, domain, certName, caCert, caKey) {
+	if !certManager.generateSiteCertificate(certPath, domain, csrName, certName, caCert, caKey) {
 		return "", "", fmt.Errorf("unable to generate site cert")
 	}
 
@@ -89,7 +92,7 @@ func (certManager *CertificateManager) generateCsr(folder, keyFile, csrFile, sub
 	return true
 }
 
-func (certManager *CertificateManager) generateSiteCertificate(certPath, domain, certFileName, caCertPath, caKeyPath string) bool {
+func (certManager *CertificateManager) generateSiteCertificate(certPath, domain, csrFileName, certFileName, caCertPath, caKeyPath string) bool {
 	content, err := utils.FetchFromGitHub("ssl", "ext.conf")
 	if err != nil {
 		utils.LogError(err, "createcerts")
@@ -105,7 +108,7 @@ func (certManager *CertificateManager) generateSiteCertificate(certPath, domain,
 	extPath := filepath.Join(certPath, extFile)
 	utils.WriteStringToFile(extPath, content, constants.FilePermissions)
 
-	params := []string{"x509", "-req", "-in", extFile, "-CA", caCertPath, "-CAkey", caKeyPath, "-CAcreateserial", "-out", certFileName, "-days", "365", "-extfile", extFile}
+	params := []string{"x509", "-req", "-in", csrFileName, "-CA", caCertPath, "-CAkey", caKeyPath, "-CAcreateserial", "-out", certFileName, "-days", "365", "-extfile", extFile}
 	output, success := utils.ExecuteCommandInDir(certPath, "openssl", params...)
 	if !success {
 		utils.LogInfo("createcerts", "openssl command failed")
