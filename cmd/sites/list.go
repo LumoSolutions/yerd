@@ -14,14 +14,18 @@ func BuildListCommand() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			version.PrintSplash()
 			red := color.New(color.FgRed)
+			blue := color.New(color.FgBlue)
 
-			sm, err := manager.NewSiteManager()
+			siteManager, err := manager.NewSiteManager()
 			if err != nil {
-				red.Printf("Unable to create an instance of SiteManager\n")
+				red.Println("Unable to create a site manager instance")
+				red.Println("Are the web components installed?")
+				blue.Println("- You can install the web components with:")
+				blue.Println("- 'sudo yerd web install'")
 				return
 			}
 
-			sm.ListSites()
+			siteManager.ListSites()
 		},
 	}
 }

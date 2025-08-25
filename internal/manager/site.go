@@ -31,6 +31,10 @@ func NewSiteManager() (*SiteManager, error) {
 		webConfig = &config.WebConfig{}
 	}
 
+	if !webConfig.Installed {
+		return nil, fmt.Errorf("web not installed")
+	}
+
 	return &SiteManager{
 		Spinner:   s,
 		WebConfig: webConfig,

@@ -35,8 +35,16 @@ func BuildSetCommand() *cobra.Command {
 			setValue := args[1]
 			siteIdentifier := args[2]
 
-			sm, _ := manager.NewSiteManager()
-			sm.SetValue(setName, setValue, siteIdentifier)
+			siteManager, err := manager.NewSiteManager()
+			if err != nil {
+				red.Println("Unable to create a site manager instance")
+				red.Println("Are the web components installed?")
+				blue.Println("- You can install the web components with:")
+				blue.Println("- 'sudo yerd web install'")
+				return
+			}
+
+			siteManager.SetValue(setName, setValue, siteIdentifier)
 		},
 	}
 }

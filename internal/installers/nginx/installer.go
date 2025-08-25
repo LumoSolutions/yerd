@@ -39,8 +39,40 @@ func NewNginxInstaller(update, forceConfig bool) (*NginxInstaller, error) {
 	}, nil
 }
 
+func (installer *NginxInstaller) Uninstall() error {
+	installer.Spinner.UpdatePhrase("Uninstalling Web Components...")
+
+	var webConfig *config.WebConfig
+	config.GetStruct("web", &webConfig)
+
+	for _, site := range webConfig.Sites {
+		sm, _ := manager.NewSiteManager()
+		sm.RemoveSite(site.Domain)
+	}
+
+	utils.SystemdStopService("yerd-nginx")
+
+	params := []string{"-D", "-n", "YERD CA", "-d", "sql:$HOME/.pki/nssdb"}
+	utils.ExecuteCommand("certutil", params...)
+
+	utils.RemoveFolder(constants.YerdWebDir)
+	utils.RemoveFile(filepath.Join(constants.SystemdDir, "yerd-nginx.service"))
+
+	utils.SystemdReload()
+
+	return nil
+}
+
 func (installer *NginxInstaller) Install() error {
 	installer.Spinner.Start()
+
+	var webConfig *config.WebConfig
+	config.GetStruct("web", &webConfig)
+
+	if webConfig.Installed {
+		installer.Spinner.StopWithError("Web Components are already installed")
+		return fmt.Errorf("already installed")
+	}
 
 	err := utils.RunAll(
 		func() error { return installer.installDependencies() },
