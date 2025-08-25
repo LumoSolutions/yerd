@@ -108,7 +108,7 @@ func (certManager *CertificateManager) generateSiteCertificate(certPath, domain,
 	extPath := filepath.Join(certPath, extFile)
 	utils.WriteStringToFile(extPath, content, constants.FilePermissions)
 
-	params := []string{"x509", "-req", "-in", csrFileName, "-CA", caCertPath, "-CAkey", caKeyPath, "-CAcreateserial", "-out", certFileName, "-days", "365", "-extfile", extFile}
+	params := []string{"x509", "-req", "-in", csrFileName, "-CA", caCertPath, "-CAkey", caKeyPath, "-CAcreateserial", "-out", certFileName, "-days", "3650", "-extfile", extFile}
 	output, success := utils.ExecuteCommandInDir(certPath, "openssl", params...)
 	if !success {
 		utils.LogInfo("createcerts", "openssl command failed")

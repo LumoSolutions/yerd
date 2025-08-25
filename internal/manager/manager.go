@@ -48,61 +48,49 @@ func NewDependencyManager() (*DependencyManager, error) {
 }
 
 func (dm *DependencyManager) TrustCertificate(certificate, name string) error {
-	switch dm.distro {
-	case "ubuntu", "debian":
-		if _, success := utils.ExecuteCommand("cp", certificate,
-			fmt.Sprintf("/usr/local/share/ca-certificates/%s-ca.crt", name)); !success {
-			return fmt.Errorf("failed to copy certificate for %s", dm.distro)
-		}
-		if _, success := utils.ExecuteCommand("update-ca-certificates"); !success {
-			return fmt.Errorf("failed to update ca-certificates for %s", dm.distro)
-		}
-		break
+	// Map distros to their certificate paths
+	certPaths := map[string]string{
+		"ubuntu":              "/usr/local/share/ca-certificates",
+		"debian":              "/usr/local/share/ca-certificates",
+		"alpine":              "/usr/local/share/ca-certificates",
+		"arch":                "/etc/ca-certificates/trust-source/anchors",
+		"manjaro":             "/etc/ca-certificates/trust-source/anchors",
+		"rhel":                "/etc/pki/ca-trust/source/anchors",
+		"centos":              "/etc/pki/ca-trust/source/anchors",
+		"fedora":              "/etc/pki/ca-trust/source/anchors",
+		"rocky":               "/etc/pki/ca-trust/source/anchors",
+		"almalinux":           "/etc/pki/ca-trust/source/anchors",
+		"opensuse":            "/etc/pki/trust/anchors",
+		"opensuse-leap":       "/etc/pki/trust/anchors",
+		"opensuse-tumbleweed": "/etc/pki/trust/anchors",
+		"sles":                "/etc/pki/trust/anchors",
+	}
 
+	certPath, ok := certPaths[dm.distro]
+	if !ok {
+		return fmt.Errorf("distro '%s' not supported yet", dm.distro)
+	}
+
+	destFile := fmt.Sprintf("%s/%s-ca.crt", certPath, name)
+	if _, success := utils.ExecuteCommand("cp", certificate, destFile); !success {
+		return fmt.Errorf("failed to copy certificate for %s", dm.distro)
+	}
+
+	switch dm.distro {
 	case "arch", "manjaro":
-		if _, success := utils.ExecuteCommand("cp", certificate,
-			fmt.Sprintf("/etc/ca-certificates/trust-source/anchors/%s-ca.crt", name)); !success {
-			return fmt.Errorf("failed to copy certificate for %s", dm.distro)
-		}
 		if _, success := utils.ExecuteCommand("trust", "extract-compat"); !success {
 			if _, success := utils.ExecuteCommand("update-ca-trust"); !success {
 				return fmt.Errorf("failed to update trust store for %s", dm.distro)
 			}
 		}
-		break
-
 	case "rhel", "centos", "fedora", "rocky", "almalinux":
-		if _, success := utils.ExecuteCommand("cp", certificate,
-			fmt.Sprintf("/etc/pki/ca-trust/source/anchors/%s-ca.crt", name)); !success {
-			return fmt.Errorf("failed to copy certificate for %s", dm.distro)
-		}
 		if _, success := utils.ExecuteCommand("update-ca-trust"); !success {
 			return fmt.Errorf("failed to update ca-trust for %s", dm.distro)
 		}
-		break
-
-	case "opensuse", "opensuse-leap", "opensuse-tumbleweed", "sles":
-		if _, success := utils.ExecuteCommand("cp", certificate,
-			fmt.Sprintf("/etc/pki/trust/anchors/%s-ca.crt", name)); !success {
-			return fmt.Errorf("failed to copy certificate for %s", dm.distro)
-		}
-		if _, success := utils.ExecuteCommand("update-ca-certificates"); !success {
-			return fmt.Errorf("failed to update ca-certificates for %s", dm.distro)
-		}
-		break
-
-	case "alpine":
-		if _, success := utils.ExecuteCommand("cp", certificate,
-			fmt.Sprintf("/usr/local/share/ca-certificates/%s-ca.crt", name)); !success {
-			return fmt.Errorf("failed to copy certificate for %s", dm.distro)
-		}
-		if _, success := utils.ExecuteCommand("update-ca-certificates"); !success {
-			return fmt.Errorf("failed to update ca-certificates for %s", dm.distro)
-		}
-		break
-
 	default:
-		return fmt.Errorf("distro '%s' not supported yet", dm.distro)
+		if _, success := utils.ExecuteCommand("update-ca-certificates"); !success {
+			return fmt.Errorf("failed to update ca-certificates for %s", dm.distro)
+		}
 	}
 
 	return nil
@@ -179,7 +167,7 @@ func (dm *DependencyManager) InstallBuildDependencies() error {
 		return fmt.Errorf("no build dependencies defined for package manager: %s", dm.pm)
 	}
 
-	return dm.installPackages(deps, "build dependencies")
+	return dm.installPackages(deps)
 }
 
 // InstallWebBuildDependencies installs essential build tools and dependencies for web service compilation.
@@ -191,7 +179,7 @@ func (dm *DependencyManager) InstallWebDependencies() error {
 		return fmt.Errorf("no web build dependencies defined for package manager: %s", dm.pm)
 	}
 
-	return dm.installPackages(deps, "web build dependencies")
+	return dm.installPackages(deps)
 }
 
 // InstallExtensionDependencies installs libraries required for specific PHP extensions.
@@ -204,7 +192,7 @@ func (dm *DependencyManager) InstallExtensionDependencies(extensions []string) e
 		return nil
 	}
 
-	return dm.installPackages(packages, "extension dependencies")
+	return dm.installPackages(packages)
 }
 
 // collectUniquePackages gathers unique system packages for the given extensions
@@ -239,8 +227,8 @@ func (dm *DependencyManager) logNoPackagesNeeded() {
 }
 
 // installPackages executes package installation commands for the detected package manager.
-// packages: Package list to install, description: Operation description for logging. Returns error if installation fails.
-func (dm *DependencyManager) installPackages(packages []string, description string) error {
+// packages: Package list to install. Returns error if installation fails.
+func (dm *DependencyManager) installPackages(packages []string) error {
 	if len(packages) == 0 {
 		return nil
 	}
