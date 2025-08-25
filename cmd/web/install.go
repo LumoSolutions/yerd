@@ -14,7 +14,7 @@ func BuildInstallCommand() *cobra.Command {
 		Short: "Installs any web components required for local development sites",
 		Run: func(cmd *cobra.Command, args []string) {
 			version.PrintSplash()
-			green := color.New(color.FgGreen)
+			//green := color.New(color.FgGreen)
 			//yellow := color.New(color.FgYellow)
 			//blue := color.New(color.FgBlue)
 			red := color.New(color.FgRed)
@@ -29,8 +29,6 @@ func BuildInstallCommand() *cobra.Command {
 			}
 
 			installer.Install()
-
-			green.Printf("✓ Web Components Installed Successfully\n")
 		},
 	}
 }

@@ -51,6 +51,7 @@ func (installer *NginxInstaller) Uninstall() error {
 	}
 
 	utils.SystemdStopService("yerd-nginx")
+	utils.SystemdDisable("yerd-nginx")
 
 	params := []string{"-D", "-n", "YERD CA", "-d", "sql:$HOME/.pki/nssdb"}
 	utils.ExecuteCommand("certutil", params...)
@@ -266,6 +267,8 @@ func (installer *NginxInstaller) addSystemdService() error {
 		installer.Spinner.StopWithError("Unable to start service %s", serviceName)
 		return fmt.Errorf("unable to start service %s", serviceName)
 	}
+
+	utils.SystemdEnable(serviceName)
 
 	installer.Spinner.AddInfoStatus("[Systemd] Started '%s' successfully", serviceName)
 	installer.Spinner.AddSuccessStatus("Systemd Configured")

@@ -52,10 +52,9 @@ func (sm *SiteManager) ListSites() {
 	}
 
 	for _, site := range sm.WebConfig.Sites {
-		fmt.Printf("🌐 Site: %s\n", site.Domain)
+		fmt.Printf("🌐 Site: %s  (PHP %s)\n", site.Domain, site.PhpVersion)
 		fmt.Printf("├─ Secure Link: https://%s/\n", site.Domain)
-		fmt.Printf("├─ Directory: %s\n", site.RootDirectory)
-		fmt.Printf("└─ PHP Version: PHP %s\n\n", site.PhpVersion)
+		fmt.Printf("└─ Directory: %s\n\n", site.RootDirectory)
 	}
 }
 

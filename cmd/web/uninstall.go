@@ -2,6 +2,7 @@ package web
 
 import (
 	"github.com/fatih/color"
+	"github.com/lumosolutions/yerd/internal/installers/nginx"
 	"github.com/lumosolutions/yerd/internal/utils"
 	"github.com/lumosolutions/yerd/internal/version"
 	"github.com/spf13/cobra"
@@ -13,16 +14,21 @@ func BuildUninstallCommand() *cobra.Command {
 		Short: "Uninstalls the web components required for local development",
 		Run: func(cmd *cobra.Command, args []string) {
 			version.PrintSplash()
-			green := color.New(color.FgGreen)
+			//green := color.New(color.FgGreen)
 			//yellow := color.New(color.FgYellow)
 			//blue := color.New(color.FgBlue)
-			//red := color.New(color.FgRed)
+			red := color.New(color.FgRed)
 
 			if !utils.CheckAndPromptForSudo() {
 				return
 			}
 
-			green.Printf("✓ Web Components Installed Successfully\n")
+			installer, err := nginx.NewNginxInstaller(false, true)
+			if err != nil {
+				red.Printf("Install failed\n\n")
+			}
+
+			installer.Uninstall()
 		},
 	}
 }

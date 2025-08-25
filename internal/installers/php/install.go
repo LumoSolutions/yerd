@@ -457,6 +457,8 @@ func (installer *PhpInstaller) setupSystemdService() error {
 		return fmt.Errorf("unable to start service %s", serviceName)
 	}
 
+	utils.SystemdEnable(serviceName)
+
 	installer.spinner.AddInfoStatus("[Systemd] Started '%s' successfully", serviceName)
 	installer.spinner.AddSuccessStatus("Systemd Configured")
 

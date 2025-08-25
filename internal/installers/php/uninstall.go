@@ -13,6 +13,7 @@ func UninstallPhp(info *config.PhpInfo) error {
 	serviceName := fmt.Sprintf("yerd-php%s-fpm", info.Version)
 	systemdPath := filepath.Join(constants.SystemdDir, fmt.Sprintf("yerd-php%s-fpm.service", info.Version))
 
+	utils.SystemdDisable(serviceName)
 	utils.SystemdStopService(serviceName)
 	if err := utils.RemoveFile(systemdPath); err != nil {
 		utils.LogError(err, "uninstall")
