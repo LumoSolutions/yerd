@@ -304,6 +304,11 @@ func (c *Config) save() error {
 		return fmt.Errorf("failed to write config file: %w", err)
 	}
 
+	userCtx, err := utils.GetRealUser()
+	if err == nil {
+		utils.Chown(c.filePath, userCtx.UID, userCtx.GID)
+	}
+
 	return nil
 }
 
