@@ -23,18 +23,147 @@ type SiteManager struct {
 }
 
 func NewSiteManager() (*SiteManager, error) {
-	var webConfig *config.WebConfig
-	if err := config.GetStruct("web", webConfig); err != nil {
-		webConfig = &config.WebConfig{}
-	}
-
 	s := utils.NewSpinner("Managing Sites...")
 	s.SetDelay(150)
+
+	var webConfig *config.WebConfig
+	if err := config.GetStruct("web", &webConfig); err != nil {
+		webConfig = &config.WebConfig{}
+	}
 
 	return &SiteManager{
 		Spinner:   s,
 		WebConfig: webConfig,
 	}, nil
+}
+
+func (sm *SiteManager) ListSites() {
+	if len(sm.WebConfig.Sites) == 0 {
+		sm.Spinner.AddWarningStatus("No Sites Created")
+		sm.Spinner.AddInfoStatus("Create a site with one of the following commands:")
+		sm.Spinner.AddInfoStatus("'sudo yerd sites add .'  # use current directory")
+		sm.Spinner.AddInfoStatus("'sudo yerd sites add relative/folder'")
+		sm.Spinner.AddInfoStatus("'sudo yerd sites add /home/user/absolute/folder'")
+		return
+	}
+
+	for _, site := range sm.WebConfig.Sites {
+		fmt.Printf("🌐 Site: %s\n", site.Domain)
+		fmt.Printf("├─ Secure Link: https://%s/\n", site.Domain)
+		fmt.Printf("├─ Directory: %s\n", site.RootDirectory)
+		fmt.Printf("└─ PHP Version: PHP %s\n\n", site.PhpVersion)
+	}
+}
+
+func (sm *SiteManager) SetValue(name, value, site string) error {
+	sm.Spinner.UpdatePhrase("Updating Site...")
+	sm.Spinner.Start()
+
+	if !sm.identifySite(site) {
+		sm.Spinner.StopWithError("Unable to identify site")
+		return fmt.Errorf("unable to identify site")
+	}
+
+	sm.Spinner.AddSuccessStatus("Identified Site")
+	sm.Spinner.AddInfoStatus("Domain: %s", sm.Domain)
+	sm.Spinner.AddInfoStatus("Directory: %s", sm.Directory)
+
+	switch strings.ToLower(name) {
+	case "php":
+		return sm.updatePhp(value)
+	default:
+		sm.Spinner.StopWithError("Unknown setting name %s", name)
+		return fmt.Errorf("unknown setting name")
+	}
+}
+
+func (sm *SiteManager) updatePhp(version string) error {
+	sm.PhpVersion = version
+	if err := sm.validatePhpVersion(); err != nil {
+		sm.Spinner.StopWithError("Failed to update site")
+		return err
+	}
+
+	if err := sm.createSiteConfig(); err != nil {
+		sm.Spinner.StopWithError("Failed to update site")
+		return err
+	}
+
+	if err := sm.restartNginx(); err != nil {
+		sm.Spinner.StopWithError("Failed to restart nginx")
+		return err
+	}
+
+	config.SetStringData(fmt.Sprintf("web.sites.[%s].php_version", sm.Domain), sm.PhpVersion)
+
+	sm.Spinner.AddInfoStatus("Updated to PHP %s", sm.PhpVersion)
+	sm.Spinner.StopWithSuccess("Update Successful")
+
+	return nil
+}
+
+func (sm *SiteManager) RemoveSite(identifier string) error {
+	sm.Spinner.UpdatePhrase("Removing site")
+	sm.Spinner.Start()
+
+	sm.Spinner.AddInfoStatus("Using identifier: %s", identifier)
+	if !sm.identifySite(identifier) {
+		sm.Spinner.StopWithError("Unable to identify site")
+		return fmt.Errorf("unable to identify site")
+	}
+
+	sm.Spinner.AddSuccessStatus("Identified Site")
+	sm.Spinner.AddInfoStatus("Domain: %s", sm.Domain)
+	sm.Spinner.AddInfoStatus("Directory: %s", sm.Directory)
+
+	nginxPath := filepath.Join(constants.YerdWebDir, "nginx")
+	files := []string{
+		filepath.Join(constants.YerdWebDir, "certs", "sites", sm.Domain+".key"),
+		filepath.Join(constants.YerdWebDir, "certs", "sites", sm.Domain+".crt"),
+		filepath.Join(nginxPath, "sites-enabled", sm.Domain+".conf"),
+	}
+
+	utils.SystemdStopService("yerd-nginx")
+
+	for _, file := range files {
+		if err := utils.RemoveFile(file); err != nil {
+			sm.Spinner.AddInfoStatus("Unable to remove %s", filepath.Base(file))
+		} else {
+			sm.Spinner.AddSuccessStatus("Removed %s", filepath.Base(file))
+		}
+	}
+
+	if err := utils.SystemdStartService("yerd-nginx"); err != nil {
+		sm.Spinner.AddInfoStatus("Unable to restart nginx")
+	} else {
+		sm.Spinner.AddSuccessStatus("Restarted Nginx")
+	}
+
+	hm := utils.NewHostsManager()
+	hm.Remove(sm.Domain)
+
+	config.Delete(fmt.Sprintf("web.sites.[%s]", sm.Domain))
+
+	sm.Spinner.StopWithSuccess("Site Removed")
+	return nil
+}
+
+func (sm *SiteManager) identifySite(identifier string) bool {
+	path, _ := filepath.Abs(identifier)
+	for _, site := range sm.WebConfig.Sites {
+		if site.Domain == identifier || site.RootDirectory == path {
+			sm.Domain = site.Domain
+			sm.Directory = site.RootDirectory
+			sm.PublicFolder = site.PublicDirectory
+			sm.PhpVersion = site.PhpVersion
+			sm.CrtFile = filepath.Join(constants.CertsDir, "sites", site.Domain+".crt")
+			sm.KeyFile = filepath.Join(constants.CertsDir, "sites", site.Domain+".key")
+
+			return true
+		}
+	}
+
+	return false
 }
 
 func (siteManager *SiteManager) AddSite(directory, domain, publicFolder, phpVersion string) error {
@@ -51,8 +180,9 @@ func (siteManager *SiteManager) AddSite(directory, domain, publicFolder, phpVers
 		func() error { return siteManager.validatePhpVersion() },
 		func() error { return siteManager.createCertificate() },
 		func() error { return siteManager.createSiteConfig() },
-		//func() error { return siteManager.createHostsEntry() },
+		func() error { return siteManager.createHostsEntry() },
 		func() error { return siteManager.restartNginx() },
+		func() error { return siteManager.addToConfig() },
 	)
 
 	if err != nil {
@@ -60,7 +190,20 @@ func (siteManager *SiteManager) AddSite(directory, domain, publicFolder, phpVers
 		return err
 	}
 
-	siteManager.Spinner.StopWithSuccess("Finished")
+	siteManager.Spinner.StopWithSuccess("Site Created!  https://%s", siteManager.Domain)
+
+	return nil
+}
+
+func (sm *SiteManager) addToConfig() error {
+	siteConfig := &config.SiteConfig{
+		RootDirectory:   sm.Directory,
+		PublicDirectory: sm.PublicFolder,
+		PhpVersion:      sm.PhpVersion,
+		Domain:          sm.Domain,
+	}
+
+	config.SetStruct(fmt.Sprintf("web.sites.[%s]", sm.Domain), siteConfig)
 
 	return nil
 }
@@ -85,15 +228,21 @@ func (siteManager *SiteManager) validateDirectory() error {
 		if utils.IsDirectory(filepath.Join(abs, "public")) {
 			siteManager.PublicFolder = "public"
 			siteManager.Spinner.AddInfoStatus("Public directory discovered")
-			siteManager.Spinner.AddInfoStatus("Serving from: /public")
 		}
-
-		return nil
 	}
 
 	if !utils.IsDirectory(filepath.Join(abs, siteManager.PublicFolder)) {
 		siteManager.Spinner.AddErrorStatus("Provided public path is not a directory")
 		return fmt.Errorf("public folder does not exist")
+	}
+
+	if siteManager.WebConfig.Sites != nil {
+		for _, site := range siteManager.WebConfig.Sites {
+			if site.RootDirectory == siteManager.Directory {
+				siteManager.Spinner.AddErrorStatus("Directory is already registered")
+				return fmt.Errorf("directory in use")
+			}
+		}
 	}
 
 	siteManager.Spinner.AddInfoStatus("Serving from /%s", siteManager.PublicFolder)
@@ -105,11 +254,15 @@ func (sm *SiteManager) createCertificate() error {
 	cm := NewCertificateManager()
 	keyFile, certFile, err := cm.GenerateCert(sm.Domain, "yerd")
 	if err != nil {
+		sm.Spinner.AddErrorStatus("Unable to secure site")
 		return err
 	}
 
 	sm.CrtFile = certFile
 	sm.KeyFile = keyFile
+
+	sm.Spinner.AddSuccessStatus("Site Secured Successfully")
+	sm.Spinner.AddInfoStatus("https://%s/", sm.Domain)
 
 	return nil
 }
@@ -119,18 +272,21 @@ func (siteManager *SiteManager) validateDomain() error {
 		base := filepath.Base(siteManager.Directory)
 		base = strings.ToLower(base) + ".test"
 		siteManager.Domain = base
-		siteManager.Spinner.AddInfoStatus("Domain: %s", base)
 	}
+
+	siteManager.Domain = strings.ToLower(siteManager.Domain)
 
 	if siteManager.WebConfig.Sites != nil {
 		for _, site := range siteManager.WebConfig.Sites {
 			if site.Domain == siteManager.Domain {
 				siteManager.Spinner.AddErrorStatus("Domain is already in use")
-				siteManager.Spinner.AddInfoStatus("- Use the -d flag to specify a custom domain")
+				siteManager.Spinner.AddInfoStatus("Use the -d flag to specify a custom domain")
 				return fmt.Errorf("domain in use")
 			}
 		}
 	}
+
+	siteManager.Spinner.AddInfoStatus("Domain: %s", siteManager.Domain)
 
 	return nil
 }
@@ -145,7 +301,6 @@ func (siteManager *SiteManager) validatePhpVersion() error {
 		for _, version := range versions {
 			if _, installed := config.GetInstalledPhpInfo(version); installed {
 				siteManager.PhpVersion = version
-				siteManager.Spinner.AddInfoStatus("Using PHP %s", version)
 				break
 			}
 		}
@@ -153,9 +308,11 @@ func (siteManager *SiteManager) validatePhpVersion() error {
 
 	_, installed := config.GetInstalledPhpInfo(siteManager.PhpVersion)
 	if !installed {
-		siteManager.Spinner.AddErrorStatus("PHP%s is not installed, or is not valid", siteManager.PhpVersion)
+		siteManager.Spinner.AddErrorStatus("PHP %s is not installed, or is not valid", siteManager.PhpVersion)
 		return fmt.Errorf("php version not installed")
 	}
+
+	siteManager.Spinner.AddInfoStatus("Using PHP %s", siteManager.PhpVersion)
 
 	return nil
 }

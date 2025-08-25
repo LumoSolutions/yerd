@@ -116,5 +116,8 @@ func (certManager *CertificateManager) generateSiteCertificate(certPath, domain,
 		return false
 	}
 
+	utils.RemoveFile(extPath)
+	utils.RemoveFile(filepath.Join(constants.CertsDir, "sites", csrFileName))
+
 	return true
 }

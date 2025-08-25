@@ -2,7 +2,7 @@ package sites
 
 import (
 	"github.com/fatih/color"
-	"github.com/lumosolutions/yerd/internal/utils"
+	"github.com/lumosolutions/yerd/internal/manager"
 	"github.com/lumosolutions/yerd/internal/version"
 	"github.com/spf13/cobra"
 )
@@ -13,20 +13,15 @@ func BuildListCommand() *cobra.Command {
 		Short: "Lists development sites & their configuration",
 		Run: func(cmd *cobra.Command, args []string) {
 			version.PrintSplash()
-			green := color.New(color.FgGreen)
-			//yellow := color.New(color.FgYellow)
-			//blue := color.New(color.FgBlue)
-			//red := color.New(color.FgRed)
+			red := color.New(color.FgRed)
 
-			if !utils.CheckAndPromptForSudo() {
+			sm, err := manager.NewSiteManager()
+			if err != nil {
+				red.Printf("Unable to create an instance of SiteManager\n")
 				return
 			}
 
-			hostManager := utils.NewHostsManager()
-			hostManager.Install()
-			hostManager.Add("test.test")
-
-			green.Printf("✓ Web Components Installed Successfully\n")
+			sm.ListSites()
 		},
 	}
 }

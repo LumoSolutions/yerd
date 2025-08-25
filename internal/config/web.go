@@ -1,14 +1,13 @@
 package config
 
 type WebConfig struct {
-	Installed bool
-	Sites     map[string]SiteConfig
+	Installed bool                  `json:"is_installed"`
+	Sites     map[string]SiteConfig `json:"sites"`
 }
 
 type SiteConfig struct {
-	RootDirectory   string
-	PublicDirectory string
-	Domain          string
-	PhpVersion      string
-	NginxConfig     string
+	RootDirectory   string `json:"rootDir"`
+	PublicDirectory string `json:"publicDir"`
+	Domain          string `json:"domain"`
+	PhpVersion      string `json:"php_version"`
 }
