@@ -63,4 +63,7 @@ func init() {
 	sitesCmd.AddCommand(sites.BuildSetCommand())
 
 	rootCmd.AddCommand(sitesCmd)
+
+	UpdateCmd.Flags().BoolVarP(&autoConfirm, "yes", "y", false, "Automatically confirm update without prompting")
+	rootCmd.AddCommand(UpdateCmd)
 }

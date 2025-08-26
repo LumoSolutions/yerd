@@ -47,10 +47,6 @@ Examples:
 
 var autoConfirm bool
 
-func init() {
-	UpdateCmd.Flags().BoolVarP(&autoConfirm, "yes", "y", false, "Automatically confirm update without prompting")
-}
-
 // runUpdate executes the YERD self-update process by checking for new releases and installing them.
 func runUpdate(cmd *cobra.Command, args []string) {
 	version.PrintSplash()
