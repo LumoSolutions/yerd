@@ -99,22 +99,6 @@ command_exists() {
 }
 
 
-check_existing_installation() {
-    if command_exists "$BINARY_NAME"; then
-        local existing_version
-        existing_version=$($BINARY_NAME --version 2>/dev/null | head -n1 | grep -o 'v[0-9]\+\.[0-9]\+\.[0-9]\+' || echo "unknown")
-        print_warning "YERD is already installed (${existing_version})"
-        print_warning "To update YERD, please run: yerd update (when available)"
-        echo
-        read -p "Continue with installation anyway? This will overwrite the existing installation. (y/N): " -r
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            print_status "Installation cancelled"
-            exit 0
-        fi
-    fi
-}
-
-
 check_prerequisites() {
     print_status "Checking prerequisites..."
     
@@ -316,7 +300,6 @@ main() {
     done
     
     check_prerequisites
-    check_existing_installation
     
     local os arch version
     os=$(detect_os)

@@ -6,7 +6,7 @@ import (
 	"github.com/fatih/color"
 )
 
-const Version = "1.1.2"
+const Version = "1.1.1"
 const Branch = "main"
 const Repo = "LumoSolutions/yerd"
 
