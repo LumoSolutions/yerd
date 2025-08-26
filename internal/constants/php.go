@@ -174,7 +174,7 @@ var availableExtensions = map[string]Extension{
 var defaultExtensions = []string{
 	"mbstring", "curl", "openssl", "fileinfo", "filter", "hash",
 	"pcre", "session", "xml", "zip", "mysqli", "sqlite3", "pdo-mysql",
-	"sockets",
+	"sockets", "zlib",
 }
 
 // GetAvailableVersions returns the list of PHP versions supported by YERD.
