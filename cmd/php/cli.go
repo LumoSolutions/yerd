@@ -3,57 +3,69 @@ package php
 import (
 	"fmt"
 
-	"github.com/LumoSolutions/yerd/internal/config"
-	"github.com/LumoSolutions/yerd/internal/manager"
-	"github.com/LumoSolutions/yerd/internal/utils"
-	"github.com/LumoSolutions/yerd/internal/version"
+	"github.com/fatih/color"
+	"github.com/lumosolutions/yerd/internal/config"
+	phpinstaller "github.com/lumosolutions/yerd/internal/installers/php"
+	"github.com/lumosolutions/yerd/internal/utils"
+	intVersion "github.com/lumosolutions/yerd/internal/version"
 	"github.com/spf13/cobra"
 )
 
-var CliCmd = &cobra.Command{
-	Use:   "cli [version]",
-	Short: "Set default PHP CLI version",
-	Long: `Set the default PHP version for command line usage.
-
+func buildCliCmd(version string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "cli",
+		Short: fmt.Sprintf("Set default PHP CLI version to PHP %s", version),
+		Long: `Set the default PHP version for command line usage.
+		
 Examples:
-  yerd php cli 8.3
-  yerd php cli 8.4
-  yerd php cli php8.3`,
-	Args: cobra.ExactArgs(1),
-	Run:  runCli,
-}
+  yerd php 8.4 cli`,
+		Run: func(cmd *cobra.Command, args []string) {
+			intVersion.PrintSplash()
 
-// runCli sets the default CLI PHP version with validation and system checks.
-func runCli(cmd *cobra.Command, args []string) {
-	version.PrintSplash()
+			if !utils.CheckAndPromptForSudo() {
+				return
+			}
 
-	if !utils.CheckAndPromptForSudo("Setting CLI version", "cli", args[0]) {
-		return
+			force, _ := cmd.Flags().GetBool("force")
+			green := color.New(color.FgGreen)
+			blue := color.New(color.FgBlue)
+			red := color.New(color.FgRed)
+
+			data, installed := config.GetInstalledPhpInfo(version)
+			if !installed {
+				red.Println("❌ Error: No action taken")
+				blue.Printf("- PHP %s is not installed, please use\n", version)
+				blue.Printf("- 'sudo yerd php %s install'\n\n", version)
+				return
+			}
+
+			if data.IsCLI && !force {
+				red.Println("❌ Error: No action taken")
+				blue.Printf("- PHP %s is already the default CLI version of PHP\n", version)
+				blue.Println("- If you wish to reapply this version forceably, you can use:")
+				blue.Printf("- 'sudo yerd php %s cli -f'\n\n", version)
+				return
+			}
+
+			fmt.Printf("Setting PHP %s as the default CLI version\n", version)
+
+			if err := phpinstaller.SetCliVersion(data); err != nil {
+				red.Println("❌ Error: No action taken")
+				blue.Printf("- Unable to set PHP %s as the default CLI version", version)
+				blue.Printf("- %v", err)
+				return
+			}
+
+			green.Println("✓ Default PHP CLI version has been updated")
+			blue.Printf("- PHP CLI version %s\n", version)
+
+			if force {
+				blue.Print("- update was forced using the -f/--force flag")
+			}
+
+		},
 	}
 
-	versionArg := args[0]
-	phpVersion := utils.NormalizePHPVersion(versionArg)
-
-	cfg, err := config.LoadConfig()
-	if err != nil {
-		fmt.Printf("Error loading config: %v\n", err)
-		return
-	}
-
-	if _, exists := cfg.InstalledPHP[phpVersion]; !exists {
-		fmt.Printf("Error: PHP %s is not installed\n", phpVersion)
-		fmt.Printf("Install it first with: sudo yerd php add %s\n", phpVersion)
-		return
-	}
-
-	fmt.Printf("Setting PHP %s as CLI version...\n", phpVersion)
-
-	err = manager.SetCLIVersion(phpVersion)
-	if err != nil {
-		fmt.Printf("Error setting CLI version: %v\n", err)
-		return
-	}
-
-	fmt.Printf("✓ PHP %s is now the default CLI version\n", phpVersion)
-	fmt.Printf("Verify with: php -v\n")
+	cmd.Flags().BoolP("force", "f", false, "Force the regeneration of the symlinks for the php CLI")
+	return cmd
 }

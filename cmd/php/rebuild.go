@@ -3,117 +3,44 @@ package php
 import (
 	"fmt"
 
-	"github.com/LumoSolutions/yerd/internal/builder"
-	"github.com/LumoSolutions/yerd/internal/config"
-	"github.com/LumoSolutions/yerd/internal/utils"
-	"github.com/LumoSolutions/yerd/internal/version"
-	"github.com/LumoSolutions/yerd/pkg/constants"
-	"github.com/LumoSolutions/yerd/pkg/php"
+	"github.com/lumosolutions/yerd/internal/config"
+	phpinstaller "github.com/lumosolutions/yerd/internal/installers/php"
+	"github.com/lumosolutions/yerd/internal/utils"
+	intVersion "github.com/lumosolutions/yerd/internal/version"
 	"github.com/spf13/cobra"
 )
 
-var RebuildCmd = &cobra.Command{
-	Use:   "rebuild <version>",
-	Short: "Rebuild PHP with current extensions",
-	Long: `Force rebuild PHP with the currently configured extensions.
-	
-This is useful for:
-  - Recovering from corrupted PHP installations
-  - Applying system updates to dependencies
-  - Troubleshooting build issues
-  - Ensuring extensions are properly compiled`,
-	Args: cobra.ExactArgs(1),
-	RunE: runRebuild,
-}
+func buildRebuildCmd(version string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "rebuild",
+		Short: fmt.Sprintf("Rebuild PHP %s", version),
+		Run: func(cmd *cobra.Command, args []string) {
+			intVersion.PrintSplash()
 
-// runRebuild forces a complete rebuild of PHP with existing extensions configuration.
-// Returns error if rebuild fails, nil if successful.
-func runRebuild(cmd *cobra.Command, args []string) error {
-	version.PrintSplash()
+			if !utils.CheckAndPromptForSudo() {
+				return
+			}
 
-	if !utils.CheckAndPromptForSudo("PHP rebuild", "rebuild", args[0]) {
-		return nil
+			data, installed := config.GetInstalledPhpInfo(version)
+			if !installed {
+				fmt.Printf("PHP %s is not installed, please use\n", version)
+				fmt.Printf("   'sudo yerd php %s install' instead\n\n", version)
+				fmt.Println("Thanks for using YERD")
+				return
+			}
+
+			nocache, _ := cmd.Flags().GetBool("nocache")
+			configFlag, _ := cmd.Flags().GetBool("config")
+
+			if err := phpinstaller.RunRebuild(data, nocache, configFlag); err != nil {
+				fmt.Printf("Failed to rebuild php%s: %v\n", version, err)
+				return
+			}
+		},
 	}
 
-	phpVersion := php.FormatVersion(args[0])
+	cmd.Flags().BoolP("nocache", "n", false, "Bypass cache to get the latest version from php.net")
+	cmd.Flags().BoolP("config", "c", false, "Recreate associated configuration, if it already exists")
 
-	if !php.IsValidVersion(phpVersion) {
-		utils.PrintError("Invalid PHP version: %s", phpVersion)
-		return nil
-	}
-
-	cfg, err := config.LoadConfig()
-	if err != nil {
-		utils.PrintError("Failed to load config: %v", err)
-		return nil
-	}
-
-	if _, exists := cfg.InstalledPHP[phpVersion]; !exists {
-		utils.PrintError("PHP %s is not installed. Use 'yerd php add %s' first", phpVersion, phpVersion)
-		return nil
-	}
-
-	currentExtensions, exists := cfg.GetPHPExtensions(phpVersion)
-	if !exists {
-		utils.PrintError("No extension information found for PHP %s", phpVersion)
-		return nil
-	}
-
-	if len(currentExtensions) == 0 {
-		utils.PrintWarning("PHP %s has no extensions configured. Adding default extensions.", phpVersion)
-		currentExtensions = constants.DefaultPHPExtensions
-		cfg.UpdatePHPExtensions(phpVersion, currentExtensions)
-	}
-
-	utils.PrintInfo("Rebuilding PHP %s with extensions:", phpVersion)
-	utils.PrintExtensionsGrid(currentExtensions)
-	fmt.Println()
-
-	if err := forceRebuildPHP(cfg, phpVersion, currentExtensions); err != nil {
-		return nil
-	}
-
-	return nil
-}
-
-// forceRebuildPHP performs the actual rebuild process with spinner animation.
-// cfg: Configuration object, version: PHP version to rebuild, extensions: Extensions to include.
-func forceRebuildPHP(cfg *config.Config, version string, extensions []string) error {
-	utils.PrintWarning("Force rebuilding PHP (no configuration backup needed)...")
-	fmt.Println()
-
-	spinner := utils.NewLoadingSpinner(fmt.Sprintf("Building PHP %s with extensions", version))
-	spinner.Start()
-
-	phpBuilder, err := builder.NewBuilder(version, extensions)
-	if err != nil {
-		spinner.Stop("✗ Failed to create builder")
-		utils.PrintError("Failed to create builder: %v", err)
-		return fmt.Errorf("builder creation failed")
-	}
-	err = phpBuilder.RebuildPHP()
-
-	if err != nil {
-		spinner.Stop("✗ Build failed")
-		logPath := phpBuilder.GetLogPath()
-		utils.PrintError("Failed to rebuild PHP %s: %v", version, err)
-		if logPath != "" {
-			utils.PrintError("Detailed build logs available at: %s", logPath)
-		}
-		phpBuilder.Cleanup()
-		return fmt.Errorf("rebuild failed")
-	}
-
-	spinner.Stop("✓ Build complete")
-
-	utils.PrintSuccess("All dependencies satisfied")
-	utils.PrintInfo("Updating configuration...")
-	if err := cfg.Save(); err != nil {
-		utils.PrintWarning("Warning: Rebuild succeeded but failed to save configuration: %v", err)
-	}
-
-	phpBuilder.CleanupSuccess()
-
-	utils.PrintSuccess("Successfully rebuilt PHP %s", version)
-	return nil
+	return cmd
 }

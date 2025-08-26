@@ -6,7 +6,9 @@ import (
 	"github.com/fatih/color"
 )
 
-const Version = "1.0.8"
+const Version = "1.1.0"
+const Branch = "feat/nginx"
+const Repo = "LumoSolutions/yerd"
 
 // PrintSplash displays the YERD ASCII art logo and version information with colors.
 func PrintSplash() {
@@ -29,9 +31,11 @@ func PrintSplash() {
 	yellow.Printf("                     v%s\n", Version)
 	fmt.Println()
 
-	white.Println("A powerful, developer-friendly tool for managing PHP versions")
-	white.Println("and local development environments with ease")
+	white.Println("A powerful, developer-friendly tool for managing")
+	white.Println("multiple PHP versions and local development ")
+	white.Println("environments via nginx with ease")
 	fmt.Println()
+	gray.Println("Consider contributing today")
 	gray.Println("https://github.com/LumoSolutions/yerd")
 	fmt.Println()
 }
@@ -39,4 +43,17 @@ func PrintSplash() {
 // GetVersion returns the current YERD version string.
 func GetVersion() string {
 	return Version
+}
+
+// GetBranch returns the current branch that files should
+// be downloaded from, useful during development, should
+// be reset to main on build for release
+func GetBranch() string {
+	return Branch
+}
+
+// GetRepo returns the current repo used to store files
+// and will be where the .config files are located
+func GetRepo() string {
+	return Repo
 }

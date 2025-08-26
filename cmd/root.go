@@ -1,7 +1,15 @@
 package cmd
 
 import (
-	"github.com/LumoSolutions/yerd/internal/version"
+	"fmt"
+	"os"
+
+	"github.com/lumosolutions/yerd/cmd/composer"
+	"github.com/lumosolutions/yerd/cmd/php"
+	"github.com/lumosolutions/yerd/cmd/sites"
+	"github.com/lumosolutions/yerd/cmd/web"
+	"github.com/lumosolutions/yerd/internal/constants"
+	"github.com/lumosolutions/yerd/internal/version"
 	"github.com/spf13/cobra"
 )
 
@@ -22,13 +30,37 @@ var rootCmd = &cobra.Command{
 
 // Execute runs the root command and handles any errors using cobra's error handler.
 func Execute() {
-	cobra.CheckErr(rootCmd.Execute())
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 }
 
 func init() {
-	rootCmd.AddCommand(phpCmd)
-	rootCmd.AddCommand(statusCmd)
-	rootCmd.AddCommand(UpdateCmd)
+	phpCmd.AddCommand(php.BuildListCmd())
+	phpCmd.AddCommand(php.BuildStatusCmd())
+	phpVersions := constants.GetAvailablePhpVersions()
+	for _, version := range phpVersions {
+		phpCmd.AddCommand(php.CreateVersionCommand(version))
+	}
 
-	rootCmd.CompletionOptions.DisableDefaultCmd = true
+	rootCmd.AddCommand(phpCmd)
+
+	composerCmd.AddCommand(composer.BuildInstallCommand())
+	composerCmd.AddCommand(composer.BuildUninstallCommand())
+	composerCmd.AddCommand(composer.BuildUpdateCommand())
+
+	rootCmd.AddCommand(composerCmd)
+
+	webCmd.AddCommand(web.BuildInstallCommand())
+	webCmd.AddCommand(web.BuildUninstallCommand())
+
+	rootCmd.AddCommand(webCmd)
+
+	sitesCmd.AddCommand(sites.BuildListCommand())
+	sitesCmd.AddCommand(sites.BuildAddCommand())
+	sitesCmd.AddCommand(sites.BuildRemoveCommand())
+	sitesCmd.AddCommand(sites.BuildSetCommand())
+
+	rootCmd.AddCommand(sitesCmd)
 }

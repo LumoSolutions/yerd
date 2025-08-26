@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"github.com/LumoSolutions/yerd/cmd/php"
 	"github.com/spf13/cobra"
 )
 
@@ -9,16 +8,4 @@ var phpCmd = &cobra.Command{
 	Use:   "php",
 	Short: "Manage PHP versions",
 	Long:  `Install, remove, update, and manage multiple PHP versions on your system.`,
-}
-
-func init() {
-	phpCmd.AddCommand(php.AddCmd)
-	phpCmd.AddCommand(php.RemoveCmd)
-	phpCmd.AddCommand(php.CliCmd)
-	phpCmd.AddCommand(php.ListCmd)
-	phpCmd.AddCommand(php.DoctorCmd)
-	phpCmd.AddCommand(php.UpdateCmd)
-	phpCmd.AddCommand(php.RebuildCmd)
-	phpCmd.AddCommand(php.ExtensionsCmd)
-	phpCmd.AddCommand(php.ComposerCmd)
 }

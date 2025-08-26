@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/LumoSolutions/yerd/internal/utils"
-	"github.com/LumoSolutions/yerd/internal/version"
+	"github.com/lumosolutions/yerd/internal/utils"
+	"github.com/lumosolutions/yerd/internal/version"
 	"github.com/spf13/cobra"
 )
 
@@ -55,7 +55,7 @@ func init() {
 func runUpdate(cmd *cobra.Command, args []string) {
 	version.PrintSplash()
 
-	currentVersion := version.Version
+	currentVersion := version.GetVersion()
 	if currentVersion == "" {
 		currentVersion = "unknown"
 	}
@@ -84,7 +84,7 @@ func runUpdate(cmd *cobra.Command, args []string) {
 
 	fmt.Printf("🆕 New version available: v%s\n", latestVersion)
 
-	if !utils.CheckAndPromptForSudo("YERD update", "update") {
+	if !utils.CheckAndPromptForSudo() {
 		return
 	}
 

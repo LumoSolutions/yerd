@@ -1,6 +1,0 @@
-projectKey=yerd
-serverUrl=https://sonarqube.d01.andersoft.io
-serverVersion=25.8.0.112029
-dashboardUrl=https://sonarqube.d01.andersoft.io/dashboard?id=yerd
-ceTaskId=1543de0a-2a7a-40a6-a17a-f2b98629fc18
-ceTaskUrl=https://sonarqube.d01.andersoft.io/api/ce/task?id=1543de0a-2a7a-40a6-a17a-f2b98629fc18
