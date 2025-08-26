@@ -7,7 +7,7 @@ import (
 )
 
 const Version = "1.1.0"
-const Branch = "feat/nginx"
+const Branch = "main"
 const Repo = "LumoSolutions/yerd"
 
 // PrintSplash displays the YERD ASCII art logo and version information with colors.
