@@ -15,6 +15,7 @@ Thank you for your interest in contributing to YERD! We welcome contributions fr
 
 - [Getting Started](#getting-started)
 - [Development Setup](#development-setup)
+- [Project Structure](#project-structure)
 - [Making Changes](#making-changes)
 - [Code Standards](#code-standards)
 - [Testing](#testing)
@@ -27,9 +28,9 @@ Thank you for your interest in contributing to YERD! We welcome contributions fr
 
 ### Prerequisites
 
-- **Go 1.21+** installed
+- **Go 1.24+** installed
 - **Git** for version control
-- **Linux environment** (Ubuntu, Debian, Arch, etc.)
+- **Linux or macOS environment** (Ubuntu, Debian, Arch, Fedora, macOS, etc.)
 - **sudo access** for testing installation features
 
 ### Fork and Clone
@@ -76,6 +77,7 @@ Thank you for your interest in contributing to YERD! We welcome contributions fr
 3. **Test basic functionality:**
    ```bash
    ./yerd --help
+   ./yerd --version
    ./yerd php --help
    ```
 
@@ -105,28 +107,127 @@ Thank you for your interest in contributing to YERD! We welcome contributions fr
    git push origin feature/your-feature-name
    ```
 
+## 📁 Project Structure
+
+YERD follows a clean, modular architecture using the Cobra CLI framework:
+
+```
+yerd/
+├── cmd/                         # CLI command definitions
+│   ├── root.go                 # Root command and initialization
+│   ├── update.go               # Self-update command
+│   ├── php.go                  # PHP parent command
+│   ├── composer.go             # Composer parent command
+│   ├── web.go                  # Web services parent command
+│   ├── sites.go                # Sites parent command
+│   ├── php/                    # PHP subcommands
+│   │   ├── cli.go              # Set CLI version
+│   │   ├── extensions.go       # Manage extensions
+│   │   ├── install.go          # Install PHP version
+│   │   ├── list.go             # List installed versions
+│   │   ├── php_version.go      # Version-specific commands
+│   │   ├── rebuild.go          # Rebuild PHP
+│   │   ├── status.go           # Show PHP status
+│   │   ├── uninstall.go        # Uninstall PHP version
+│   │   └── update.go           # Update PHP version
+│   ├── composer/               # Composer subcommands
+│   │   ├── install.go          # Install Composer
+│   │   ├── uninstall.go        # Uninstall Composer
+│   │   └── update.go           # Update Composer
+│   ├── web/                    # Web service subcommands
+│   │   ├── install.go          # Install nginx
+│   │   └── uninstall.go        # Uninstall nginx
+│   └── sites/                  # Site management subcommands
+│       ├── add.go              # Add new site
+│       ├── list.go             # List sites
+│       ├── remove.go           # Remove site
+│       └── set.go              # Set site configuration
+│
+├── internal/                    # Internal packages (not exported)
+│   ├── config/                 # Configuration management
+│   │   ├── config.go           # Config file operations
+│   │   ├── php.go              # PHP-specific config
+│   │   └── web.go              # Web services config
+│   ├── constants/              # Application constants
+│   │   ├── constants.go        # General constants
+│   │   ├── dependencies.go     # System dependencies
+│   │   ├── nginx.go            # nginx-specific constants
+│   │   └── php.go              # PHP versions and extensions
+│   ├── installers/             # Installation logic
+│   │   ├── composer/           # Composer installer
+│   │   │   └── common.go       # Composer operations
+│   │   ├── nginx/              # nginx installer
+│   │   │   └── installer.go    # nginx build and install
+│   │   └── php/                # PHP installer
+│   │       ├── cli.go          # CLI version management
+│   │       ├── extensions.go   # Extension management
+│   │       ├── general.go      # Common PHP operations
+│   │       ├── install.go      # PHP installation
+│   │       ├── uninstall.go    # PHP removal
+│   │       └── versions.go     # Version checking
+│   ├── manager/                # Site and service management
+│   │   ├── certificate.go      # SSL certificate generation
+│   │   ├── manager.go          # Site manager
+│   │   └── site.go             # Site operations
+│   ├── utils/                  # Utility functions
+│   │   ├── arrays.go           # Array helpers
+│   │   ├── commands.go         # Command execution
+│   │   ├── common.go           # Common utilities
+│   │   ├── download.go         # File downloads
+│   │   ├── file.go             # File operations
+│   │   ├── hosts.go           # /etc/hosts management
+│   │   ├── logger.go           # Logging utilities
+│   │   ├── spinner.go          # CLI spinner
+│   │   ├── systemd.go          # Systemd operations
+│   │   ├── template.go         # Template rendering
+│   │   ├── ui.go               # UI helpers
+│   │   └── user.go             # User operations
+│   └── version/                # Version information
+│       └── version.go          # Version constants and splash
+│
+├── scripts/                    # Build and release scripts
+│   └── build-releases.sh       # Multi-platform build script
+│
+├── main.go                     # Application entry point
+├── go.mod                      # Go module definition
+├── go.sum                      # Go module checksums
+├── README.md                   # Project documentation
+├── CONTRIBUTING.md             # Contribution guidelines
+├── LICENSE                     # MIT License
+└── install.sh                  # Installation script
+```
+
+### Key Packages
+
+- **cmd/**: Contains all CLI commands using Cobra framework
+- **internal/config/**: Manages YERD configuration files
+- **internal/constants/**: Defines PHP versions, extensions, and paths
+- **internal/installers/**: Handles PHP, Composer, and nginx installation
+- **internal/manager/**: Manages sites and SSL certificates
+- **internal/utils/**: Common utilities for file ops, systemd, UI, etc.
+
 ## ✏️ Making Changes
 
 ### Branch Naming
 
 Use descriptive branch names that indicate the type of change:
 
-- **Features:** `feature/add-nginx-support`
-- **Bug fixes:** `fix/extension-detection-error`
-- **Documentation:** `docs/update-readme-examples`
-- **Refactoring:** `refactor/simplify-config-loading`
+- **Features:** `feature/add-redis-extension`
+- **Bug fixes:** `fix/fpm-socket-permission`
+- **Documentation:** `docs/update-ssl-docs`
+- **Refactoring:** `refactor/simplify-installer`
 
 ### Commit Messages
 
 Write clear, descriptive commit messages:
 
 ```
-Add support for custom PHP configure flags
+Add support for Redis PHP extension
 
-- Allow users to specify custom configure flags via config file
-- Add validation for configure flag syntax
-- Update documentation with examples
-- Add tests for flag validation
+- Add Redis to available extensions list
+- Include hiredis dependency for Redis
+- Update extension validation logic
+- Add Redis to documentation
 
 Closes #123
 ```
@@ -137,36 +238,49 @@ Closes #123
 - Blank line, then detailed explanation if needed
 - Reference issues with "Closes #123" or "Fixes #456"
 
-### File Organization
+### Adding New Features
 
-YERD follows a structured organization:
+#### Adding a New PHP Extension
 
-```
-yerd/
-├── cmd/                    # CLI commands
-│   ├── php/               # PHP-specific commands
-│   └── root.go            # Root command
-├── internal/              # Internal packages
-│   ├── builder/           # PHP building logic
-│   ├── config/            # Configuration management
-│   ├── installer/         # Installation logic
-│   ├── utils/             # Utility functions
-│   └── versions/          # Version management
-├── pkg/                   # Public packages
-│   ├── constants/         # Shared constants
-│   ├── extensions/        # PHP extensions
-│   └── php/               # PHP version definitions
-└── scripts/               # Build and release scripts
-```
+1. Update `internal/constants/php.go`:
+   ```go
+   // Add to availableExtensions map
+   "redis": {
+       Name:         "redis",
+       ConfigFlag:   "--enable-redis",
+       Dependencies: []string{"hiredis"},
+   },
+   ```
+
+2. Update documentation in README.md
+
+#### Adding a New Command
+
+1. Create command file in appropriate `cmd/` subdirectory
+2. Use Cobra command structure:
+   ```go
+   func BuildYourCommand() *cobra.Command {
+       return &cobra.Command{
+           Use:   "command",
+           Short: "Brief description",
+           Long:  `Detailed description`,
+           Run: func(cmd *cobra.Command, args []string) {
+               // Implementation
+           },
+       }
+   }
+   ```
+
+3. Register command in parent command's init
 
 ## 📏 Code Standards
 
 ### Go Style
 
-- Follow **Go conventions** and **gofmt** formatting
-- Use **meaningful variable names**
-- Add **comments for exported functions**
-- Keep functions **focused and small**
+- Follow **standard Go conventions**
+- Run **gofmt** before committing
+- Use **meaningful variable and function names**
+- Keep functions **focused and concise**
 - Use **early returns** to reduce nesting
 
 ### Documentation
@@ -174,37 +288,35 @@ yerd/
 - All **exported functions** must have comments
 - Use **Go doc comment format:**
   ```go
-  // FunctionName does something specific and returns an error if it fails.
-  // parameter: Description of what this parameter does.
-  func FunctionName(parameter string) error {
+  // InstallPhp installs the specified PHP version with given extensions.
+  // Returns error if installation fails or version is invalid.
+  func InstallPhp(version string, extensions []string) error {
       // implementation
   }
   ```
 
 ### Error Handling
 
-- Always **handle errors appropriately**
+- Always **check and handle errors**
 - Provide **context in error messages**
-- Use **fmt.Errorf** for error wrapping
-- Don't ignore errors with `_`
+- Use **fmt.Errorf** for error wrapping:
+  ```go
+  if err := someFunction(); err != nil {
+      return fmt.Errorf("failed to do something: %w", err)
+  }
+  ```
 
-### Example:
-```go
-// InstallPHP installs a PHP version with specified extensions.
-// version: PHP version to install, extensions: List of extensions to include.
-func InstallPHP(version string, extensions []string) error {
-    if version == "" {
-        return fmt.Errorf("version cannot be empty")
-    }
-    
-    cfg, err := config.LoadConfig()
-    if err != nil {
-        return fmt.Errorf("failed to load config: %v", err)
-    }
-    
-    // ... rest of implementation
-}
-```
+### Logging and Output
+
+- Use **color package** for colored output
+- Follow existing patterns for user feedback:
+  ```go
+  green := color.New(color.FgGreen)
+  red := color.New(color.FgRed)
+  
+  green.Println("✓ Operation successful")
+  red.Printf("❌ Error: %v\n", err)
+  ```
 
 ## 🧪 Testing
 
@@ -217,39 +329,50 @@ Before submitting a PR, test your changes:
    go build -o yerd .
    ```
 
-2. **Test basic functionality:**
+2. **Run format checks:**
    ```bash
-   ./yerd --help
-   ./yerd php list
-   ./yerd status
+   go fmt ./...
+   go vet ./...
    ```
 
-3. **Test your specific changes:**
-   - If you added a new command, test all its options
-   - If you fixed a bug, verify the fix works
-   - If you added a feature, test edge cases
+3. **Test basic functionality:**
+   ```bash
+   ./yerd --version
+   ./yerd php list
+   ./yerd php status
+   ```
 
-If tests fail, fix them before submitting your PR.
+4. **Test your specific changes:**
+   - New command: test all flags and arguments
+   - Bug fix: verify the issue is resolved
+   - New feature: test edge cases and error handling
+
+### Testing Checklist
+
+- [ ] Code compiles without warnings
+- [ ] Basic commands work (`--help`, `--version`)
+- [ ] New features work as expected
+- [ ] Error cases handled gracefully
+- [ ] No regression in existing functionality
 
 ## 📤 Submitting Changes
 
 ### Before Submitting
 
-1. **Rebase** on the latest upstream main:
+1. **Update from upstream:**
    ```bash
    git fetch upstream
    git rebase upstream/main
    ```
 
-2. **Squash commits** if you have multiple small commits:
+2. **Run final checks:**
    ```bash
-   git rebase -i HEAD~3  # Interactive rebase for last 3 commits
+   go fmt ./...
+   go vet ./...
+   go build -o yerd .
    ```
 
-3. **Test one final time:**
-   ```bash
-   go build -o yerd . && ./yerd --help
-   ```
+3. **Update documentation** if needed
 
 ### Create Pull Request
 
@@ -258,93 +381,87 @@ If tests fail, fix them before submitting your PR.
    git push origin feature/your-feature-name
    ```
 
-2. **Create PR on GitHub:**
-   - Go to your fork on GitHub
-   - Click "Compare & pull request"
-   - Fill out the PR template
+2. **Create PR on GitHub** with clear description
 
 ## 🔄 Pull Request Process
 
 ### PR Template
 
-When creating a PR, include:
-
 ```markdown
 ## Description
-Brief description of changes made.
+Brief description of changes made and why.
 
 ## Type of Change
 - [ ] Bug fix (non-breaking change that fixes an issue)
-- [ ] New feature (non-breaking change that adds functionality)  
-- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] New feature (non-breaking change that adds functionality)
+- [ ] Breaking change (would cause existing functionality to not work as expected)
 - [ ] Documentation update
+- [ ] Code refactoring
 
-## How Has This Been Tested?
+## Testing
 - [ ] Manual testing performed
+- [ ] Tested on Linux
+- [ ] Tested on macOS (if applicable)
 
 ## Checklist
-- [ ] Code follows project style guidelines
+- [ ] Code follows Go conventions
 - [ ] Self-review completed
 - [ ] Comments added for complex logic
 - [ ] Documentation updated if needed
 - [ ] No new warnings introduced
 ```
 
-### PR Requirements
+### Review Process
 
-- ✅ **Clear description** of changes
-- ✅ **Tests passing** (manual and automated)
-- ✅ **Documentation updated** if needed
-- ✅ **No merge conflicts** with main branch
-- ✅ **Follows code standards**
+1. **Automated checks** run on PR creation
+2. **Maintainer review** for code quality
+3. **Discussion and feedback**
+4. **Approval and merge**
 
 ## 👀 Code Review
 
-### Review Process
+### What We Look For
 
-2. **Maintainer review** for code quality and design
-3. **Feedback addressed** through discussion
-4. **Approval and merge** when ready
+- **Code quality** and Go best practices
+- **Clear logic** and readability
+- **Error handling** completeness
+- **Documentation** accuracy
+- **Backwards compatibility**
 
 ### Addressing Feedback
 
-- **Be responsive** to reviewer comments
-- **Ask questions** if feedback is unclear
+- **Respond promptly** to reviewer comments
+- **Ask questions** if unclear
 - **Make requested changes** in new commits
-- **Explain your reasoning** if you disagree
+- **Mark conversations** as resolved
 
 ## 🤝 Community Guidelines
 
-### Be Respectful
-
-- **Constructive feedback** only
-- **Assume positive intent** in discussions
-- **Help others learn** and improve
-
 ### Communication
 
-- **Use GitHub issues** for bug reports and feature requests
-- **Use discussions** for general questions
-- **Be patient** - maintainers are volunteers
+- **Be respectful** and constructive
+- **Assume positive intent**
+- **Help others** learn and improve
+- **Use GitHub issues** for bugs and features
+- **Use discussions** for questions
 
-### Contribution Types
+### Types of Contributions
 
-We welcome various types of contributions:
-
+We welcome:
 - 🐛 **Bug fixes**
 - ✨ **New features**
 - 📚 **Documentation improvements**
 - 🧪 **Test coverage**
 - 🎨 **Code refactoring**
-- 🌍 **Translations**
 - 💡 **Ideas and suggestions**
+- 🔧 **PHP extension additions**
+- 🌍 **Multi-platform support**
 
 ## 🆘 Getting Help
 
-- **Documentation:** Check [README.md](README.md)
-- **Issues:** Browse [existing issues](https://github.com/LumoSolutions/yerd/issues)
-- **Discussions:** Use [GitHub Discussions](https://github.com/LumoSolutions/yerd/discussions)
-- **Contact:** Reach out to the maintainers
+- **Documentation:** [README.md](README.md) and [CLAUDE.md](CLAUDE.md)
+- **Issues:** [GitHub Issues](https://github.com/LumoSolutions/yerd/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/LumoSolutions/yerd/discussions)
 
 ## 📄 License
 
@@ -354,4 +471,4 @@ By contributing to YERD, you agree that your contributions will be licensed unde
 
 **Thank you for contributing to YERD!** 🎉
 
-Every contribution, no matter how small, helps make YERD better for the entire PHP community.
+Every contribution helps make PHP development better for the entire community.
