@@ -45,9 +45,12 @@ YERD revolutionizes PHP development by providing a zero-friction environment man
 ## ⚡ Quick Start
 
 ```bash
-# One-line installation
-curl -sSL https://raw.githubusercontent.com/LumoSolutions/yerd/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/LumoSolutions/yerd/main/install.sh | sudo bash
+```
 
+Then:
+
+```bash
 # Install PHP 8.4 with a single command
 sudo yerd php 8.4 install
 
