@@ -76,6 +76,11 @@ func ReplaceDirectory(path string) error {
 
 // WriteToFile writes content to a file with specified permissions, overwriting if it exists
 func WriteToFile(filename string, content []byte, perm os.FileMode) error {
+	dir := filepath.Dir(filename)
+	if err := CreateDirectory(dir); err != nil {
+		return fmt.Errorf("failed to create directory for file %s: %w", filename, err)
+	}
+
 	err := os.WriteFile(filename, content, perm)
 	if err != nil {
 		return fmt.Errorf("failed to write file %s: %w", filename, err)
