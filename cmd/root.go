@@ -54,6 +54,7 @@ func init() {
 
 	webCmd.AddCommand(web.BuildInstallCommand())
 	webCmd.AddCommand(web.BuildUninstallCommand())
+	webCmd.AddCommand(web.BuildTrustCommand())
 
 	rootCmd.AddCommand(webCmd)
 

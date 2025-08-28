@@ -11,3 +11,16 @@ type SiteConfig struct {
 	Domain          string `json:"domain"`
 	PhpVersion      string `json:"php_version"`
 }
+
+func GetWebConfig() *WebConfig {
+	var webConfig *WebConfig
+	err := GetStruct("web", &webConfig)
+	if err != nil || webConfig == nil {
+		webConfig = &WebConfig{
+			Installed: false,
+			Sites:     make(map[string]SiteConfig),
+		}
+	}
+
+	return webConfig
+}

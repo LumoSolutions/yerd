@@ -42,11 +42,7 @@ func NewNginxInstaller(update, forceConfig bool) (*NginxInstaller, error) {
 func (installer *NginxInstaller) Uninstall() error {
 	installer.Spinner.UpdatePhrase("Uninstalling Web Components...")
 
-	var webConfig *config.WebConfig
-	err := config.GetStruct("web", &webConfig)
-	if err != nil || webConfig == nil {
-		webConfig = &config.WebConfig{}
-	}
+	webConfig := config.GetWebConfig()
 
 	if webConfig.Sites != nil {
 		for _, site := range webConfig.Sites {
@@ -58,32 +54,27 @@ func (installer *NginxInstaller) Uninstall() error {
 	utils.SystemdStopService("yerd-nginx")
 	utils.SystemdDisable("yerd-nginx")
 
-	params := []string{"-D", "-n", "YERD CA", "-d", "sql:$HOME/.pki/nssdb"}
-	utils.ExecuteCommand("certutil", params...)
-
 	utils.RemoveFolder(constants.YerdWebDir)
 	utils.RemoveFile(filepath.Join(constants.SystemdDir, "yerd-nginx.service"))
 
 	utils.SystemdReload()
+
+	dm, _ := manager.NewDependencyManager()
+	dm.RemoveTrust()
 
 	return nil
 }
 
 func (installer *NginxInstaller) Install() error {
 	installer.Spinner.Start()
-
-	var webConfig *config.WebConfig
-	err := config.GetStruct("web", &webConfig)
-	if err != nil || webConfig == nil {
-		webConfig = &config.WebConfig{Installed: false}
-	}
+	webConfig := config.GetWebConfig()
 
 	if webConfig.Installed {
 		installer.Spinner.StopWithError("Web Components are already installed")
 		return fmt.Errorf("already installed")
 	}
 
-	err = utils.RunAll(
+	err := utils.RunAll(
 		func() error { return installer.installDependencies() },
 		func() error { return installer.prepareInstall() },
 		func() error { return installer.downloadSource() },
@@ -287,25 +278,15 @@ func (installer *NginxInstaller) addSystemdService() error {
 func (installer *NginxInstaller) writeConfig() error {
 	installer.Spinner.UpdatePhrase("Writing YERD Configuration")
 
-	var existing *config.WebConfig
-	err := config.GetStruct("web", &existing)
-	if err != nil || existing == nil {
-		newConfig := config.WebConfig{
-			Installed: true,
-		}
+	webConfig := config.GetWebConfig()
 
-		config.SetStruct("web", newConfig)
-		installer.Spinner.AddSuccessStatus("YERD Configuration Created")
-		return nil
-	}
-
-	if existing.Installed {
+	if webConfig.Installed {
 		installer.Spinner.AddInfoStatus("- YERD configuration does not need updating")
 		return nil
 	}
 
-	existing.Installed = true
-	config.SetStruct("web", existing)
+	webConfig.Installed = true
+	config.SetStruct("web", webConfig)
 
 	hostManager := utils.NewHostsManager()
 	hostManager.Install()

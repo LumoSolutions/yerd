@@ -26,10 +26,7 @@ func NewSiteManager() (*SiteManager, error) {
 	s := utils.NewSpinner("Managing Sites...")
 	s.SetDelay(150)
 
-	var webConfig *config.WebConfig
-	if err := config.GetStruct("web", &webConfig); err != nil {
-		webConfig = &config.WebConfig{}
-	}
+	webConfig := config.GetWebConfig()
 
 	if !webConfig.Installed {
 		return nil, fmt.Errorf("web not installed")

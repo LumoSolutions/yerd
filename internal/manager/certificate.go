@@ -37,8 +37,20 @@ func (certManager *CertificateManager) GenerateCaCertificate(name string) error 
 	depMan, _ := NewDependencyManager()
 	depMan.TrustCertificate(filepath.Join(caPath, certName), name)
 
-	params = []string{"-A", "-n", "YERD CA", "-t", "TCu,Cu,Tu", "-i", filepath.Join(caPath, certName), "-d", "sql:$HOME/.pki/nssdb"}
-	utils.ExecuteCommand("certutil", params...)
+	certManager.ChromeTrust(caPath, certName)
+
+	return nil
+}
+
+func (certManager *CertificateManager) ChromeTrust(caPath, certName string) error {
+	userCtx, _ := utils.GetRealUser()
+
+	params := []string{"-A", "-n", "YERD CA", "-t", "TCu,Cu,Tu", "-i", filepath.Join(caPath, certName), "-d", fmt.Sprintf("sql:%s/.pki/nssdb", userCtx.HomeDir)}
+
+	if _, success := utils.ExecuteCommandAsUser("certutil", params...); !success {
+		utils.LogInfo("cacert", "cert command failed")
+		return fmt.Errorf("failed to trust certificate")
+	}
 
 	return nil
 }
@@ -120,4 +132,11 @@ func (certManager *CertificateManager) generateSiteCertificate(certPath, domain,
 	utils.RemoveFile(filepath.Join(constants.CertsDir, "sites", csrFileName))
 
 	return true
+}
+
+func (certManager *CertificateManager) ChromeUntrust() {
+	userCtx, _ := utils.GetRealUser()
+
+	params := []string{"-D", "-n", "YERD CA", "-d", fmt.Sprintf("sql:%s/.pki/nssdb", userCtx.HomeDir)}
+	utils.ExecuteCommandAsUser("certutil", params...)
 }

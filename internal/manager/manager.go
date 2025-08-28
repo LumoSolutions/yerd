@@ -47,8 +47,7 @@ func NewDependencyManager() (*DependencyManager, error) {
 	}, nil
 }
 
-func (dm *DependencyManager) TrustCertificate(certificate, name string) error {
-	// Map distros to their certificate paths
+func (d *DependencyManager) getCertPath(distro string) (string, error) {
 	certPaths := map[string]string{
 		"ubuntu":              "/usr/local/share/ca-certificates",
 		"debian":              "/usr/local/share/ca-certificates",
@@ -66,9 +65,18 @@ func (dm *DependencyManager) TrustCertificate(certificate, name string) error {
 		"sles":                "/etc/pki/trust/anchors",
 	}
 
-	certPath, ok := certPaths[dm.distro]
+	certPath, ok := certPaths[distro]
 	if !ok {
-		return fmt.Errorf("distro '%s' not supported yet", dm.distro)
+		return "", fmt.Errorf("distro '%s' not supported yet", distro)
+	}
+
+	return certPath, nil
+}
+
+func (dm *DependencyManager) TrustCertificate(certificate, name string) error {
+	certPath, err := dm.getCertPath(dm.distro)
+	if err != nil {
+		return err
 	}
 
 	destFile := fmt.Sprintf("%s/%s-ca.crt", certPath, name)
@@ -76,6 +84,14 @@ func (dm *DependencyManager) TrustCertificate(certificate, name string) error {
 		return fmt.Errorf("failed to copy certificate for %s", dm.distro)
 	}
 
+	if err := dm.execTrustUpdate(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (dm *DependencyManager) execTrustUpdate() error {
 	switch dm.distro {
 	case "arch", "manjaro":
 		if _, success := utils.ExecuteCommand("trust", "extract-compat"); !success {
@@ -94,6 +110,17 @@ func (dm *DependencyManager) TrustCertificate(certificate, name string) error {
 	}
 
 	return nil
+}
+
+func (dm *DependencyManager) RemoveTrust() error {
+	certPath, err := dm.getCertPath(dm.distro)
+	if err != nil {
+		return err
+	}
+
+	destFile := fmt.Sprintf("%s/%s-ca.crt", certPath, "yerd")
+	utils.RemoveFile(destFile)
+	return dm.execTrustUpdate()
 }
 
 // detectDistribution identifies the Linux distribution using multiple detection methods.
