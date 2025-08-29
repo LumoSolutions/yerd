@@ -6,6 +6,7 @@ import (
 
 	"github.com/lumosolutions/yerd/internal/config"
 	"github.com/lumosolutions/yerd/internal/constants"
+	"github.com/lumosolutions/yerd/internal/manager"
 	"github.com/lumosolutions/yerd/internal/utils"
 )
 
@@ -108,6 +109,10 @@ func (ext *ExtensionManager) addExtensions(extensions []string) error {
 		}
 	}
 
+	if len(toAdd) > 0 {
+		ext.displayInstallationNotes(toAdd)
+	}
+
 	ext.Info.AddExtensions = utils.AddUnique(ext.Info.AddExtensions, toAdd...)
 	ext.Info.RemoveExtensions = utils.RemoveItems(ext.Info.RemoveExtensions, toAdd...)
 	ext.Info.AddExtensions = utils.RemoveItems(ext.Info.AddExtensions, ext.Info.Extensions...)
@@ -181,4 +186,38 @@ func (ext *ExtensionManager) handleRebuild(action string, extensions []string) e
 	}
 
 	return nil
+}
+
+func (ext *ExtensionManager) displayInstallationNotes(extensions []string) {
+	dm, _ := manager.NewDependencyManager()
+	pm := dm.GetPackageManager()
+
+	hasSpecialNotes := false
+
+	for _, extName := range extensions {
+		if phpExt, exists := constants.GetExtension(extName); exists {
+			for _, dep := range phpExt.Dependencies {
+				if depConfig, exists := constants.GetDependencyConfig(dep); exists {
+					if depConfig.RequiresSpecialHandling != nil && depConfig.RequiresSpecialHandling[pm] {
+						if !hasSpecialNotes {
+							fmt.Println("\n⚠️  SPECIAL INSTALLATION REQUIREMENTS:")
+							fmt.Println("─────────────────────────────────────")
+							hasSpecialNotes = true
+						}
+
+						fmt.Printf("\n📦 Extension '%s' (dependency: %s):\n", extName, dep)
+						if note, exists := depConfig.InstallNotes[pm]; exists {
+							fmt.Printf("   %s\n", note)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if hasSpecialNotes {
+		fmt.Println("\n─────────────────────────────────────")
+		fmt.Println("ℹ️  Please install these dependencies before rebuilding PHP")
+		fmt.Println()
+	}
 }

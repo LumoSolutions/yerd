@@ -74,10 +74,12 @@ func (installer *PhpInstaller) Install() error {
 		run(installer.getVersionInfo).
 		run(installer.conflictingBinaries).
 		run(installer.installDeps).
+		//run(installer.installPECLExtensions).
 		run(installer.downloadPhp).
 		run(installer.configurePhp).
 		run(installer.compilePhp).
 		run(installer.makePhp).
+		run(installer.installPECLExtensions).
 		run(installer.createSymlinks).
 		run(installer.verifyInstall).
 		run(installer.createDefaultConfig).
@@ -115,6 +117,47 @@ func (installer *PhpInstaller) identifySystem() error {
 	installer.spinner.AddSuccessStatus("System Identification Complete")
 	installer.spinner.AddInfoStatus("Distro: %s", installer.depManager.GetDistro())
 	installer.spinner.AddInfoStatus("Package Manager: %s", installer.depManager.GetPackageManager())
+
+	return nil
+}
+
+func (i *PhpInstaller) isExtensionLoaded(extName string) bool {
+	phpBin := fmt.Sprintf("/opt/yerd/php/php%s/bin/php", i.version)
+	output, success := utils.ExecuteCommand(phpBin, "-m")
+	if !success {
+		return false
+	}
+
+	modules := strings.ToLower(output)
+	return strings.Contains(modules, strings.ToLower(extName))
+}
+
+func (i *PhpInstaller) installPECLExtensions() error {
+	i.spinner.UpdatePhrase("Installing PECL extensions...")
+	peclPath := filepath.Join(constants.YerdPHPDir, fmt.Sprintf("php%s", i.version), "bin", "pecl")
+	for _, extName := range i.extensions {
+		if ext, exists := constants.GetExtension(extName); exists && ext.IsPECL {
+			if i.isExtensionLoaded(extName) {
+				i.spinner.AddInfoStatus("Extension %s is already installed and loaded", extName)
+				continue
+			}
+
+			_, success := utils.ExecuteCommand(peclPath, "install", ext.PECLName)
+			if !success {
+				i.spinner.StopWithError("Failed to install PECL extension %s", extName)
+				return fmt.Errorf("failed to install PECL extension %s", extName)
+			}
+
+			iniPath := fmt.Sprintf("/opt/yerd/etc/php%s/conf.d/%s.ini", i.version, extName)
+			content := fmt.Sprintf("extension=%s.so\n", extName)
+			if err := utils.WriteStringToFile(iniPath, content, constants.FilePermissions); err != nil {
+				i.spinner.StopWithError("Failed to create ini file for extension %s", extName)
+				return fmt.Errorf("failed to create ini file for %s: %v", extName, err)
+			}
+
+			i.spinner.AddSuccessStatus("Extension %s installed and loaded", extName)
+		}
+	}
 
 	return nil
 }
@@ -539,6 +582,7 @@ func getConfigureFlags(majorMinor string, extensions []string) []string {
 		fmt.Sprintf("--with-fpm-user=%s", GetFPMUser()),
 		fmt.Sprintf("--with-fpm-group=%s", GetFPMGroup()),
 		"--enable-cli",
+		"--with-pear",
 	}
 
 	extensionFlags := constants.GetExtensionConfigureFlags(extensions)

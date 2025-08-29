@@ -197,7 +197,7 @@ func (dm *DependencyManager) InstallBuildDependencies() error {
 	return dm.installPackages(deps)
 }
 
-// InstallWebBuildDependencies installs essential build tools and dependencies for web service compilation.
+// InstallWebDependencies installs essential build tools and dependencies for web service compilation.
 // Returns error if installation fails.
 func (dm *DependencyManager) InstallWebDependencies() error {
 	deps := constants.GetWebBuildDependencies(dm.pm)

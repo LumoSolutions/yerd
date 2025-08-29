@@ -327,9 +327,8 @@ main() {
     echo
     echo "Next steps:"
     echo "1. Run: yerd --help"
-    echo "2. Check system status: yerd status"  
-    echo "3. List PHP versions: yerd php list"
-    echo "4. Install PHP: sudo yerd php add 8.4"
+    echo "2. List PHP versions: yerd php list"
+    echo "3. Install PHP: sudo yerd php 8.4 install"
     echo
 }
 

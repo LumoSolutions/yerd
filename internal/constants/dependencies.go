@@ -88,12 +88,14 @@ var PackageManagerConfigs = map[string]PackageManagerConfig{
 
 // DependencyConfig represents all configuration for a single dependency
 type DependencyConfig struct {
-	Name            string
-	SystemPackages  map[string][]string
-	PkgConfigNames  map[string][]string
-	CommonPkgConfig []string
-	Commands        []string
-	Libraries       []string
+	Name                    string
+	SystemPackages          map[string][]string
+	PkgConfigNames          map[string][]string
+	CommonPkgConfig         []string
+	Commands                []string
+	Libraries               []string
+	RequiresSpecialHandling map[string]bool
+	InstallNotes            map[string]string
 }
 
 // DependencyRegistry is the single source of truth for all dependency configurations
@@ -428,6 +430,47 @@ var DependencyRegistry = map[string]*DependencyConfig{
 			APKL:   {"wget", "tar"},
 		},
 		Commands: []string{"wget", "tar"},
+	},
+	"imagick": {
+		Name: "imagick",
+		SystemPackages: map[string][]string{
+			APT:    {"libmagickwand-dev", "imagemagick"},
+			YUM:    {"ImageMagick-devel"},
+			DNF:    {"ImageMagick-devel"},
+			PACMAN: {"imagemagick"},
+			ZYPPER: {"ImageMagick-devel"},
+			APKL:   {"imagemagick-dev"},
+		},
+		CommonPkgConfig: []string{"MagickWand", "ImageMagick"},
+	},
+	"imap": {
+		Name: "imap",
+		SystemPackages: map[string][]string{
+			APT: {"libc-client-dev", "libkrb5-dev"},
+			YUM: {"libc-client-devel", "krb5-devel"},
+		},
+		RequiresSpecialHandling: map[string]bool{
+			DNF:    true,
+			PACMAN: true,
+			APKL:   true,
+		},
+		InstallNotes: map[string]string{
+			DNF:    "Run: sudo dnf install epel-release && sudo dnf install libc-client-devel",
+			PACMAN: "Run: yay -S c-client (requires AUR helper)",
+			APKL:   "Run: apk add --repository http://dl-cdn.alpinelinux.org/alpine/edge/community/ c-client-dev",
+		},
+	},
+	"pecl": {
+		Name: "pecl",
+		SystemPackages: map[string][]string{
+			APT:    {"php-pear", "php-dev"},            // Debian/Ubuntu
+			YUM:    {"php-pear", "php-devel"},          // CentOS/RHEL 7
+			DNF:    {"php-pear", "php-devel"},          // RHEL 8+/Fedora
+			PACMAN: {"php", "autoconf", "make", "gcc"}, // Arch (PECL comes with php)
+			ZYPPER: {"php-pear", "php-devel"},          // openSUSE
+			APKL:   {"php-pear", "php-dev"},            // Alpine
+		},
+		Commands: []string{"pecl"},
 	},
 }
 

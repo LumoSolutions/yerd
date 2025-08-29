@@ -131,7 +131,7 @@ sudo yerd php 8.3 extensions remove gd
 sudo yerd php 8.3 extensions add gd --rebuild
 ```
 
-**Available Extensions**: mbstring, bcmath, opcache, curl, openssl, zip, sockets, mysqli, pdo-mysql, gd, jpeg, freetype, xml, json, session, hash, filter, pcre, zlib, bz2, iconv, intl, pgsql, pdo-pgsql, sqlite3, pdo-sqlite, fileinfo, exif, gettext, gmp, ldap, soap, ftp, pcntl
+**Available Extensions**: mbstring, bcmath, opcache, curl, openssl, zip, sockets, mysqli, pdo-mysql, gd, jpeg, freetype, xml, json, session, hash, filter, pcre, zlib, bz2, iconv, intl, pgsql, pdo-pgsql, sqlite3, pdo-sqlite, fileinfo, exif, gettext, gmp, ldap, soap, ftp, pcntl, imap, imagick, redis
 
 #### Maintenance Operations
 
@@ -150,6 +150,27 @@ sudo yerd php 8.2 uninstall
 
 # Skip confirmation prompts
 sudo yerd php 8.2 uninstall --yes
+```
+
+Note, the imap extension may require special handling, you will be informed of the actions required when you attempt to add the extension, for example:
+
+```bash 
+⚠️  SPECIAL INSTALLATION REQUIREMENTS:
+─────────────────────────────────────
+
+📦 Extension 'imap' (dependency: imap):
+   Run: yay -S c-client (requires AUR helper)
+
+─────────────────────────────────────
+ℹ️  Please install these dependencies before rebuilding PHP
+
+These extensions will be added to PHP 8.3 on the next rebuild
+  imap    imagick
+
+ℹ️  These changes won't apply until PHP is rebuilt
+ℹ️  PHP can be rebuilt with the following command:
+
+ sudo yerd php 8.3 rebuild
 ```
 
 ### Composer Management
@@ -173,6 +194,9 @@ sudo yerd web install
 
 # Remove web components
 sudo yerd web uninstall
+
+# If you are having problems with Chrome trusting SSL certificates
+sudo yerd web trust
 ```
 
 ### Site Management

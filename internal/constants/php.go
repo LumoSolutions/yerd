@@ -11,6 +11,8 @@ type Extension struct {
 	Name         string
 	ConfigFlag   string
 	Dependencies []string
+	IsPECL       bool
+	PECLName     string
 }
 
 var availablePhpVersions = []string{"8.1", "8.2", "8.3", "8.4"}
@@ -18,157 +20,211 @@ var availableExtensions = map[string]Extension{
 	"mbstring": {
 		Name:       "mbstring",
 		ConfigFlag: "--enable-mbstring",
+		IsPECL:     false,
 	},
 	"bcmath": {
 		Name:       "bcmath",
 		ConfigFlag: "--enable-bcmath",
+		IsPECL:     false,
 	},
 	"opcache": {
 		Name:       "opcache",
 		ConfigFlag: "--enable-opcache",
+		IsPECL:     false,
 	},
 	"curl": {
 		Name:         "curl",
 		ConfigFlag:   "--with-curl",
 		Dependencies: []string{"libcurl"},
+		IsPECL:       false,
 	},
 	"openssl": {
 		Name:         "openssl",
 		ConfigFlag:   "--with-openssl",
 		Dependencies: []string{"openssl"},
+		IsPECL:       false,
 	},
 	"zip": {
 		Name:         "zip",
 		ConfigFlag:   "--with-zip",
 		Dependencies: []string{"libzip"},
+		IsPECL:       false,
 	},
 	"sockets": {
 		Name:       "sockets",
 		ConfigFlag: "--enable-sockets",
+		IsPECL:     false,
 	},
 	"mysqli": {
 		Name:         "mysqli",
 		ConfigFlag:   "--with-mysqli",
 		Dependencies: []string{"mysql"},
+		IsPECL:       false,
 	},
 	"pdo-mysql": {
 		Name:         "pdo-mysql",
 		ConfigFlag:   "--with-pdo-mysql",
 		Dependencies: []string{"mysql"},
+		IsPECL:       false,
 	},
 	"gd": {
 		Name:         "gd",
 		ConfigFlag:   "--enable-gd",
 		Dependencies: []string{"libgd"},
+		IsPECL:       false,
 	},
 	"jpeg": {
 		Name:         "jpeg",
 		ConfigFlag:   "--with-jpeg",
 		Dependencies: []string{"libjpeg"},
+		IsPECL:       false,
 	},
 	"freetype": {
 		Name:         "freetype",
 		ConfigFlag:   "--with-freetype",
 		Dependencies: []string{"freetype2"},
+		IsPECL:       false,
 	},
 	"xml": {
 		Name:       "xml",
 		ConfigFlag: "--enable-xml",
+		IsPECL:     false,
 	},
 	"json": {
 		Name:       "json",
 		ConfigFlag: "--enable-json",
+		IsPECL:     false,
 	},
 	"session": {
 		Name:       "session",
 		ConfigFlag: "--enable-session",
+		IsPECL:     false,
 	},
 	"hash": {
 		Name:       "hash",
 		ConfigFlag: "--enable-hash",
+		IsPECL:     false,
 	},
 	"filter": {
 		Name:       "filter",
 		ConfigFlag: "--enable-filter",
+		IsPECL:     false,
 	},
 	"pcre": {
 		Name:         "pcre",
 		ConfigFlag:   "--with-pcre-jit",
 		Dependencies: []string{"pcre2"},
+		IsPECL:       false,
 	},
 	"zlib": {
 		Name:         "zlib",
 		ConfigFlag:   "--with-zlib",
 		Dependencies: []string{"zlib"},
+		IsPECL:       false,
 	},
 	"bz2": {
 		Name:         "bz2",
 		ConfigFlag:   "--with-bz2",
 		Dependencies: []string{"bzip2"},
+		IsPECL:       false,
 	},
 	"iconv": {
 		Name:       "iconv",
 		ConfigFlag: "--with-iconv",
+		IsPECL:     false,
 	},
 	"intl": {
 		Name:         "intl",
 		ConfigFlag:   "--enable-intl",
 		Dependencies: []string{"icu"},
+		IsPECL:       false,
 	},
 	"pgsql": {
 		Name:         "pgsql",
 		ConfigFlag:   "--with-pgsql",
 		Dependencies: []string{"postgresql"},
+		IsPECL:       false,
 	},
 	"pdo-pgsql": {
 		Name:         "pdo-pgsql",
 		ConfigFlag:   "--with-pdo-pgsql",
 		Dependencies: []string{"postgresql"},
+		IsPECL:       false,
 	},
 	"sqlite3": {
 		Name:         "sqlite3",
 		ConfigFlag:   "--with-sqlite3",
 		Dependencies: []string{"sqlite"},
+		IsPECL:       false,
 	},
 	"pdo-sqlite": {
 		Name:         "pdo-sqlite",
 		ConfigFlag:   "--with-pdo-sqlite",
 		Dependencies: []string{"sqlite"},
+		IsPECL:       false,
 	},
 	"fileinfo": {
 		Name:       "fileinfo",
 		ConfigFlag: "--enable-fileinfo",
+		IsPECL:     false,
 	},
 	"exif": {
 		Name:       "exif",
 		ConfigFlag: "--enable-exif",
+		IsPECL:     false,
 	},
 	"gettext": {
 		Name:         "gettext",
 		ConfigFlag:   "--with-gettext",
 		Dependencies: []string{"gettext"},
+		IsPECL:       false,
 	},
 	"gmp": {
 		Name:         "gmp",
 		ConfigFlag:   "--with-gmp",
 		Dependencies: []string{"gmp"},
+		IsPECL:       false,
 	},
 	"ldap": {
 		Name:         "ldap",
 		ConfigFlag:   "--with-ldap",
 		Dependencies: []string{"ldap"},
+		IsPECL:       false,
 	},
 	"soap": {
 		Name:       "soap",
 		ConfigFlag: "--enable-soap",
+		IsPECL:     false,
 	},
 	"ftp": {
 		Name:       "ftp",
 		ConfigFlag: "--enable-ftp",
+		IsPECL:     false,
 	},
 	"pcntl": {
 		Name:       "pcntl",
 		ConfigFlag: "--enable-pcntl",
+		IsPECL:     false,
+	},
+	"imagick": {
+		Name:         "imagick",
+		ConfigFlag:   "",
+		Dependencies: []string{"imagick"},
+		IsPECL:       true,
+		PECLName:     "imagick",
+	},
+	"imap": {
+		Name:         "imap",
+		ConfigFlag:   "--with-imap",
+		Dependencies: []string{"imap"},
+		IsPECL:       false,
+	},
+	"redis": {
+		Name:         "redis",
+		ConfigFlag:   "",
+		Dependencies: []string{},
+		IsPECL:       true,
+		PECLName:     "redis",
 	},
 }
 var defaultExtensions = []string{
