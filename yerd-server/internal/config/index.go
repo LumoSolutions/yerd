@@ -35,9 +35,33 @@ func LoadConfig() error {
 		}
 	}
 
-	var config Config
-	if err := v.Unmarshal(&config); err != nil {
+	config := Config{
+		Yerd:  YerdConfig{},
+		Nginx: NginxConfig{},
+		Php:   make(PhpConfig),
+	}
+
+	if err := v.UnmarshalKey("yerd", &config.Yerd); err != nil {
 		return err
+	}
+	if err := v.UnmarshalKey("nginx", &config.Nginx); err != nil {
+		return err
+	}
+
+	phpRaw := v.Get("php")
+	if phpRaw != nil {
+		phpMap, ok := phpRaw.(map[string]interface{})
+		if ok {
+			for version, data := range phpMap {
+				phpInfo := &PhpInfo{}
+
+				if err := mapstructure.Decode(data, phpInfo); err != nil {
+					return err
+				}
+
+				config.Php[version] = phpInfo
+			}
+		}
 	}
 
 	appConfig = &config
@@ -66,7 +90,20 @@ func WriteConfig() error {
 	v.SetConfigType("json")
 
 	var configMap map[string]interface{}
-	err := mapstructure.Decode(appConfig, &configMap)
+
+	// Custom decoder configuration
+	decoderConfig := &mapstructure.DecoderConfig{
+		Result:           &configMap,
+		TagName:          "json",
+		WeaklyTypedInput: true,
+	}
+
+	decoder, err := mapstructure.NewDecoder(decoderConfig)
+	if err != nil {
+		return err
+	}
+
+	err = decoder.Decode(appConfig)
 	if err != nil {
 		return err
 	}
